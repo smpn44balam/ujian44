@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <title>Ujian — NEXORA EXAM</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="exam-body">
+  <header class="exam-topbar">
+    <div class="exam-brand"><div class="mini-mark">44</div><div><strong>NEXORA EXAM</strong><small id="examIdentity">Memuat...</small></div></div>
+    <div class="exam-status">
+      <div class="timer" id="timer">90:00</div>
+      <div class="violation-badge" id="violationBadge">⚠ 0</div>
+      <button id="fullscreenBtn" class="icon-btn" title="Layar penuh">⛶</button>
+    </div>
+  </header>
+
+  <main class="exam-stage">
+    <div id="startOverlay" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-icon">⛶</div>
+        <h2>Siap Memulai?</h2>
+        <p>NEXORA akan meminta mode layar penuh dan memulai timer.</p>
+        <button id="beginExamBtn" class="primary full">Mulai & Masuk Fullscreen</button>
+      </div>
+    </div>
+
+    <div id="loading" class="loading-card">
+      <div class="spinner"></div>
+      <p>Memuat lembar ujian...</p>
+    </div>
+
+    <iframe id="formFrame" class="form-frame" title="Google Form Ujian" allow="fullscreen"></iframe>
+
+    <section id="finished" class="finished-card hidden">
+      <div class="success-icon">✓</div>
+      <h2>Sesi Ujian Berakhir</h2>
+      <p id="finishReason">Waktu ujian telah selesai.</p>
+      <p>Jika Google Form belum terkirim, selesaikan pengiriman jawaban pada halaman Form sebelum menutup perangkat, jika masih tersedia.</p>
+      <button class="primary" onclick="location.href='index.html'">Kembali ke Beranda</button>
+    </section>
+  </main>
+
+  <div id="violationModal" class="modal-overlay hidden">
+    <div class="modal-card danger-card">
+      <div class="modal-icon">⚠</div>
+      <h2>Peringatan Keamanan</h2>
+      <p id="violationText">NEXORA mendeteksi perubahan status halaman.</p>
+      <button id="closeViolation" class="primary full">Saya Mengerti</button>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="security.js"></script>
+  <script src="exam.js"></script>
+</body>
+</html>

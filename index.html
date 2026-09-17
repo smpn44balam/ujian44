@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>NEXORA EXAM — SMP Negeri 44</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="landing">
+  <main class="shell narrow">
+    <section class="brand-card">
+      <div class="brand-mark">44</div>
+      <div>
+        <div class="eyebrow">SISTEM UJIAN ONLINE</div>
+        <h1>NEXORA EXAM</h1>
+        <p>SMP NEGERI 44</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <span>1</span>
+        <div><h2>Identitas Peserta</h2><p>Isi data sesuai daftar peserta ujian.</p></div>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <label>Nama Lengkap
+          <input id="studentName" required autocomplete="name" placeholder="Contoh: Ahmad Fauzan">
+        </label>
+
+        <label>Kelas
+          <select id="classSelect" required>
+            <option value="">Pilih kelas...</option>
+          </select>
+        </label>
+
+        <label>Mata Pelajaran
+          <select id="subjectSelect" required>
+            <option value="">Pilih mata pelajaran...</option>
+          </select>
+        </label>
+
+        <div id="formInfo" class="info-box hidden"></div>
+        <p id="loginError" class="error hidden"></p>
+        <button class="primary full" type="submit">Lanjutkan <span>→</span></button>
+      </form>
+    </section>
+
+    <section class="notice">
+      <strong>Perhatian</strong>
+      <ul>
+        <li>Gunakan satu perangkat selama ujian.</li>
+        <li>Setelah ujian dimulai, jangan berpindah aplikasi atau tab.</li>
+        <li>Indikator keamanan adalah tanda yang perlu diperiksa, bukan bukti otomatis kecurangan.</li>
+      </ul>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

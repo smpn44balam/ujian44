@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <title>Konfirmasi Ujian — NEXORA EXAM</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell narrow">
+    <section class="brand-card compact">
+      <div class="brand-mark">44</div>
+      <div><div class="eyebrow">KONFIRMASI PESERTA</div><h1>NEXORA EXAM</h1><p>SMP NEGERI 44</p></div>
+    </section>
+
+    <section class="card">
+      <div class="section-title"><span>2</span><div><h2>Periksa Data</h2><p>Pastikan data berikut sudah benar.</p></div></div>
+      <div class="identity-grid">
+        <div><small>Nama</small><strong id="name"></strong></div>
+        <div><small>Kelas</small><strong id="className"></strong></div>
+        <div><small>Tingkat</small><strong id="level"></strong></div>
+        <div><small>Mata Pelajaran</small><strong id="subject"></strong></div>
+      </div>
+
+      <div class="security-list">
+        <div>✓ <span>Mode layar penuh</span></div>
+        <div>✓ <span>Timer ujian</span></div>
+        <div>✓ <span>Pencatatan indikator keamanan</span></div>
+        <div>✓ <span>Google Form sebagai lembar jawaban</span></div>
+      </div>
+
+      <div class="notice warning">
+        <strong>Sebelum mulai</strong>
+        <p>Pastikan koneksi stabil. Setelah menekan tombol mulai, timer berjalan dan NEXORA akan meminta mode layar penuh.</p>
+      </div>
+
+      <div class="actions">
+        <button class="secondary" id="backBtn">← Kembali</button>
+        <button class="primary" id="startBtn">Mulai Ujian →</button>
+      </div>
+      <p id="confirmError" class="error hidden"></p>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="exam-config.js"></script>
+</body>
+</html>
