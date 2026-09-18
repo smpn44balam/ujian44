@@ -90,7 +90,22 @@ window.NexoraSecurity = (() => {
     });
   }
 
-  function getCount() { return violationCount; }
+  function disarm() {
+    armed = false;
+  }
 
-  return {setCallback, record, arm, enterFullscreen, getCount, sendMonitoring};
+  function getCount() {
+    return violationCount;
+  }
+
+  return {
+    setCallback,
+    record,
+    arm,
+    disarm,
+    enterFullscreen,
+    getCount,
+    sendMonitoring
+  };
+})();
 })();
