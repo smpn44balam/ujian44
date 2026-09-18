@@ -43,7 +43,7 @@ const NEXORA_CONFIG = {
 // =========================================================
 const GOOGLE_FORMS = {
   VII: {
-    bahasaIndonesia: "",
+    bahasaIndonesia: "https://forms.gle/3TZ8XvKLsS3sKzvo9",
     pai: "",
     matematika: "",
     pkn: "",
