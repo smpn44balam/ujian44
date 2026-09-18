@@ -1,39 +1,47 @@
 /* =========================================================
-   NEXORA EXAM — SMP NEGERI 44 BANDAR LAMPUNG
-   STYLE.CSS
+   NEXORA EXAM
+   SMP NEGERI 44 BANDAR LAMPUNG
+   MASTER STYLESHEET
    ========================================================= */
 
 
 /* =========================================================
-   GLOBAL
+   1. GLOBAL
    ========================================================= */
 
 * {
   box-sizing: border-box;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
+html {
   min-height: 100%;
-  font-family: Arial, Helvetica, sans-serif;
-  color: #172033;
-  background: #eef2f7;
 }
 
 body {
-  line-height: 1.5;
+  margin: 0;
+  min-height: 100vh;
+
+  font-family:
+    Inter,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 button {
-  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hidden {
@@ -42,982 +50,30 @@ button {
 
 
 /* =========================================================
-   GENERAL / LOGIN / DASHBOARD
-   Dipertahankan agar halaman lain tidak rusak
+   2. COMMON LAYOUT
    ========================================================= */
 
 .shell {
-  width: min(1100px, calc(100% - 32px));
-  margin: 0 auto;
-}
-
-.narrow {
-  max-width: 620px;
-}
-
-.wide {
-  max-width: 1180px;
-}
-
-.landing {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 16px;
-  background:
-    radial-gradient(circle at top left, #dbeafe 0, transparent 35%),
-    linear-gradient(135deg, #f8fafc, #e8eef6);
-}
-
-.brand-card {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.brand-mark,
-.mini-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  background: #0f172a;
-  color: #fff;
-  border-radius: 14px;
-}
-
-.brand-mark {
-  width: 76px;
-  height: 76px;
-  font-size: 24px;
-  margin-bottom: 16px;
-}
-
-.mini-mark {
-  width: 42px;
-  height: 42px;
-  font-size: 14px;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  color: #64748b;
-}
-
-.brand-card h1 {
-  margin: 0;
-  font-size: 34px;
-  line-height: 1.1;
-  color: #0f172a;
-}
-
-.brand-card p {
-  margin: 10px 0 0;
-  color: #64748b;
-}
-
-.card {
-  background: #fff;
-  border: 1px solid #dbe2ea;
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: 0 12px 35px rgba(15, 23, 42, .08);
-}
-
-.section-title {
-  margin: 0 0 18px;
-  font-size: 20px;
-  color: #0f172a;
-}
-
-label {
-  display: block;
-  margin-bottom: 7px;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-input,
-select {
-  width: 100%;
-  height: 46px;
-  padding: 0 13px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  background: #fff;
-  color: #172033;
-  outline: none;
-}
-
-input:focus,
-select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
-}
-
-button {
-  border: 0;
-}
-
-.primary,
-.secondary,
-.danger {
-  min-height: 44px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-weight: 800;
-}
-
-.primary {
-  background: #2563eb;
-  color: #fff;
-}
-
-.primary:hover {
-  background: #1d4ed8;
-}
-
-.secondary {
-  background: #e2e8f0;
-  color: #172033;
-}
-
-.danger {
-  background: #dc2626;
-  color: #fff;
-}
-
-.full {
-  width: 100%;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.info-box,
-.notice {
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e3a8a;
-}
-
-.error {
-  color: #b91c1c;
-  font-weight: 700;
-}
-
-.identity-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.security-list {
-  margin: 0;
-  padding-left: 20px;
-}
-
-
-/* =========================================================
-   NEXORA EXAM
-   ========================================================= */
-
-.exam-body {
-  min-height: 100vh;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .10), transparent 28%),
-    radial-gradient(circle at 90% 100%, rgba(14, 165, 233, .08), transparent 30%),
-    #e9eef5;
-}
-
-
-/* =========================================================
-   TOP HEADER
-   ========================================================= */
-
-.exam-topbar {
-  position: relative;
-  z-index: 20;
-
-  min-height: 82px;
-  padding: 10px 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-
-  background:
-    linear-gradient(110deg, #0b1730 0%, #12264a 58%, #173968 100%);
-
-  color: #fff;
-
-  border-bottom: 4px solid #2563eb;
-
-  box-shadow:
-    0 5px 18px rgba(15, 23, 42, .22);
-}
-
-
-/* =========================================================
-   BRAND
-   ========================================================= */
-
-.exam-brand {
-  min-width: 0;
-
-  display: flex;
-  align-items: center;
-  gap: 13px;
-}
-
-.school-logo {
-  width: 56px;
-  height: 56px;
-
-  flex: 0 0 56px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 12px;
-
-  background: #fff;
-
-  border: 2px solid rgba(255, 255, 255, .65);
-
-  overflow: hidden;
-
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
-}
-
-.school-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.logo-fallback {
-  font-size: 18px;
-  font-weight: 900;
-  color: #0f172a;
-}
-
-.brand-text {
-  min-width: 0;
-}
-
-.brand-text strong {
-  display: block;
-
-  font-size: 21px;
-  line-height: 1.1;
-
-  font-weight: 900;
-  letter-spacing: .4px;
-}
-
-.brand-text small {
-  display: block;
-
-  margin-top: 4px;
-
-  color: #dbeafe;
-
-  font-size: 11px;
-  font-weight: 700;
-
-  letter-spacing: .65px;
-}
-
-.brand-text::after {
-  content: "NEXT GENERATION ONLINE ASSESSMENT";
-
-  display: block;
-
-  margin-top: 2px;
-
-  font-size: 8px;
-  font-weight: 800;
-
-  letter-spacing: 1.2px;
-
-  color: #93c5fd;
-}
-
-
-/* =========================================================
-   RIGHT HEADER STATUS
-   ========================================================= */
-
-.exam-status {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 9px;
-
-  flex-shrink: 0;
-}
-
-
-/* REAL-TIME CLOCK */
-
-.exam-clock {
-  min-width: 94px;
-
-  padding: 7px 10px;
-
-  text-align: center;
-
-  border-radius: 8px;
-
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .13);
-}
-
-.exam-clock .status-label {
-  display: block;
-
-  margin-bottom: 1px;
-
-  font-size: 7px;
-  font-weight: 800;
-
-  letter-spacing: 1px;
-
-  color: #94a3b8;
-}
-
-.exam-clock strong {
-  display: block;
-
-  font-family: "Courier New", monospace;
-
-  font-size: 14px;
-  letter-spacing: 1px;
-
-  color: #fff;
-}
-
-
-/* =========================================================
-   TIMER
-   ========================================================= */
-
-.exam-timer {
-  min-width: 150px;
-
-  padding: 7px 14px;
-
-  background: #fff;
-
-  border-radius: 10px;
-
-  border: 1px solid #dbeafe;
-
-  text-align: center;
-
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
-}
-
-.exam-timer .status-label {
-  display: block;
-
-  margin-bottom: 0;
-
-  font-size: 8px;
-  font-weight: 900;
-
-  letter-spacing: 1.3px;
-
-  color: #64748b;
-}
-
-.timer {
-  display: block;
-
-  margin-top: -1px;
-
-  font-family: "Courier New", monospace;
-
-  font-size: 26px;
-  line-height: 1;
-
-  font-weight: 900;
-
-  letter-spacing: 1px;
-
-  color: #0f172a;
-}
-
-
-/* =========================================================
-   SECURITY
-   ========================================================= */
-
-.exam-security {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.exam-security .status-label {
-  font-size: 7px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #94a3b8;
-}
-
-.violation-badge {
-  min-width: 66px;
-  height: 34px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 0 10px;
-
-  border-radius: 8px;
-
-  background: rgba(245, 158, 11, .14);
-  border: 1px solid rgba(245, 158, 11, .35);
-
-  color: #fde68a;
-
-  font-size: 13px;
-  font-weight: 900;
-}
-
-
-/* =========================================================
-   FULLSCREEN BUTTON
-   ========================================================= */
-
-.icon-btn {
-  width: 38px;
-  height: 38px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 9px;
-
-  background: rgba(255, 255, 255, .08);
-  color: #fff;
-
-  border: 1px solid rgba(255, 255, 255, .15);
-
-  font-size: 20px;
-}
-
-.icon-btn:hover {
-  background: rgba(255, 255, 255, .16);
-}
-
-
-/* =========================================================
-   EXAM INFO BAR
-   ========================================================= */
-
-.exam-info-bar {
-  position: relative;
-  z-index: 10;
-
-  min-height: 70px;
-
-  display: flex;
-  align-items: center;
-
-  padding: 10px 24px;
-
-  background: #fff;
-
-  border-bottom: 1px solid #d9e1eb;
-
-  box-shadow: 0 3px 10px rgba(15, 23, 42, .07);
-}
-
-.exam-identity-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  min-width: 280px;
-
-  padding-right: 25px;
-
-  border-right: 1px solid #e2e8f0;
-}
-
-.identity-icon {
-  width: 40px;
-  height: 40px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  flex: 0 0 40px;
-
-  border-radius: 10px;
-
-  background: #eff6ff;
-
-  border: 1px solid #bfdbfe;
-
-  color: #2563eb;
-
-  font-size: 19px;
-}
-
-.identity-content {
-  min-width: 0;
-}
-
-.identity-label {
-  display: block;
-
-  margin-bottom: 1px;
-
-  font-size: 8px;
-  font-weight: 900;
-
-  letter-spacing: 1.2px;
-
-  color: #64748b;
-}
-
-#examIdentity {
-  display: block;
-
-  font-size: 14px;
-  font-weight: 900;
-
-  color: #0f172a;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   EXAM STAGE
-   ========================================================= */
-
-.exam-stage {
-  position: relative;
-
-  height: calc(100vh - 152px);
-
-  padding: 16px 22px 20px;
-
-  overflow: hidden;
-
-  background:
-    linear-gradient(
-      180deg,
-      #edf2f7 0%,
-      #e7edf4 100%
-    );
-}
-
-
-/* =========================================================
-   GOOGLE FORM WORKSPACE
-   ========================================================= */
-
-.form-frame {
-  position: relative;
-  z-index: 1;
-
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  border: 0;
-
-  border-radius: 12px;
-
-  background: #fff;
-
-  box-shadow:
-    0 2px 5px rgba(15, 23, 42, .06),
-    0 10px 30px rgba(15, 23, 42, .10);
-
-  border: 1px solid #d9e2ec;
-}
-
-
-/* =========================================================
-   LOADING
-   ========================================================= */
-
-.loading-card {
-  position: absolute;
-
-  z-index: 5;
-
-  left: 50%;
-  top: 50%;
-
-  transform: translate(-50%, -50%);
-
-  width: min(360px, calc(100% - 40px));
-
-  padding: 30px;
-
-  text-align: center;
-
-  background: #fff;
-
-  border: 1px solid #dbe2ea;
-
-  border-radius: 16px;
-
-  box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
-}
-
-.loading-card p {
-  margin: 12px 0 0;
-
-  color: #64748b;
-  font-weight: 700;
-}
-
-.spinner {
-  width: 38px;
-  height: 38px;
+  width: min(92%, 900px);
 
   margin: 0 auto;
 
-  border: 4px solid #dbeafe;
-  border-top-color: #2563eb;
-
-  border-radius: 50%;
-
-  animation: nexora-spin .8s linear infinite;
+  padding: 30px 0 28px;
 }
 
-@keyframes nexora-spin {
-  to {
-    transform: rotate(360deg);
-  }
+.shell.narrow {
+  max-width: 720px;
 }
 
 
 /* =========================================================
-   MODAL
+   3. NEXORA LANDING PAGE
+   index.html
    ========================================================= */
-
-.modal-overlay {
-  position: fixed;
-
-  inset: 0;
-
-  z-index: 100;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  padding: 20px;
-
-  background: rgba(15, 23, 42, .70);
-
-  backdrop-filter: blur(5px);
-}
-
-.modal-card {
-  width: min(440px, 100%);
-
-  padding: 32px;
-
-  text-align: center;
-
-  background: #fff;
-
-  border-radius: 18px;
-
-  border: 1px solid #dbe2ea;
-
-  box-shadow: 0 25px 70px rgba(0, 0, 0, .28);
-}
-
-.modal-icon {
-  width: 58px;
-  height: 58px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin: 0 auto 16px;
-
-  border-radius: 50%;
-
-  background: #eff6ff;
-
-  color: #2563eb;
-
-  font-size: 25px;
-  font-weight: 900;
-}
-
-.modal-card h2 {
-  margin: 0 0 10px;
-
-  color: #0f172a;
-
-  font-size: 23px;
-}
-
-.modal-card p {
-  margin: 0 0 22px;
-
-  color: #64748b;
-}
-
-.danger-card .modal-icon {
-  background: #fff7ed;
-  color: #ea580c;
-}
-
-.danger-card {
-  border-top: 5px solid #f97316;
-}
-
-
-/* =========================================================
-   FINISHED
-   ========================================================= */
-
-.finished-card {
-  position: absolute;
-
-  z-index: 10;
-
-  left: 50%;
-  top: 50%;
-
-  transform: translate(-50%, -50%);
-
-  width: min(480px, calc(100% - 40px));
-
-  padding: 36px;
-
-  text-align: center;
-
-  background: #fff;
-
-  border-radius: 18px;
-
-  border: 1px solid #dbe2ea;
-
-  box-shadow: 0 25px 60px rgba(15, 23, 42, .18);
-}
-
-.success-icon {
-  width: 64px;
-  height: 64px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin: 0 auto 16px;
-
-  border-radius: 50%;
-
-  background: #ecfdf5;
-
-  color: #059669;
-
-  font-size: 34px;
-  font-weight: 900;
-}
-
-.finished-card h2 {
-  margin: 0 0 10px;
-
-  color: #0f172a;
-}
-
-.finished-card p {
-  color: #64748b;
-}
-
-
-/* =========================================================
-   DASHBOARD
-   ========================================================= */
-
-.dashboard {
-  min-height: 100vh;
-  padding: 24px;
-
-  background: #eef2f7;
-}
-
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (max-width: 900px) {
-
-  .exam-topbar {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .exam-info-bar {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .exam-stage {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .exam-clock {
-    display: none;
-  }
-
-  .exam-timer {
-    min-width: 135px;
-  }
-
-  .timer {
-    font-size: 23px;
-  }
-
-  .exam-identity-box {
-    min-width: 0;
-  }
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 640px) {
-
-  .exam-body {
-    overflow: hidden;
-  }
-
-  .exam-topbar {
-    min-height: 68px;
-    padding: 8px 10px;
-    gap: 8px;
-  }
-
-  .school-logo {
-    width: 44px;
-    height: 44px;
-    flex-basis: 44px;
-  }
-
-  .brand-text strong {
-    font-size: 16px;
-  }
-
-  .brand-text small {
-    font-size: 8px;
-  }
-
-  .brand-text::after {
-    display: none;
-  }
-
-  .exam-status {
-    gap: 5px;
-  }
-
-  .exam-timer {
-    min-width: 105px;
-    padding: 5px 8px;
-  }
-
-  .timer {
-    font-size: 20px;
-  }
-
-  .exam-security {
-    display: none;
-  }
-
-  .icon-btn {
-    width: 34px;
-    height: 34px;
-  }
-
-  .exam-info-bar {
-    min-height: 58px;
-    padding: 7px 10px;
-  }
-
-  .exam-identity-box {
-    width: 100%;
-    padding-right: 0;
-    border-right: 0;
-  }
-
-  .identity-icon {
-    width: 34px;
-    height: 34px;
-    flex-basis: 34px;
-    font-size: 16px;
-  }
-
-  #examIdentity {
-    font-size: 12px;
-  }
-
-  .exam-stage {
-    height: calc(100vh - 126px);
-    padding: 8px;
-  }
-
-  .form-frame {
-    border-radius: 8px;
-  }
-
-  .modal-card {
-    padding: 25px 20px;
-  }
-}
-
-/* =========================================================
-   NEXORA EXAM
-   LANDING / STUDENT ENTRY THEME
-   SMP NEGERI 44 BANDAR LAMPUNG
-   ========================================================= */
-
-/* ---------------------------------------------------------
-   BACKGROUND
---------------------------------------------------------- */
 
 body.landing {
-  margin: 0;
+  position: relative;
+
   min-height: 100vh;
 
   background:
@@ -1037,13 +93,16 @@ body.landing {
 }
 
 
-/* subtle diagonal background accents */
+/* Background decoration */
 
 body.landing::before,
 body.landing::after {
   content: "";
+
   position: fixed;
+
   pointer-events: none;
+
   z-index: 0;
 }
 
@@ -1054,11 +113,12 @@ body.landing::before {
   top: -220px;
   left: -180px;
 
-  background: linear-gradient(
-    135deg,
-    rgba(37, 99, 235, 0.16),
-    transparent
-  );
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.16),
+      transparent
+    );
 
   transform: rotate(45deg);
 }
@@ -1070,44 +130,106 @@ body.landing::after {
   right: -220px;
   bottom: -230px;
 
-  background: linear-gradient(
-    135deg,
-    transparent,
-    rgba(37, 99, 235, 0.14)
-  );
+  background:
+    linear-gradient(
+      135deg,
+      transparent,
+      rgba(37, 99, 235, 0.14)
+    );
 
   transform: rotate(45deg);
 }
 
 
-/* ---------------------------------------------------------
-   MAIN CONTAINER
---------------------------------------------------------- */
+/* =========================================================
+   4. STUDENT CONFIRMATION PAGE
+   siswa.html
+   ========================================================= */
 
-body.landing .shell {
+body.student-confirmation {
   position: relative;
+
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(30, 110, 210, 0.20),
+      transparent 38%
+    ),
+    linear-gradient(
+      135deg,
+      #06152f 0%,
+      #082451 48%,
+      #061a3a 100%
+    );
+
+  color: #f8fafc;
+}
+
+body.student-confirmation::before,
+body.student-confirmation::after {
+  content: "";
+
+  position: fixed;
+
+  pointer-events: none;
+
+  z-index: 0;
+}
+
+body.student-confirmation::before {
+  width: 420px;
+  height: 420px;
+
+  top: -220px;
+  left: -180px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.16),
+      transparent
+    );
+
+  transform: rotate(45deg);
+}
+
+body.student-confirmation::after {
+  width: 420px;
+  height: 420px;
+
+  right: -220px;
+  bottom: -230px;
+
+  background:
+    linear-gradient(
+      135deg,
+      transparent,
+      rgba(37, 99, 235, 0.14)
+    );
+
+  transform: rotate(45deg);
+}
+
+
+/* =========================================================
+   5. BRAND
+   Shared by index + siswa
+   ========================================================= */
+
+body.landing .shell,
+body.student-confirmation .shell {
+  position: relative;
+
   z-index: 1;
-
-  width: min(92%, 720px);
-
-  margin: 0 auto;
-
-  padding:
-    34px
-    0
-    28px;
-}
-
-body.landing .shell.narrow {
-  max-width: 720px;
 }
 
 
-/* ---------------------------------------------------------
-   BRAND
---------------------------------------------------------- */
+/* Brand container */
 
-body.landing .brand-card {
+body.landing .brand-card,
+body.student-confirmation .brand-card {
   text-align: center;
 
   margin-bottom: 30px;
@@ -1115,20 +237,27 @@ body.landing .brand-card {
   color: #ffffff;
 }
 
+body.student-confirmation .brand-card.compact {
+  padding: 0;
+}
 
-/* 44 badge */
 
-body.landing .brand-mark {
+/* School badge */
+
+body.landing .brand-mark,
+body.student-confirmation .brand-mark {
   width: 62px;
   height: 62px;
 
   margin: 0 auto 12px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
-  border: 2px solid rgba(96, 165, 250, 0.85);
+  border:
+    2px solid rgba(96, 165, 250, 0.85);
 
   border-radius: 18px;
 
@@ -1139,25 +268,28 @@ body.landing .brand-mark {
       #0a2854
     );
 
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.30),
-    inset 0 0 0 1px rgba(147, 197, 253, 0.15);
-
   color: #ffffff;
 
   font-size: 25px;
+
   font-weight: 800;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.30),
+    inset 0 0 0 1px rgba(147, 197, 253, 0.15);
 }
 
 
-/* small title */
+/* Eyebrow */
 
-body.landing .eyebrow {
+body.landing .eyebrow,
+body.student-confirmation .eyebrow {
   margin-bottom: 7px;
 
   color: #93c5fd;
 
   font-size: 12px;
+
   font-weight: 700;
 
   letter-spacing: 0.22em;
@@ -1166,9 +298,10 @@ body.landing .eyebrow {
 }
 
 
-/* NEXORA EXAM */
+/* NEXORA title */
 
-body.landing .brand-card h1 {
+body.landing .brand-card h1,
+body.student-confirmation .brand-card h1 {
   margin: 0;
 
   color: #ffffff;
@@ -1183,23 +316,26 @@ body.landing .brand-card h1 {
 }
 
 
-/* school */
+/* School name */
 
-body.landing .school-name {
+body.landing .school-name,
+body.student-confirmation .school-name {
   margin: 10px 0 0;
 
   color: #dbeafe;
 
   font-size: 16px;
+
   font-weight: 600;
 
   letter-spacing: 0.03em;
 }
 
 
-/* tagline */
+/* Tagline */
 
-body.landing .brand-tagline {
+body.landing .brand-tagline,
+body.student-confirmation .brand-tagline {
   margin: 7px 0 0;
 
   color: #93c5fd;
@@ -1210,11 +346,12 @@ body.landing .brand-tagline {
 }
 
 
-/* ---------------------------------------------------------
-   MAIN FORM CARD
---------------------------------------------------------- */
+/* =========================================================
+   6. MAIN CARD
+   ========================================================= */
 
-body.landing .card {
+body.landing .card,
+body.student-confirmation .card {
   position: relative;
 
   padding: 30px;
@@ -1227,8 +364,8 @@ body.landing .card {
   background:
     linear-gradient(
       145deg,
-      rgba(14, 51, 100, 0.94),
-      rgba(7, 35, 73, 0.96)
+      rgba(14, 51, 100, 0.96),
+      rgba(7, 35, 73, 0.97)
     );
 
   box-shadow:
@@ -1239,9 +376,10 @@ body.landing .card {
 }
 
 
-/* subtle top accent */
+/* Blue line */
 
-body.landing .card::before {
+body.landing .card::before,
+body.student-confirmation .card::before {
   content: "";
 
   position: absolute;
@@ -1261,17 +399,19 @@ body.landing .card::before {
 }
 
 
-/* ---------------------------------------------------------
-   SECTION TITLE
---------------------------------------------------------- */
+/* =========================================================
+   7. SECTION TITLE
+   ========================================================= */
 
-body.landing .section-title {
+body.landing .section-title,
+body.student-confirmation .section-title {
   display: flex;
+
   align-items: center;
 
   gap: 16px;
 
-  margin-bottom: 24px;
+  margin-bottom: 26px;
 
   padding-bottom: 20px;
 
@@ -1280,15 +420,17 @@ body.landing .section-title {
 }
 
 
-/* number box */
+/* Number */
 
-body.landing .section-number {
+body.landing .section-number,
+body.student-confirmation .section-number {
   flex: 0 0 auto;
 
   width: 48px;
   height: 48px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1304,6 +446,7 @@ body.landing .section-number {
   color: #ffffff;
 
   font-size: 22px;
+
   font-weight: 800;
 
   box-shadow:
@@ -1311,29 +454,35 @@ body.landing .section-number {
 }
 
 
-/* heading area */
+/* Heading */
 
-body.landing .section-heading h2 {
+body.landing .section-heading h2,
+body.student-confirmation .section-heading h2 {
   margin: 0;
 
   color: #ffffff;
 
   font-size: 24px;
+
   line-height: 1.2;
 }
 
-body.landing .section-heading p {
+
+body.landing .section-heading p,
+body.student-confirmation .section-heading p {
   margin: 5px 0 0;
 
   color: #93c5fd;
 
   font-size: 14px;
+
+  line-height: 1.5;
 }
 
 
-/* ---------------------------------------------------------
-   FORM
---------------------------------------------------------- */
+/* =========================================================
+   8. LOGIN FORM
+   ========================================================= */
 
 body.landing form {
   display: flex;
@@ -1343,8 +492,6 @@ body.landing form {
   gap: 18px;
 }
 
-
-/* labels */
 
 body.landing form label {
   display: flex;
@@ -1356,22 +503,18 @@ body.landing form label {
   color: #e0ecff;
 
   font-size: 14px;
+
   font-weight: 700;
 }
 
-
-/* inputs */
 
 body.landing form input,
 body.landing form select {
   width: 100%;
 
-  box-sizing: border-box;
-
   min-height: 52px;
 
-  padding:
-    0 15px;
+  padding: 0 15px;
 
   border:
     1px solid rgba(96, 165, 250, 0.38);
@@ -1384,8 +527,6 @@ body.landing form select {
     rgba(5, 26, 57, 0.75);
 
   color: #ffffff;
-
-  font-family: inherit;
 
   font-size: 15px;
 
@@ -1418,18 +559,43 @@ body.landing form select {
 }
 
 
-/* ---------------------------------------------------------
-   BUTTON
---------------------------------------------------------- */
+/* =========================================================
+   9. INFO / ERROR
+   ========================================================= */
 
-body.landing .primary {
-  min-height: 52px;
+body.landing .info-box {
+  padding: 12px 14px;
 
-  margin-top: 4px;
+  border:
+    1px solid rgba(96, 165, 250, 0.22);
 
+  border-radius: 9px;
+
+  background:
+    rgba(30, 64, 175, 0.18);
+
+  color: #bfdbfe;
+
+  font-size: 13px;
+}
+
+
+body.landing .error,
+body.student-confirmation .error {
+  margin: 0;
+
+  color: #fca5a5;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   10. PRIMARY BUTTON
+   ========================================================= */
+
+.primary {
   border: 0;
-
-  border-radius: 10px;
 
   background:
     linear-gradient(
@@ -1439,11 +605,6 @@ body.landing .primary {
     );
 
   color: #ffffff;
-
-  font-family: inherit;
-
-  font-size: 15px;
-  font-weight: 700;
 
   cursor: pointer;
 
@@ -1457,18 +618,16 @@ body.landing .primary {
 }
 
 
-body.landing .primary:hover {
-  filter: brightness(1.08);
+body.landing .primary {
+  width: 100%;
 
-  transform: translateY(-1px);
+  min-height: 52px;
 
-  box-shadow:
-    0 13px 28px rgba(37, 99, 235, 0.35);
-}
+  border-radius: 10px;
 
+  font-size: 15px;
 
-body.landing .primary:active {
-  transform: translateY(0);
+  font-weight: 700;
 }
 
 
@@ -1479,39 +638,24 @@ body.landing .primary span {
 }
 
 
-/* ---------------------------------------------------------
-   INFO / ERROR
---------------------------------------------------------- */
+.primary:hover {
+  filter: brightness(1.08);
 
-body.landing .info-box {
-  padding: 12px 14px;
+  transform: translateY(-1px);
 
-  border-radius: 9px;
-
-  background:
-    rgba(30, 64, 175, 0.18);
-
-  border:
-    1px solid rgba(96, 165, 250, 0.22);
-
-  color: #bfdbfe;
-
-  font-size: 13px;
+  box-shadow:
+    0 13px 28px rgba(37, 99, 235, 0.35);
 }
 
 
-body.landing .error {
-  margin: -4px 0 0;
-
-  color: #fca5a5;
-
-  font-size: 13px;
+.primary:active {
+  transform: translateY(0);
 }
 
 
-/* ---------------------------------------------------------
-   NOTICE
---------------------------------------------------------- */
+/* =========================================================
+   11. NOTICE
+   ========================================================= */
 
 body.landing .notice {
   margin-top: 18px;
@@ -1536,40 +680,46 @@ body.landing .notice {
 }
 
 
-body.landing .notice-heading {
+body.landing .notice-heading,
+body.student-confirmation .notice-heading {
   display: flex;
+
   align-items: center;
 
   gap: 11px;
 
   margin-bottom: 12px;
-
-  color: #ffffff;
-
-  font-size: 14px;
 }
 
 
-/* notice icon */
-
-body.landing .notice-icon {
+body.landing .notice-icon,
+body.student-confirmation .notice-icon {
   width: 28px;
   height: 28px;
 
   flex: 0 0 auto;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
   border-radius: 50%;
 
   background:
-    rgba(37, 99, 235, 0.75);
+    rgba(37, 99, 235, 0.85);
 
   color: #ffffff;
 
   font-weight: 800;
+}
+
+
+body.landing .notice-heading strong,
+body.student-confirmation .notice-heading strong {
+  color: #ffffff;
+
+  font-size: 14px;
 }
 
 
@@ -1596,43 +746,820 @@ body.landing .notice li::marker {
 }
 
 
-/* ---------------------------------------------------------
-   FOOTER CAPTION
---------------------------------------------------------- */
+/* =========================================================
+   12. PAGE CAPTION
+   ========================================================= */
 
-body.landing .page-caption {
+body.landing .page-caption,
+body.student-confirmation .page-caption {
   margin: 20px 0 0;
-
-  text-align: center;
 
   color: #6f9bc9;
 
-  font-size: 11px;
+  font-size: 10px;
+
+  text-align: center;
 
   letter-spacing: 0.05em;
 }
 
 
-/* ---------------------------------------------------------
-   MOBILE
---------------------------------------------------------- */
+/* =========================================================
+   13. STUDENT CONFIRMATION
+   DATA PESERTA
+   ========================================================= */
+
+body.student-confirmation .confirmation-section {
+  margin-bottom: 26px;
+}
+
+
+body.student-confirmation .subsection-title {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 11px;
+
+  margin-bottom: 14px;
+}
+
+
+body.student-confirmation .subsection-line {
+  width: 3px;
+  min-height: 34px;
+
+  flex: 0 0 auto;
+
+  border-radius: 3px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #38bdf8,
+      #2563eb
+    );
+}
+
+
+body.student-confirmation .subsection-title strong {
+  display: block;
+
+  color: #e0efff;
+
+  font-size: 12px;
+
+  letter-spacing: 0.10em;
+}
+
+
+body.student-confirmation .subsection-title small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #7fa8d5;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   14. IDENTITY GRID
+   ========================================================= */
+
+body.student-confirmation .identity-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+
+body.student-confirmation .identity-item {
+  min-width: 0;
+
+  padding: 15px;
+
+  border:
+    1px solid rgba(96, 165, 250, 0.20);
+
+  border-radius: 10px;
+
+  background:
+    rgba(4, 24, 52, 0.55);
+}
+
+
+body.student-confirmation .identity-item small {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #7fa8d5;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.06em;
+
+  text-transform: uppercase;
+}
+
+
+body.student-confirmation .identity-item strong {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 14px;
+
+  line-height: 1.4;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   15. SYSTEM CHECK
+   ========================================================= */
+
+body.student-confirmation .system-check-section {
+  margin-top: 4px;
+}
+
+
+body.student-confirmation .system-check-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+
+body.student-confirmation .system-check-item {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 11px;
+
+  padding: 14px;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.20);
+
+  border-radius: 10px;
+
+  background:
+    rgba(5, 29, 61, 0.62);
+}
+
+
+body.student-confirmation .check-icon {
+  width: 25px;
+  height: 25px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    rgba(37, 99, 235, 0.85);
+
+  color: #ffffff;
+
+  font-size: 13px;
+
+  font-weight: 800;
+}
+
+
+body.student-confirmation .system-check-item strong {
+  display: block;
+
+  color: #e8f2ff;
+
+  font-size: 13px;
+
+  line-height: 1.35;
+}
+
+
+body.student-confirmation .system-check-item small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #7fa8d5;
+
+  font-size: 11px;
+
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   16. CONFIRMATION WARNING
+   ========================================================= */
+
+body.student-confirmation .notice.warning {
+  margin-top: 8px;
+
+  margin-bottom: 24px;
+
+  padding: 18px 19px;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.22);
+
+  border-left:
+    3px solid #38bdf8;
+
+  border-radius: 12px;
+
+  background:
+    rgba(8, 38, 78, 0.68);
+
+  color: #bfdbfe;
+}
+
+
+body.student-confirmation .notice.warning p {
+  margin: 0;
+
+  color: #9fc4ec;
+
+  font-size: 12px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   17. CONFIRMATION ACTIONS
+   ========================================================= */
+
+body.student-confirmation .actions {
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 4px;
+}
+
+
+body.student-confirmation .actions button {
+  min-height: 50px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+
+body.student-confirmation .actions .secondary {
+  flex: 0 0 125px;
+
+  border:
+    1px solid rgba(147, 197, 253, 0.25);
+
+  background:
+    rgba(5, 28, 59, 0.65);
+
+  color: #bfdbfe;
+}
+
+
+body.student-confirmation .actions .primary {
+  flex: 1;
+
+  border: 0;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0ea5e9
+    );
+
+  color: #ffffff;
+}
+
+
+body.student-confirmation .actions button:hover {
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   18. EXAM PAGE
+   ujian.html
+   ========================================================= */
+
+body.exam-page {
+  margin: 0;
+
+  min-height: 100vh;
+
+  background: #eef4fb;
+
+  color: #172033;
+}
+
+
+/* Exam topbar */
+
+.exam-topbar {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 100;
+
+  min-height: 70px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 10px 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #071a38,
+      #0a2b59
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.16);
+}
+
+
+/* Exam brand */
+
+.exam-brand {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  min-width: 0;
+}
+
+
+.school-logo {
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 auto;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #123d79;
+
+  border:
+    1px solid rgba(147, 197, 253, 0.35);
+
+  overflow: hidden;
+}
+
+
+.school-logo img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+
+.logo-fallback {
+  font-size: 15px;
+
+  font-weight: 800;
+}
+
+
+.brand-text {
+  min-width: 0;
+}
+
+
+.brand-text strong {
+  display: block;
+
+  font-size: 17px;
+
+  line-height: 1.1;
+}
+
+
+.brand-text small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #a9c8eb;
+
+  font-size: 10px;
+
+  letter-spacing: 0.04em;
+}
+
+
+/* Exam status */
+
+.exam-status {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.exam-clock,
+.exam-timer,
+.exam-security {
+  min-height: 40px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0 11px;
+
+  border:
+    1px solid rgba(147, 197, 253, 0.20);
+
+  border-radius: 9px;
+
+  background:
+    rgba(4, 22, 47, 0.55);
+
+  color: #dbeafe;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+
+.exam-timer {
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+.exam-security {
+  color: #bfdbfe;
+}
+
+
+.exam-security.warning {
+  color: #fbbf24;
+
+  border-color:
+    rgba(251, 191, 36, 0.35);
+}
+
+
+.fullscreen-btn {
+  min-height: 40px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid rgba(147, 197, 253, 0.25);
+
+  border-radius: 9px;
+
+  background:
+    rgba(37, 99, 235, 0.75);
+
+  color: #ffffff;
+
+  cursor: pointer;
+}
+
+
+/* Exam info bar */
+
+.exam-info-bar {
+  padding: 12px 18px;
+
+  background: #ffffff;
+
+  border-bottom:
+    1px solid #dbe5f0;
+}
+
+
+.exam-identity-box {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  max-width: 1200px;
+
+  margin: 0 auto;
+}
+
+
+.identity-icon {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #e7f0ff;
+
+  color: #2563eb;
+
+  font-weight: 800;
+}
+
+
+.identity-label {
+  display: block;
+
+  color: #718096;
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+}
+
+
+#examIdentity {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #172033;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+/* Exam workspace */
+
+#formFrame {
+  display: block;
+
+  width: min(1100px, 94%);
+
+  min-height: calc(100vh - 150px);
+
+  margin: 18px auto;
+
+  border:
+    1px solid #dbe5f0;
+
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 28px rgba(31, 55, 86, 0.08);
+}
+
+
+/* Loading */
+
+#loading {
+  padding: 50px 20px;
+
+  text-align: center;
+
+  color: #52657d;
+}
+
+
+/* Start overlay */
+
+#startOverlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1000;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(3, 16, 36, 0.90);
+}
+
+
+#startOverlay.hidden {
+  display: none;
+}
+
+
+/* Finished */
+
+#finished {
+  width: min(520px, 92%);
+
+  margin: 70px auto;
+
+  padding: 30px;
+
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  text-align: center;
+
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.16);
+}
+
+
+/* Violation modal */
+
+#violationModal {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 2000;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(3, 16, 36, 0.78);
+}
+
+
+/* =========================================================
+   19. DASHBOARD / PENGAWAS
+   ========================================================= */
+
+body.dashboard {
+  min-height: 100vh;
+
+  background:
+    #f3f6fa;
+
+  color: #172033;
+}
+
+
+.dashboard-header {
+  background:
+    linear-gradient(
+      135deg,
+      #071a38,
+      #0a2b59
+    );
+
+  color: #ffffff;
+
+  padding: 18px 22px;
+}
+
+
+.dashboard-container {
+  width: min(1200px, 94%);
+
+  margin: 0 auto;
+
+  padding: 24px 0;
+}
+
+
+.dashboard-card {
+  background: #ffffff;
+
+  border:
+    1px solid #dbe5f0;
+
+  border-radius: 14px;
+
+  padding: 20px;
+
+  box-shadow:
+    0 8px 25px rgba(31, 55, 86, 0.07);
+}
+
+
+/* =========================================================
+   20. GENERIC TABLE
+   ========================================================= */
+
+table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+
+th,
+td {
+  padding: 10px 12px;
+
+  border-bottom:
+    1px solid #e5ebf2;
+
+  text-align: left;
+
+  font-size: 13px;
+}
+
+
+th {
+  color: #53657c;
+
+  background: #f6f9fc;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   21. RESPONSIVE — LANDING
+   ========================================================= */
 
 @media (max-width: 600px) {
 
-  body.landing .shell {
+  body.landing .shell,
+  body.student-confirmation .shell {
     width: min(92%, 520px);
 
     padding-top: 24px;
+
     padding-bottom: 20px;
   }
 
 
-  body.landing .brand-card {
+  body.landing .brand-card,
+  body.student-confirmation .brand-card {
     margin-bottom: 22px;
   }
 
 
-  body.landing .brand-mark {
+  body.landing .brand-mark,
+  body.student-confirmation .brand-mark {
     width: 54px;
     height: 54px;
 
@@ -1642,42 +1569,50 @@ body.landing .page-caption {
   }
 
 
-  body.landing .brand-card h1 {
+  body.landing .brand-card h1,
+  body.student-confirmation .brand-card h1 {
     font-size: 31px;
   }
 
 
-  body.landing .school-name {
+  body.landing .school-name,
+  body.student-confirmation .school-name {
     font-size: 13px;
 
     line-height: 1.4;
   }
 
 
-  body.landing .brand-tagline {
+  body.landing .brand-tagline,
+  body.student-confirmation .brand-tagline {
     font-size: 10px;
 
     line-height: 1.5;
   }
 
 
-  body.landing .card {
+  body.landing .card,
+  body.student-confirmation .card {
     padding: 22px 18px;
 
     border-radius: 15px;
   }
 
 
-  body.landing .section-title {
+  body.landing .section-title,
+  body.student-confirmation .section-title {
+    align-items: flex-start;
+
     gap: 12px;
 
-    margin-bottom: 20px;
+    margin-bottom: 21px;
 
     padding-bottom: 17px;
   }
 
 
-  body.landing .section-number {
+  body.landing .section-number,
+  body.student-confirmation .section-number {
     width: 42px;
     height: 42px;
 
@@ -1687,15 +1622,15 @@ body.landing .page-caption {
   }
 
 
-  body.landing .section-heading h2 {
+  body.landing .section-heading h2,
+  body.student-confirmation .section-heading h2 {
     font-size: 20px;
   }
 
 
-  body.landing .section-heading p {
+  body.landing .section-heading p,
+  body.student-confirmation .section-heading p {
     font-size: 12px;
-
-    line-height: 1.45;
   }
 
 
@@ -1724,36 +1659,141 @@ body.landing .page-caption {
   }
 
 
-  body.landing .page-caption {
+  body.landing .page-caption,
+  body.student-confirmation .page-caption {
     font-size: 9px;
 
     line-height: 1.5;
   }
+
+
+  /* Confirmation page */
+
+  body.student-confirmation .identity-grid {
+    grid-template-columns: 1fr;
+
+    gap: 8px;
+  }
+
+
+  body.student-confirmation .identity-item {
+    padding: 13px;
+  }
+
+
+  body.student-confirmation .system-check-grid {
+    grid-template-columns: 1fr;
+
+    gap: 8px;
+  }
+
+
+  body.student-confirmation .system-check-item {
+    padding: 13px;
+  }
+
+
+  body.student-confirmation .notice.warning {
+    margin-top: 4px;
+
+    margin-bottom: 20px;
+
+    padding: 16px;
+  }
+
+
+  body.student-confirmation .actions {
+    flex-direction: column-reverse;
+
+    gap: 9px;
+  }
+
+
+  body.student-confirmation .actions .secondary,
+  body.student-confirmation .actions .primary {
+    width: 100%;
+
+    flex: none;
+  }
+
+
+  /* Exam page */
+
+  .exam-topbar {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+    padding: 12px;
+  }
+
+
+  .exam-status {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+
+  .exam-clock,
+  .exam-timer,
+  .exam-security,
+  .fullscreen-btn {
+    width: 100%;
+  }
+
+
+  .exam-info-bar {
+    padding: 10px 12px;
+  }
+
+
+  #formFrame {
+    width: 96%;
+
+    margin: 10px auto;
+
+    border-radius: 10px;
+  }
 }
 
 
-/* ---------------------------------------------------------
-   VERY SMALL SCREEN
---------------------------------------------------------- */
+/* =========================================================
+   22. VERY SMALL MOBILE
+   ========================================================= */
 
 @media (max-width: 380px) {
 
-  body.landing .brand-card h1 {
+  body.landing .brand-card h1,
+  body.student-confirmation .brand-card h1 {
     font-size: 28px;
   }
 
 
-  body.landing .school-name {
+  body.landing .school-name,
+  body.student-confirmation .school-name {
     font-size: 12px;
   }
 
 
-  body.landing .brand-tagline {
+  body.landing .brand-tagline,
+  body.student-confirmation .brand-tagline {
     font-size: 9px;
   }
 
 
-  body.landing .section-heading h2 {
+  body.landing .section-heading h2,
+  body.student-confirmation .section-heading h2 {
     font-size: 18px;
+  }
+
+
+  .exam-status {
+    grid-template-columns: 1fr;
   }
 }
