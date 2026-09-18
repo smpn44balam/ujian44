@@ -1005,3 +1005,755 @@ button {
     padding: 25px 20px;
   }
 }
+
+/* =========================================================
+   NEXORA EXAM
+   LANDING / STUDENT ENTRY THEME
+   SMP NEGERI 44 BANDAR LAMPUNG
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   BACKGROUND
+--------------------------------------------------------- */
+
+body.landing {
+  margin: 0;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(30, 110, 210, 0.20),
+      transparent 38%
+    ),
+    linear-gradient(
+      135deg,
+      #06152f 0%,
+      #082451 48%,
+      #061a3a 100%
+    );
+
+  color: #f8fafc;
+}
+
+
+/* subtle diagonal background accents */
+
+body.landing::before,
+body.landing::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.landing::before {
+  width: 420px;
+  height: 420px;
+
+  top: -220px;
+  left: -180px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.16),
+    transparent
+  );
+
+  transform: rotate(45deg);
+}
+
+body.landing::after {
+  width: 420px;
+  height: 420px;
+
+  right: -220px;
+  bottom: -230px;
+
+  background: linear-gradient(
+    135deg,
+    transparent,
+    rgba(37, 99, 235, 0.14)
+  );
+
+  transform: rotate(45deg);
+}
+
+
+/* ---------------------------------------------------------
+   MAIN CONTAINER
+--------------------------------------------------------- */
+
+body.landing .shell {
+  position: relative;
+  z-index: 1;
+
+  width: min(92%, 720px);
+
+  margin: 0 auto;
+
+  padding:
+    34px
+    0
+    28px;
+}
+
+body.landing .shell.narrow {
+  max-width: 720px;
+}
+
+
+/* ---------------------------------------------------------
+   BRAND
+--------------------------------------------------------- */
+
+body.landing .brand-card {
+  text-align: center;
+
+  margin-bottom: 30px;
+
+  color: #ffffff;
+}
+
+
+/* 44 badge */
+
+body.landing .brand-mark {
+  width: 62px;
+  height: 62px;
+
+  margin: 0 auto 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid rgba(96, 165, 250, 0.85);
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #123d79,
+      #0a2854
+    );
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.30),
+    inset 0 0 0 1px rgba(147, 197, 253, 0.15);
+
+  color: #ffffff;
+
+  font-size: 25px;
+  font-weight: 800;
+}
+
+
+/* small title */
+
+body.landing .eyebrow {
+  margin-bottom: 7px;
+
+  color: #93c5fd;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 0.22em;
+
+  text-transform: uppercase;
+}
+
+
+/* NEXORA EXAM */
+
+body.landing .brand-card h1 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(32px, 6vw, 44px);
+
+  line-height: 1.05;
+
+  font-weight: 800;
+
+  letter-spacing: -0.03em;
+}
+
+
+/* school */
+
+body.landing .school-name {
+  margin: 10px 0 0;
+
+  color: #dbeafe;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  letter-spacing: 0.03em;
+}
+
+
+/* tagline */
+
+body.landing .brand-tagline {
+  margin: 7px 0 0;
+
+  color: #93c5fd;
+
+  font-size: 12px;
+
+  letter-spacing: 0.12em;
+}
+
+
+/* ---------------------------------------------------------
+   MAIN FORM CARD
+--------------------------------------------------------- */
+
+body.landing .card {
+  position: relative;
+
+  padding: 30px;
+
+  border:
+    1px solid rgba(96, 165, 250, 0.28);
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14, 51, 100, 0.94),
+      rgba(7, 35, 73, 0.96)
+    );
+
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  overflow: hidden;
+}
+
+
+/* subtle top accent */
+
+body.landing .card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #2563eb,
+      #38bdf8
+    );
+}
+
+
+/* ---------------------------------------------------------
+   SECTION TITLE
+--------------------------------------------------------- */
+
+body.landing .section-title {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  margin-bottom: 24px;
+
+  padding-bottom: 20px;
+
+  border-bottom:
+    1px solid rgba(147, 197, 253, 0.18);
+}
+
+
+/* number box */
+
+body.landing .section-number {
+  flex: 0 0 auto;
+
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #2563eb,
+      #0ea5e9
+    );
+
+  color: #ffffff;
+
+  font-size: 22px;
+  font-weight: 800;
+
+  box-shadow:
+    0 8px 20px rgba(37, 99, 235, 0.30);
+}
+
+
+/* heading area */
+
+body.landing .section-heading h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+body.landing .section-heading p {
+  margin: 5px 0 0;
+
+  color: #93c5fd;
+
+  font-size: 14px;
+}
+
+
+/* ---------------------------------------------------------
+   FORM
+--------------------------------------------------------- */
+
+body.landing form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+}
+
+
+/* labels */
+
+body.landing form label {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+  color: #e0ecff;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+
+/* inputs */
+
+body.landing form input,
+body.landing form select {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  min-height: 52px;
+
+  padding:
+    0 15px;
+
+  border:
+    1px solid rgba(96, 165, 250, 0.38);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background:
+    rgba(5, 26, 57, 0.75);
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 15px;
+
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+
+body.landing form input::placeholder {
+  color: #7fa6d3;
+}
+
+
+body.landing form input:focus,
+body.landing form select:focus {
+  border-color: #38bdf8;
+
+  background:
+    rgba(6, 31, 66, 0.95);
+
+  box-shadow:
+    0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+
+body.landing form select {
+  cursor: pointer;
+}
+
+
+/* ---------------------------------------------------------
+   BUTTON
+--------------------------------------------------------- */
+
+body.landing .primary {
+  min-height: 52px;
+
+  margin-top: 4px;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0ea5e9
+    );
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 24px rgba(37, 99, 235, 0.28);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+
+
+body.landing .primary:hover {
+  filter: brightness(1.08);
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 13px 28px rgba(37, 99, 235, 0.35);
+}
+
+
+body.landing .primary:active {
+  transform: translateY(0);
+}
+
+
+body.landing .primary span {
+  margin-left: 8px;
+
+  font-size: 18px;
+}
+
+
+/* ---------------------------------------------------------
+   INFO / ERROR
+--------------------------------------------------------- */
+
+body.landing .info-box {
+  padding: 12px 14px;
+
+  border-radius: 9px;
+
+  background:
+    rgba(30, 64, 175, 0.18);
+
+  border:
+    1px solid rgba(96, 165, 250, 0.22);
+
+  color: #bfdbfe;
+
+  font-size: 13px;
+}
+
+
+body.landing .error {
+  margin: -4px 0 0;
+
+  color: #fca5a5;
+
+  font-size: 13px;
+}
+
+
+/* ---------------------------------------------------------
+   NOTICE
+--------------------------------------------------------- */
+
+body.landing .notice {
+  margin-top: 18px;
+
+  padding: 20px 22px;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.25);
+
+  border-left:
+    3px solid #38bdf8;
+
+  border-radius: 14px;
+
+  background:
+    rgba(8, 38, 78, 0.72);
+
+  color: #bfdbfe;
+
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+
+body.landing .notice-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  margin-bottom: 12px;
+
+  color: #ffffff;
+
+  font-size: 14px;
+}
+
+
+/* notice icon */
+
+body.landing .notice-icon {
+  width: 28px;
+  height: 28px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    rgba(37, 99, 235, 0.75);
+
+  color: #ffffff;
+
+  font-weight: 800;
+}
+
+
+body.landing .notice ul {
+  margin: 0;
+
+  padding-left: 20px;
+}
+
+
+body.landing .notice li {
+  margin: 7px 0;
+
+  color: #9fc4ec;
+
+  font-size: 13px;
+
+  line-height: 1.55;
+}
+
+
+body.landing .notice li::marker {
+  color: #38bdf8;
+}
+
+
+/* ---------------------------------------------------------
+   FOOTER CAPTION
+--------------------------------------------------------- */
+
+body.landing .page-caption {
+  margin: 20px 0 0;
+
+  text-align: center;
+
+  color: #6f9bc9;
+
+  font-size: 11px;
+
+  letter-spacing: 0.05em;
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+--------------------------------------------------------- */
+
+@media (max-width: 600px) {
+
+  body.landing .shell {
+    width: min(92%, 520px);
+
+    padding-top: 24px;
+    padding-bottom: 20px;
+  }
+
+
+  body.landing .brand-card {
+    margin-bottom: 22px;
+  }
+
+
+  body.landing .brand-mark {
+    width: 54px;
+    height: 54px;
+
+    border-radius: 15px;
+
+    font-size: 22px;
+  }
+
+
+  body.landing .brand-card h1 {
+    font-size: 31px;
+  }
+
+
+  body.landing .school-name {
+    font-size: 13px;
+
+    line-height: 1.4;
+  }
+
+
+  body.landing .brand-tagline {
+    font-size: 10px;
+
+    line-height: 1.5;
+  }
+
+
+  body.landing .card {
+    padding: 22px 18px;
+
+    border-radius: 15px;
+  }
+
+
+  body.landing .section-title {
+    gap: 12px;
+
+    margin-bottom: 20px;
+
+    padding-bottom: 17px;
+  }
+
+
+  body.landing .section-number {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 10px;
+
+    font-size: 19px;
+  }
+
+
+  body.landing .section-heading h2 {
+    font-size: 20px;
+  }
+
+
+  body.landing .section-heading p {
+    font-size: 12px;
+
+    line-height: 1.45;
+  }
+
+
+  body.landing form {
+    gap: 15px;
+  }
+
+
+  body.landing form input,
+  body.landing form select {
+    min-height: 50px;
+
+    font-size: 14px;
+  }
+
+
+  body.landing .notice {
+    padding: 17px 16px;
+
+    border-radius: 13px;
+  }
+
+
+  body.landing .notice li {
+    font-size: 12px;
+  }
+
+
+  body.landing .page-caption {
+    font-size: 9px;
+
+    line-height: 1.5;
+  }
+}
+
+
+/* ---------------------------------------------------------
+   VERY SMALL SCREEN
+--------------------------------------------------------- */
+
+@media (max-width: 380px) {
+
+  body.landing .brand-card h1 {
+    font-size: 28px;
+  }
+
+
+  body.landing .school-name {
+    font-size: 12px;
+  }
+
+
+  body.landing .brand-tagline {
+    font-size: 9px;
+  }
+
+
+  body.landing .section-heading h2 {
+    font-size: 18px;
+  }
+}
