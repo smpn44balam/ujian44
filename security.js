@@ -215,17 +215,28 @@ window.NexoraSecurity = (() => {
       }
     );
 
-    window.addEventListener(
-      "blur",
-      () => {
-        if (!armed) return;
+window.addEventListener(
+  "blur",
+  () => {
+    if (!armed) return;
 
-        record(
-          "WINDOW_BLUR",
-          "Jendela kehilangan fokus."
-        );
-      }
+    // Klik atau berpindah fokus ke Google Form
+    // di dalam iframe bukan pelanggaran.
+    const activeElement = document.activeElement;
+
+    if (
+      activeElement &&
+      activeElement.tagName === "IFRAME"
+    ) {
+      return;
+    }
+
+    record(
+      "WINDOW_BLUR",
+      "Jendela kehilangan fokus."
     );
+  }
+);
 
     document.addEventListener(
       "contextmenu",
