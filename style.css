@@ -1,8 +1,11 @@
-```css
 /* =========================================================
-   NEXORA EXAM
-   SMP NEGERI 44 BANDAR LAMPUNG
-   Next Generation Online Assessment
+   NEXORA EXAM — SMP NEGERI 44 BANDAR LAMPUNG
+   STYLE.CSS
+   ========================================================= */
+
+
+/* =========================================================
+   GLOBAL
    ========================================================= */
 
 * {
@@ -12,15 +15,15 @@
 html,
 body {
   margin: 0;
+  padding: 0;
   min-height: 100%;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   color: #172033;
   background: #eef2f7;
 }
 
 body {
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 button,
@@ -30,7 +33,6 @@ select {
 }
 
 button {
-  border: 0;
   cursor: pointer;
 }
 
@@ -38,387 +40,277 @@ button {
   display: none !important;
 }
 
+
 /* =========================================================
-   GENERAL
+   GENERAL / LOGIN / DASHBOARD
+   Dipertahankan agar halaman lain tidak rusak
    ========================================================= */
 
 .shell {
-  width: min(100% - 28px, 1080px);
+  width: min(1100px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 48px;
 }
 
 .narrow {
-  max-width: 720px;
+  max-width: 620px;
 }
 
 .wide {
-  max-width: 1200px;
+  max-width: 1180px;
 }
-
-.card {
-  background: #fff;
-  border-radius: 22px;
-  padding: 26px;
-  box-shadow: 0 14px 40px rgba(15, 23, 42, .09);
-  margin-bottom: 18px;
-}
-
-/* =========================================================
-   LANDING / LOGIN
-   ========================================================= */
 
 .landing {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
   background:
-    linear-gradient(
-      180deg,
-      #0f172a 0,
-      #172554 34%,
-      #eef2f7 34%
-    );
+    radial-gradient(circle at top left, #dbeafe 0, transparent 35%),
+    linear-gradient(135deg, #f8fafc, #e8eef6);
 }
 
 .brand-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: #fff;
-  padding: 24px 4px 28px;
-}
-
-.brand-card.compact {
-  padding-bottom: 20px;
+  text-align: center;
+  margin-bottom: 24px;
 }
 
 .brand-mark,
 .mini-mark {
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  background: #fff;
-  color: #0f172a;
-  border-radius: 18px;
-  width: 58px;
-  height: 58px;
-  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 14px;
+}
+
+.brand-mark {
+  width: 76px;
+  height: 76px;
+  font-size: 24px;
+  margin-bottom: 16px;
 }
 
 .mini-mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
+  width: 42px;
+  height: 42px;
   font-size: 14px;
 }
 
 .eyebrow {
-  font-size: 11px;
-  letter-spacing: .16em;
+  margin: 0 0 6px;
+  font-size: 12px;
   font-weight: 800;
-  opacity: .72;
+  letter-spacing: 1.5px;
+  color: #64748b;
 }
 
 .brand-card h1 {
-  font-size: 26px;
-  margin: 2px 0;
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+  color: #0f172a;
 }
 
 .brand-card p {
-  margin: 0;
-  opacity: .72;
+  margin: 10px 0 0;
+  color: #64748b;
 }
 
-/* =========================================================
-   TITLES
-   ========================================================= */
+.card {
+  background: #fff;
+  border: 1px solid #dbe2ea;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, .08);
+}
 
 .section-title {
-  display: flex;
-  gap: 13px;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.section-title > span {
-  display: grid;
-  place-items: center;
-  background: #e9eef8;
+  margin: 0 0 18px;
+  font-size: 20px;
   color: #0f172a;
-  font-weight: 800;
-  border-radius: 10px;
-  width: 32px;
-  height: 32px;
 }
-
-.section-title h2 {
-  margin: 0;
-  font-size: 19px;
-}
-
-.section-title p {
-  margin: 3px 0 0;
-  color: #697386;
-  font-size: 13px;
-}
-
-.no-margin {
-  margin: 0;
-}
-
-/* =========================================================
-   FORM ELEMENTS
-   ========================================================= */
 
 label {
   display: block;
-  font-size: 13px;
-  font-weight: 750;
-  margin: 16px 0;
+  margin-bottom: 7px;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 input,
 select {
-  display: block;
   width: 100%;
-  margin-top: 7px;
-  border: 1px solid #d7ddea;
-  border-radius: 12px;
-  padding: 13px 14px;
+  height: 46px;
+  padding: 0 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
   background: #fff;
+  color: #172033;
   outline: none;
 }
 
 input:focus,
 select:focus {
-  border-color: #64748b;
-  box-shadow: 0 0 0 3px rgba(100, 116, 139, .12);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+button {
+  border: 0;
+}
+
+.primary,
+.secondary,
+.danger {
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 800;
 }
 
 .primary {
-  background: #0f172a;
+  background: #2563eb;
   color: #fff;
 }
 
 .primary:hover {
-  background: #1e293b;
+  background: #1d4ed8;
 }
 
 .secondary {
-  background: #edf1f7;
+  background: #e2e8f0;
   color: #172033;
 }
 
 .danger {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #dc2626;
+  color: #fff;
 }
 
 .full {
   width: 100%;
-  margin-top: 12px;
 }
 
 .actions {
   display: flex;
   gap: 10px;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.actions .primary {
-  min-width: 180px;
+  flex-wrap: wrap;
 }
 
 .info-box,
 .notice {
-  border-radius: 14px;
-  padding: 13px 15px;
-  font-size: 13px;
-}
-
-.info-box {
-  background: #eef5ff;
-  color: #24456d;
-  margin-top: 14px;
-}
-
-.notice {
-  background: rgba(255,255,255,.72);
-  color: #536074;
-  margin-bottom: 18px;
-}
-
-.notice ul {
-  margin: 7px 0 0;
-  padding-left: 20px;
-}
-
-.notice.warning {
-  background: #fff8e8;
-  color: #725a1e;
-  margin-top: 18px;
-}
-
-.notice p {
-  margin: 5px 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
 }
 
 .error {
-  color: #b42318;
-  background: #fff0ef;
-  border-radius: 10px;
-  padding: 9px 11px;
-  font-size: 13px;
-}
-
-/* =========================================================
-   IDENTITY
-   ========================================================= */
-
-.identity-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.identity-grid > div {
-  padding: 13px;
-  border: 1px solid #e2e7ef;
-  border-radius: 13px;
-}
-
-.identity-grid small {
-  display: block;
-  color: #7a8495;
-  font-size: 11px;
-}
-
-.identity-grid strong {
-  display: block;
-  margin-top: 3px;
-}
-
-.security-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-.security-list div {
-  background: #f5f7fa;
-  padding: 10px;
-  border-radius: 11px;
-  font-size: 13px;
+  color: #b91c1c;
   font-weight: 700;
 }
 
-.security-list div:first-letter {
-  color: #16803c;
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
+.security-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+
 /* =========================================================
-   NEXORA EXAM PAGE
+   NEXORA EXAM
    ========================================================= */
 
 .exam-body {
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(37, 99, 235, .08),
-      transparent 30%
-    ),
-    #edf2f7;
+  min-height: 100vh;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .10), transparent 28%),
+    radial-gradient(circle at 90% 100%, rgba(14, 165, 233, .08), transparent 30%),
+    #e9eef5;
 }
+
 
 /* =========================================================
    TOP HEADER
    ========================================================= */
 
 .exam-topbar {
+  position: relative;
+  z-index: 20;
+
   min-height: 82px;
-  background:
-    linear-gradient(
-      135deg,
-      #0f172a,
-      #172554
-    );
-  color: #fff;
+  padding: 10px 24px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  padding: 10px 22px;
   gap: 20px;
 
-  box-shadow: 0 5px 22px rgba(15, 23, 42, .20);
+  background:
+    linear-gradient(110deg, #0b1730 0%, #12264a 58%, #173968 100%);
 
-  position: relative;
-  z-index: 5;
+  color: #fff;
+
+  border-bottom: 4px solid #2563eb;
+
+  box-shadow:
+    0 5px 18px rgba(15, 23, 42, .22);
 }
 
-/* subtle decorative line */
-
-.exam-topbar::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    #38bdf8,
-    #60a5fa,
-    #818cf8
-  );
-}
 
 /* =========================================================
    BRAND
    ========================================================= */
 
 .exam-brand {
+  min-width: 0;
+
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 0;
+  gap: 13px;
 }
 
 .school-logo {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
 
-  flex: 0 0 54px;
+  flex: 0 0 56px;
 
-  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  background: rgba(255,255,255,.12);
+  border-radius: 12px;
 
-  border: 1px solid rgba(255,255,255,.18);
+  background: #fff;
 
-  display: grid;
-  place-items: center;
+  border: 2px solid rgba(255, 255, 255, .65);
 
   overflow: hidden;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
 }
 
 .school-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 5px;
 }
 
 .logo-fallback {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 900;
-  color: #fff;
-}
-
-.logo-placeholder .logo-fallback {
-  display: grid;
+  color: #0f172a;
 }
 
 .brand-text {
@@ -427,152 +319,268 @@ select:focus {
 
 .brand-text strong {
   display: block;
-  font-size: 17px;
-  line-height: 1.15;
-  letter-spacing: .01em;
+
+  font-size: 21px;
+  line-height: 1.1;
+
+  font-weight: 900;
+  letter-spacing: .4px;
 }
 
 .brand-text small {
   display: block;
-  margin-top: 3px;
-  color: #cbd5e1;
-  font-size: 10px;
-  letter-spacing: .08em;
+
+  margin-top: 4px;
+
+  color: #dbeafe;
+
+  font-size: 11px;
   font-weight: 700;
+
+  letter-spacing: .65px;
 }
 
 .brand-text::after {
-  content: "Next Generation Online Assessment";
+  content: "NEXT GENERATION ONLINE ASSESSMENT";
+
   display: block;
+
   margin-top: 2px;
-  color: #94a3b8;
-  font-size: 9px;
-  letter-spacing: .03em;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+
+  color: #93c5fd;
 }
 
+
 /* =========================================================
-   STATUS AREA
+   RIGHT HEADER STATUS
    ========================================================= */
 
 .exam-status {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 9px;
+
+  flex-shrink: 0;
 }
 
-.exam-clock,
-.exam-timer,
-.exam-security {
+
+/* REAL-TIME CLOCK */
+
+.exam-clock {
   min-width: 94px;
-  padding: 7px 11px;
-  border-radius: 12px;
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.12);
+
+  padding: 7px 10px;
+
   text-align: center;
+
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .13);
 }
 
-.status-label {
+.exam-clock .status-label {
   display: block;
-  font-size: 8px;
-  letter-spacing: .12em;
+
+  margin-bottom: 1px;
+
+  font-size: 7px;
   font-weight: 800;
+
+  letter-spacing: 1px;
+
   color: #94a3b8;
-  margin-bottom: 2px;
 }
 
-.exam-clock strong,
-.exam-timer strong,
-.exam-security strong {
+.exam-clock strong {
   display: block;
+
+  font-family: "Courier New", monospace;
+
   font-size: 14px;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+
+  color: #fff;
 }
+
+
+/* =========================================================
+   TIMER
+   ========================================================= */
 
 .exam-timer {
-  background: rgba(255,255,255,.96);
-  color: #0f172a;
-  min-width: 110px;
+  min-width: 150px;
+
+  padding: 7px 14px;
+
+  background: #fff;
+
+  border-radius: 10px;
+
+  border: 1px solid #dbeafe;
+
+  text-align: center;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
 }
 
 .exam-timer .status-label {
+  display: block;
+
+  margin-bottom: 0;
+
+  font-size: 8px;
+  font-weight: 900;
+
+  letter-spacing: 1.3px;
+
   color: #64748b;
 }
 
 .timer {
-  font-variant-numeric: tabular-nums;
+  display: block;
+
+  margin-top: -1px;
+
+  font-family: "Courier New", monospace;
+
+  font-size: 26px;
+  line-height: 1;
+
   font-weight: 900;
+
+  letter-spacing: 1px;
+
+  color: #0f172a;
 }
 
-.timer-danger {
-  background: #fee2e2 !important;
-  color: #991b1b !important;
-}
+
+/* =========================================================
+   SECURITY
+   ========================================================= */
 
 .exam-security {
-  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.exam-security .status-label {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #94a3b8;
 }
 
 .violation-badge {
-  color: #f8fafc;
+  min-width: 66px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 10px;
+
+  border-radius: 8px;
+
+  background: rgba(245, 158, 11, .14);
+  border: 1px solid rgba(245, 158, 11, .35);
+
+  color: #fde68a;
+
+  font-size: 13px;
+  font-weight: 900;
 }
 
-.violation-badge.danger {
-  background: #991b1b;
-  color: #fff;
-}
+
+/* =========================================================
+   FULLSCREEN BUTTON
+   ========================================================= */
 
 .icon-btn {
-  background: rgba(255,255,255,.12);
+  width: 38px;
+  height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, .08);
   color: #fff;
-  padding: 10px 12px;
-  border-radius: 11px;
-  font-size: 18px;
-  border: 1px solid rgba(255,255,255,.12);
+
+  border: 1px solid rgba(255, 255, 255, .15);
+
+  font-size: 20px;
 }
 
 .icon-btn:hover {
-  background: rgba(255,255,255,.20);
+  background: rgba(255, 255, 255, .16);
 }
 
+
 /* =========================================================
-   PARTICIPANT INFORMATION BAR
+   EXAM INFO BAR
    ========================================================= */
 
 .exam-info-bar {
   position: relative;
-  z-index: 4;
+  z-index: 10;
 
-  background: rgba(255,255,255,.96);
-
-  border-bottom: 1px solid #dce3ec;
-
-  padding: 10px 22px;
-
-  box-shadow: 0 3px 12px rgba(15,23,42,.05);
-}
-
-.exam-identity-box {
-  max-width: 1400px;
-  margin: 0 auto;
+  min-height: 70px;
 
   display: flex;
   align-items: center;
-  gap: 11px;
+
+  padding: 10px 24px;
+
+  background: #fff;
+
+  border-bottom: 1px solid #d9e1eb;
+
+  box-shadow: 0 3px 10px rgba(15, 23, 42, .07);
+}
+
+.exam-identity-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-width: 280px;
+
+  padding-right: 25px;
+
+  border-right: 1px solid #e2e8f0;
 }
 
 .identity-icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
 
-  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  background: #eaf2ff;
+  flex: 0 0 40px;
 
-  display: grid;
-  place-items: center;
+  border-radius: 10px;
 
-  font-size: 17px;
+  background: #eff6ff;
+
+  border: 1px solid #bfdbfe;
+
+  color: #2563eb;
+
+  font-size: 19px;
 }
 
 .identity-content {
@@ -581,60 +589,79 @@ select:focus {
 
 .identity-label {
   display: block;
+
+  margin-bottom: 1px;
+
   font-size: 8px;
-  letter-spacing: .13em;
-  font-weight: 800;
+  font-weight: 900;
+
+  letter-spacing: 1.2px;
+
   color: #64748b;
 }
 
-.identity-content strong {
+#examIdentity {
   display: block;
-  font-size: 13px;
-  color: #172033;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  color: #0f172a;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 
 /* =========================================================
    EXAM STAGE
    ========================================================= */
 
 .exam-stage {
-  height: calc(100vh - 137px);
   position: relative;
 
-  padding: 14px;
+  height: calc(100vh - 152px);
+
+  padding: 16px 22px 20px;
+
+  overflow: hidden;
 
   background:
     linear-gradient(
       180deg,
-      #e9eef5,
-      #dfe6ef
+      #edf2f7 0%,
+      #e7edf4 100%
     );
 }
 
+
 /* =========================================================
-   GOOGLE FORM
+   GOOGLE FORM WORKSPACE
    ========================================================= */
 
 .form-frame {
-  border: 0;
+  position: relative;
+  z-index: 1;
+
+  display: block;
 
   width: 100%;
   height: 100%;
 
-  display: block;
+  border: 0;
+
+  border-radius: 12px;
 
   background: #fff;
 
-  border-radius: 16px;
-
   box-shadow:
-    0 8px 30px rgba(15,23,42,.10);
+    0 2px 5px rgba(15, 23, 42, .06),
+    0 10px 30px rgba(15, 23, 42, .10);
 
-  overflow: hidden;
+  border: 1px solid #d9e2ec;
 }
+
 
 /* =========================================================
    LOADING
@@ -642,108 +669,139 @@ select:focus {
 
 .loading-card {
   position: absolute;
-  inset: 14px;
 
-  display: grid;
-  place-content: center;
-  justify-items: center;
+  z-index: 5;
 
-  background: rgba(248,250,252,.97);
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  width: min(360px, calc(100% - 40px));
+
+  padding: 30px;
+
+  text-align: center;
+
+  background: #fff;
+
+  border: 1px solid #dbe2ea;
 
   border-radius: 16px;
 
-  z-index: 2;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
 }
 
 .loading-card p {
-  margin-top: 12px;
+  margin: 12px 0 0;
+
   color: #64748b;
-  font-size: 13px;
+  font-weight: 700;
 }
 
 .spinner {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
 
-  border: 3px solid #d8dee8;
+  margin: 0 auto;
+
+  border: 4px solid #dbeafe;
   border-top-color: #2563eb;
 
   border-radius: 50%;
 
-  animation: spin 1s linear infinite;
+  animation: nexora-spin .8s linear infinite;
 }
 
-@keyframes spin {
+@keyframes nexora-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
+
 /* =========================================================
-   MODALS
+   MODAL
    ========================================================= */
 
 .modal-overlay {
   position: fixed;
+
   inset: 0;
 
-  background: rgba(3,8,20,.72);
+  z-index: 100;
 
-  display: grid;
-  place-items: center;
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
 
   padding: 20px;
 
-  z-index: 20;
+  background: rgba(15, 23, 42, .70);
 
   backdrop-filter: blur(5px);
 }
 
 .modal-card {
-  background: #fff;
+  width: min(440px, 100%);
 
-  width: min(100%, 430px);
-
-  border-radius: 22px;
-
-  padding: 28px;
+  padding: 32px;
 
   text-align: center;
 
-  box-shadow:
-    0 25px 80px rgba(0,0,0,.28);
+  background: #fff;
 
-  animation: modalIn .18s ease-out;
-}
+  border-radius: 18px;
 
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(.98);
-  }
+  border: 1px solid #dbe2ea;
 
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-card h2 {
-  margin: 10px 0 5px;
-}
-
-.modal-card p {
-  color: #687386;
-  font-size: 14px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, .28);
 }
 
 .modal-icon {
-  font-size: 40px;
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 16px;
+
+  border-radius: 50%;
+
+  background: #eff6ff;
+
+  color: #2563eb;
+
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.modal-card h2 {
+  margin: 0 0 10px;
+
+  color: #0f172a;
+
+  font-size: 23px;
+}
+
+.modal-card p {
+  margin: 0 0 22px;
+
+  color: #64748b;
+}
+
+.danger-card .modal-icon {
+  background: #fff7ed;
+  color: #ea580c;
 }
 
 .danger-card {
-  border-top: 5px solid #b42318;
+  border-top: 5px solid #f97316;
 }
+
 
 /* =========================================================
    FINISHED
@@ -751,129 +809,71 @@ select:focus {
 
 .finished-card {
   position: absolute;
-  inset: 14px;
 
-  background: #fff;
+  z-index: 10;
 
-  border-radius: 16px;
+  left: 50%;
+  top: 50%;
 
-  display: grid;
-  place-content: center;
+  transform: translate(-50%, -50%);
+
+  width: min(480px, calc(100% - 40px));
+
+  padding: 36px;
 
   text-align: center;
 
-  padding: 25px;
+  background: #fff;
 
-  box-shadow:
-    0 8px 30px rgba(15,23,42,.10);
+  border-radius: 18px;
 
-  z-index: 3;
-}
+  border: 1px solid #dbe2ea;
 
-.finished-card p {
-  max-width: 550px;
-  color: #667085;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, .18);
 }
 
 .success-icon {
-  margin: auto;
+  width: 64px;
+  height: 64px;
 
-  width: 62px;
-  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 16px;
 
   border-radius: 50%;
 
-  display: grid;
-  place-items: center;
+  background: #ecfdf5;
 
-  background: #dcfce7;
-  color: #15803d;
+  color: #059669;
 
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 900;
 }
+
+.finished-card h2 {
+  margin: 0 0 10px;
+
+  color: #0f172a;
+}
+
+.finished-card p {
+  color: #64748b;
+}
+
 
 /* =========================================================
    DASHBOARD
    ========================================================= */
 
-.dashboard-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
+.dashboard {
+  min-height: 100vh;
+  padding: 24px;
+
+  background: #eef2f7;
 }
 
-.dashboard-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 10px;
-  margin: 20px 0;
-}
-
-.stats > div {
-  background: #f4f6f9;
-  border-radius: 14px;
-  padding: 14px;
-}
-
-.stats small {
-  display: block;
-  color: #758094;
-}
-
-.stats strong {
-  font-size: 24px;
-}
-
-.table-wrap {
-  overflow: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-th,
-td {
-  text-align: left;
-  padding: 12px 10px;
-  border-bottom: 1px solid #e8ebf0;
-  white-space: nowrap;
-}
-
-th {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: #748094;
-}
-
-.pill {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #dcfce7;
-  color: #166534;
-  font-weight: 800;
-}
-
-.pill.warn {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.empty {
-  text-align: center;
-  color: #8791a1;
-  padding: 30px;
-}
 
 /* =========================================================
    TABLET
@@ -882,30 +882,37 @@ th {
 @media (max-width: 900px) {
 
   .exam-topbar {
-    padding: 9px 14px;
-    gap: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .exam-info-bar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .exam-stage {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .exam-clock {
     display: none;
   }
 
-  .exam-info-bar {
-    padding: 9px 14px;
-  }
-
-  .exam-stage {
-    height: calc(100vh - 132px);
-  }
-
-  .exam-security {
-    min-width: 86px;
-  }
-
   .exam-timer {
-    min-width: 100px;
+    min-width: 135px;
+  }
+
+  .timer {
+    font-size: 23px;
+  }
+
+  .exam-identity-box {
+    min-width: 0;
   }
 }
+
 
 /* =========================================================
    MOBILE
@@ -913,81 +920,32 @@ th {
 
 @media (max-width: 640px) {
 
-  .shell {
-    width: min(100% - 18px, 720px);
-    padding-top: 12px;
+  .exam-body {
+    overflow: hidden;
   }
-
-  .card {
-    padding: 19px;
-    border-radius: 18px;
-  }
-
-  .landing {
-    background:
-      linear-gradient(
-        180deg,
-        #0f172a 0,
-        #172554 27%,
-        #eef2f7 27%
-      );
-  }
-
-  .identity-grid,
-  .security-list {
-    grid-template-columns: 1fr;
-  }
-
-  .actions {
-    flex-direction: column-reverse;
-  }
-
-  .actions button {
-    width: 100%;
-  }
-
-  .dashboard-head {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .dashboard-actions {
-    width: 100%;
-  }
-
-  .dashboard-actions button {
-    flex: 1;
-  }
-
-  /* Mobile exam header */
 
   .exam-topbar {
-    min-height: 70px;
+    min-height: 68px;
     padding: 8px 10px;
-  }
-
-  .exam-brand {
     gap: 8px;
   }
 
   .school-logo {
-    width: 43px;
-    height: 43px;
-    flex-basis: 43px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
   }
 
   .brand-text strong {
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .brand-text small {
     font-size: 8px;
-    letter-spacing: .04em;
   }
 
   .brand-text::after {
-    font-size: 7px;
+    display: none;
   }
 
   .exam-status {
@@ -995,110 +953,55 @@ th {
   }
 
   .exam-timer {
-    min-width: 78px;
-    padding: 6px 7px;
+    min-width: 105px;
+    padding: 5px 8px;
+  }
+
+  .timer {
+    font-size: 20px;
   }
 
   .exam-security {
-    min-width: 68px;
-    padding: 6px 6px;
-  }
-
-  .exam-clock {
     display: none;
   }
 
-  .status-label {
-    font-size: 7px;
-  }
-
-  .exam-clock strong,
-  .exam-timer strong,
-  .exam-security strong {
-    font-size: 11px;
-  }
-
   .icon-btn {
-    padding: 8px 9px;
-    font-size: 16px;
+    width: 34px;
+    height: 34px;
   }
-
-  /* Identity */
 
   .exam-info-bar {
-    padding: 8px 10px;
+    min-height: 58px;
+    padding: 7px 10px;
+  }
+
+  .exam-identity-box {
+    width: 100%;
+    padding-right: 0;
+    border-right: 0;
   }
 
   .identity-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 15px;
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    font-size: 16px;
   }
 
-  .identity-content strong {
-    font-size: 11px;
+  #examIdentity {
+    font-size: 12px;
   }
-
-  /* Form area */
 
   .exam-stage {
-    height: calc(100vh - 125px);
+    height: calc(100vh - 126px);
     padding: 8px;
   }
 
-  .form-frame,
-  .loading-card,
-  .finished-card {
-    border-radius: 12px;
+  .form-frame {
+    border-radius: 8px;
   }
-
-  .loading-card {
-    inset: 8px;
-  }
-
-  .finished-card {
-    inset: 8px;
-  }
-
-  /* Modal */
 
   .modal-card {
-    padding: 23px 19px;
-    border-radius: 18px;
+    padding: 25px 20px;
   }
 }
-
-/* =========================================================
-   VERY SMALL PHONE
-   ========================================================= */
-
-@media (max-width: 420px) {
-
-  .brand-text small {
-    max-width: 145px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .exam-security {
-    min-width: 62px;
-  }
-
-  .exam-timer {
-    min-width: 73px;
-  }
-
-  .exam-timer .timer {
-    font-size: 10px;
-  }
-
-  .exam-security .violation-badge {
-    font-size: 10px;
-  }
-
-  .icon-btn {
-    padding: 7px 8px;
-  }
-}
-```
