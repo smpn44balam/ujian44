@@ -6,7 +6,8 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
-  <meta name="theme-color" content="#0b1730">
+
+  <meta name="theme-color" content="#102a43">
 
   <title>NEXORA EXAM — SMP Negeri 44 Bandar Lampung</title>
 
@@ -17,171 +18,123 @@
 
   <main class="shell narrow">
 
-    <!-- =====================================================
-         HEADER / IDENTITAS NEXORA
-         ===================================================== -->
+    <!-- HEADER -->
 
-    <section class="brand-card nexora-brand">
+    <section class="brand-card">
 
-      <div class="brand-visual">
+      <div class="brand-mark">
+        44
+      </div>
 
-        <div class="brand-logo">
-          <span>44</span>
+      <div class="brand-text">
+
+        <div class="eyebrow">
+          SISTEM UJIAN ONLINE
         </div>
 
-        <div class="brand-line"></div>
+        <h1>
+          NEXORA EXAM
+        </h1>
 
-        <div class="brand-copy">
-          <div class="eyebrow">SISTEM UJIAN ONLINE</div>
+        <p>
+          SMP NEGERI 44 BANDAR LAMPUNG
+        </p>
 
-          <h1>NEXORA EXAM</h1>
-
-          <p class="brand-school">
-            SMP NEGERI 44 BANDAR LAMPUNG
-          </p>
-
-          <span class="brand-tagline">
-            NEXT GENERATION ONLINE ASSESSMENT
-          </span>
-        </div>
+        <span>
+          Next Generation Online Assessment
+        </span>
 
       </div>
 
     </section>
 
 
-    <!-- =====================================================
-         PROGRESS / STEP 1
-         ===================================================== -->
+    <!-- KARTU IDENTITAS -->
 
-    <section class="exam-progress">
+    <section class="card exam-card">
 
-      <div class="progress-step active">
-        <div class="progress-number">1</div>
+      <div class="section-title">
 
-        <div class="progress-content">
-          <strong>Identitas Peserta</strong>
-          <span>Isi data peserta ujian</span>
-        </div>
-      </div>
-
-      <div class="progress-line"></div>
-
-      <div class="progress-step">
-        <div class="progress-number">2</div>
-
-        <div class="progress-content">
-          <strong>Periksa Data</strong>
-          <span>Konfirmasi data ujian</span>
-        </div>
-      </div>
-
-      <div class="progress-line"></div>
-
-      <div class="progress-step">
-        <div class="progress-number">3</div>
-
-        <div class="progress-content">
-          <strong>Mulai Ujian</strong>
-          <span>Masuk layar penuh</span>
-        </div>
-      </div>
-
-    </section>
-
-
-    <!-- =====================================================
-         FORM IDENTITAS
-         ===================================================== -->
-
-    <section class="card exam-entry-card">
-
-      <div class="section-title exam-section-title">
-
-        <div class="section-step-badge">
+        <div class="step-number">
           1
         </div>
 
         <div>
-          <div class="section-kicker">
-            LANGKAH 01
+          <div class="step-label">
+            LANGKAH 1
           </div>
 
-          <h2>Identitas Peserta</h2>
+          <h2>
+            Identitas Peserta
+          </h2>
 
           <p>
-            Masukkan data sesuai dengan daftar peserta ujian.
+            Isi data peserta untuk memulai proses ujian.
           </p>
         </div>
 
       </div>
-
-
-      <div class="exam-divider"></div>
 
 
       <form id="loginForm" novalidate>
 
         <!-- NAMA -->
 
-        <div class="field-group field-name">
+        <div class="form-field">
 
           <label for="studentName">
-            <span class="field-icon">👤</span>
             Nama Lengkap
           </label>
 
-          <div class="input-wrap">
-            <input
-              id="studentName"
-              required
-              autocomplete="name"
-              placeholder="Masukkan nama lengkap peserta"
-            >
-          </div>
+          <input
+            id="studentName"
+            required
+            autocomplete="name"
+            placeholder="Masukkan nama lengkap"
+          >
 
         </div>
 
 
-        <!-- KELAS + MAPEL -->
+        <!-- KELAS -->
 
-        <div class="field-grid">
+        <div class="form-field">
 
-          <div class="field-group">
+          <label for="classSelect">
+            Kelas
+          </label>
 
-            <label for="classSelect">
-              <span class="field-icon">▣</span>
-              Kelas
-            </label>
+          <select id="classSelect" required>
 
-            <div class="input-wrap select-wrap">
-              <select id="classSelect" required>
-                <option value="">Pilih kelas...</option>
-              </select>
-            </div>
+            <option value="">
+              Pilih kelas...
+            </option>
 
-          </div>
-
-
-          <div class="field-group">
-
-            <label for="subjectSelect">
-              <span class="field-icon">📚</span>
-              Mata Pelajaran
-            </label>
-
-            <div class="input-wrap select-wrap">
-              <select id="subjectSelect" required>
-                <option value="">Pilih mata pelajaran...</option>
-              </select>
-            </div>
-
-          </div>
+          </select>
 
         </div>
 
 
-        <!-- INFO FORM -->
+        <!-- MATA PELAJARAN -->
+
+        <div class="form-field">
+
+          <label for="subjectSelect">
+            Mata Pelajaran
+          </label>
+
+          <select id="subjectSelect" required>
+
+            <option value="">
+              Pilih mata pelajaran...
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- INFO -->
 
         <div
           id="formInfo"
@@ -199,87 +152,71 @@
 
         <!-- BUTTON -->
 
-        <div class="entry-action">
-
-          <button
-            class="primary full exam-main-button"
-            type="submit"
-          >
-            <span>Lanjutkan ke Periksa Data</span>
-            <span class="button-arrow">→</span>
-          </button>
-
-        </div>
+        <button
+          class="primary full"
+          type="submit"
+        >
+          Lanjutkan
+          <span>→</span>
+        </button>
 
       </form>
 
     </section>
 
 
-    <!-- =====================================================
-         PERHATIAN / ATURAN
-         ===================================================== -->
+    <!-- PERHATIAN -->
 
-    <section class="notice exam-notice">
+    <section class="notice">
 
-      <div class="notice-icon">
-        !
-      </div>
-
-      <div class="notice-content">
+      <div class="notice-heading">
+        <span class="notice-mark">!</span>
 
         <strong>
-          Perhatian Sebelum Mengikuti Ujian
+          Perhatian Sebelum Ujian
         </strong>
-
-        <p>
-          Pastikan perangkat dan koneksi internet siap digunakan
-          sebelum melanjutkan.
-        </p>
-
-        <ul>
-          <li>
-            Gunakan satu perangkat selama ujian.
-          </li>
-
-          <li>
-            Setelah ujian dimulai, jangan berpindah aplikasi atau tab.
-          </li>
-
-          <li>
-            Indikator keamanan merupakan tanda yang perlu diperiksa,
-            bukan bukti otomatis kecurangan.
-          </li>
-        </ul>
-
       </div>
+
+      <ul>
+
+        <li>
+          Gunakan satu perangkat selama ujian.
+        </li>
+
+        <li>
+          Setelah ujian dimulai, jangan berpindah aplikasi atau tab.
+        </li>
+
+        <li>
+          Indikator keamanan merupakan tanda yang perlu diperiksa,
+          bukan bukti otomatis kecurangan.
+        </li>
+
+      </ul>
 
     </section>
 
 
-    <!-- =====================================================
-         FOOTER
-         ===================================================== -->
+    <!-- IDENTITAS BAWAH -->
 
-    <footer class="nexora-footer">
+    <div class="page-caption">
 
-      <div>
-        <strong>NEXORA EXAM</strong>
-        <span>Next Generation Online Assessment</span>
-      </div>
+      <span>
+        NEXORA EXAM
+      </span>
+
+      <span>
+        •
+      </span>
 
       <span>
         SMP NEGERI 44 BANDAR LAMPUNG
       </span>
 
-    </footer>
+    </div>
 
   </main>
 
-
-  <!-- =======================================================
-       SCRIPT
-       ======================================================= -->
 
   <script src="config.js"></script>
   <script src="app.js"></script>
