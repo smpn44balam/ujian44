@@ -108,4 +108,3 @@ window.NexoraSecurity = (() => {
     sendMonitoring
   };
 })();
-})();
