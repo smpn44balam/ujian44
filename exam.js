@@ -1,24 +1,4 @@
 (() => {
-  /*
-   * =========================================================
-   * NEXORA EXAM — EXAM ENGINE
-   * SMP NEGERI 44 BANDAR LAMPUNG
-   * =========================================================
-   *
-   * ATURAN PELANGGARAN:
-   *
-   * Pelanggaran 1  → 1 menit 30 detik
-   * Pelanggaran 2  → 5 menit
-   * Pelanggaran 3  → Ujian dihentikan
-   *
-   * CATATAN:
-   * - Timer hukuman disimpan di sessionStorage.
-   * - Refresh tidak menghapus hukuman.
-   * - Timer ujian tetap berjalan selama hukuman.
-   * - Sesi ONGOING dipulihkan setelah refresh.
-   * =========================================================
-   */
-
   const session = JSON.parse(
     sessionStorage.getItem("nexoraSession") || "null"
   );
@@ -29,8 +9,27 @@
   }
 
   /*
-   * Jika sesi sudah selesai, jangan izinkan halaman
-   * ujian digunakan kembali.
+   * =========================================================
+   * NEXORA EXAM — EXAM ENGINE
+   * SMP NEGERI 44 BANDAR LAMPUNG
+   * =========================================================
+   *
+   * FUNGSI UTAMA:
+   * - Timer ujian 90 menit
+   * - Resume sesi setelah refresh
+   * - Penalty pelanggaran:
+   *   #1 = 1 menit 30 detik
+   *   #2 = 5 menit
+   *   #3 = ujian dihentikan
+   * - Penalty tetap berjalan setelah refresh
+   * - Timer ujian tetap berjalan selama penalty
+   * - Google Form diblokir selama penalty
+   * =========================================================
+   */
+
+  /*
+   * Jika sesi sudah selesai, jangan izinkan
+   * halaman ujian digunakan kembali.
    */
   if (
     session.status === "FINISHED" ||
@@ -79,21 +78,18 @@
   const beginExamBtn =
     document.getElementById("beginExamBtn");
 
-  /*
-   * =========================================================
-   * IDENTITAS PESERTA
-   * =========================================================
-   */
+  const fullscreenBtn =
+    document.getElementById("fullscreenBtn");
 
-  document.getElementById(
-    "examIdentity"
-  ).textContent =
+  const examIdentity =
+    document.getElementById("examIdentity");
+
+  examIdentity.textContent =
     `${session.name} • ${session.className} • ${session.subjectName}`;
 
   /*
-   * Google Form tetap dimuat sejak awal.
-   * Hukuman akan memblokir interaksi menggunakan
-   * pointer-events + modal.
+   * URL Google Form tetap menggunakan URL
+   * yang sudah dipilih pada halaman sebelumnya.
    */
   frame.src = session.formUrl;
 
@@ -125,17 +121,20 @@
   let penaltyActive = false;
 
   /*
-   * Durasi hukuman.
+   * =========================================================
+   * PENALTY CONFIG
+   * =========================================================
    */
-  const PENALTY_FIRST =
-    90 * 1000; // 1 menit 30 detik
 
-  const PENALTY_SECOND =
-    5 * 60 * 1000; // 5 menit
+  const FIRST_PENALTY_MS =
+    90 * 1000;
+
+  const SECOND_PENALTY_MS =
+    5 * 60 * 1000;
 
   /*
    * =========================================================
-   * SESSION SAVE
+   * SESSION STORAGE
    * =========================================================
    */
 
@@ -149,37 +148,28 @@
     );
   }
 
-  /*
-   * =========================================================
-   * VIOLATION COUNT
-   * =========================================================
-   *
-   * Ambil jumlah dari security engine.
-   * Jika security engine belum memulihkan count,
-   * gunakan count yang sudah tersimpan dalam session.
-   * =========================================================
-   */
+  function savePenalty(penaltyUntil) {
+    session.penaltyUntil =
+      penaltyUntil;
 
-  function getViolationCount() {
-    const securityCount =
-      Number(
-        NexoraSecurity.getCount()
-      ) || 0;
+    sessionStorage.setItem(
+      "nexoraSession",
+      JSON.stringify(session)
+    );
+  }
 
-    const sessionCount =
-      Number(
-        session.violations
-      ) || 0;
+  function clearPenalty() {
+    delete session.penaltyUntil;
 
-    return Math.max(
-      securityCount,
-      sessionCount
+    sessionStorage.setItem(
+      "nexoraSession",
+      JSON.stringify(session)
     );
   }
 
   /*
    * =========================================================
-   * TIME FORMAT
+   * FORMAT WAKTU UJIAN
    * =========================================================
    */
 
@@ -191,9 +181,7 @@
       );
 
     const h =
-      Math.floor(
-        total / 3600
-      );
+      Math.floor(total / 3600);
 
     const m =
       Math.floor(
@@ -203,20 +191,29 @@
     const s =
       total % 60;
 
-    return h > 0
-      ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-      : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    if (h > 0) {
+      return (
+        `${String(h).padStart(2, "0")}:` +
+        `${String(m).padStart(2, "0")}:` +
+        `${String(s).padStart(2, "0")}`
+      );
+    }
+
+    return (
+      `${String(m).padStart(2, "0")}:` +
+      `${String(s).padStart(2, "0")}`
+    );
   }
 
   /*
    * =========================================================
-   * HUMAN PENALTY TIME
+   * FORMAT WAKTU PENALTI
    * =========================================================
    *
    * Contoh:
-   * 90 detik → "1 menit 30 detik"
-   * 300 detik → "5 menit"
-   * =========================================================
+   * 90 detik -> "1 menit 30 detik"
+   * 60 detik -> "1 menit"
+   * 5 menit  -> "5 menit"
    */
 
   function formatPenaltyTime(ms) {
@@ -238,12 +235,13 @@
       minutes > 0 &&
       seconds > 0
     ) {
-      return `${minutes} menit ${seconds} detik`;
+      return (
+        `${minutes} menit ` +
+        `${seconds} detik`
+      );
     }
 
-    if (
-      minutes > 0
-    ) {
+    if (minutes > 0) {
       return `${minutes} menit`;
     }
 
@@ -252,107 +250,36 @@
 
   /*
    * =========================================================
-   * STUDENT-FACING VIOLATION TEXT
-   * =========================================================
-   *
-   * Kode teknis tidak ditampilkan kepada siswa.
-   *
-   * WINDOW_BLUR dan VISIBILITY_HIDDEN
-   * digabung menjadi:
-   *
-   * "Meninggalkan Halaman Ujian"
+   * BLOCK / UNBLOCK GOOGLE FORM
    * =========================================================
    */
 
-  function getStudentViolationInfo(type) {
-    /*
-     * FULLSCREEN
-     */
-    if (
-      type === "FULLSCREEN_EXIT"
-    ) {
-      return {
-        category:
-          "Keluar dari Mode Layar Penuh",
+  function blockForm() {
+    penaltyActive = true;
 
-        title:
-          "Kamu terdeteksi keluar dari mode layar penuh.",
+    frame.style.pointerEvents =
+      "none";
 
-        message:
-          "Silakan kembali ke mode layar penuh (Fullscreen) untuk melanjutkan ujian.",
+    frame.setAttribute(
+      "aria-disabled",
+      "true"
+    );
+  }
 
-        reminder:
-          "Dilarang membuka Google, tab lain, atau aplikasi lain selama ujian berlangsung."
-      };
-    }
+  function unblockForm() {
+    penaltyActive = false;
 
-    /*
-     * WINDOW BLUR + VISIBILITY HIDDEN
-     */
-    if (
-      type === "WINDOW_BLUR" ||
-      type === "VISIBILITY_HIDDEN"
-    ) {
-      return {
-        category:
-          "Meninggalkan Halaman Ujian",
+    frame.style.pointerEvents =
+      "auto";
 
-        title:
-          "Kamu terdeteksi meninggalkan halaman ujian.",
-
-        message:
-          "Jangan membuka Google, tab lain, aplikasi lain, atau berpindah dari halaman ujian selama ujian berlangsung.",
-
-        reminder:
-          "Silakan kembali ke halaman ujian untuk melanjutkan."
-      };
-    }
-
-    /*
-     * DEVTOOLS
-     */
-    if (
-      type === "DEVTOOLS_SHORTCUT"
-    ) {
-      return {
-        category:
-          "Fitur yang Tidak Diizinkan",
-
-        title:
-          "Kamu terdeteksi mencoba membuka fitur yang tidak diperbolehkan selama ujian.",
-
-        message:
-          "Jangan membuka Developer Tools atau fitur pengembang browser selama ujian berlangsung.",
-
-        reminder:
-          "Tetap berada pada halaman ujian dan gunakan browser hanya untuk mengerjakan soal."
-      };
-    }
-
-    /*
-     * FALLBACK
-     */
-    return {
-      category:
-        "Aktivitas Tidak Diizinkan",
-
-      title:
-        "Kamu terdeteksi melakukan aktivitas yang tidak diperbolehkan selama ujian.",
-
-      message:
-        "Tetap berada pada halaman ujian dan jangan membuka hal lain selama pengerjaan.",
-
-      reminder:
-        "Silakan kembali fokus mengerjakan ujian."
-    };
+    frame.removeAttribute(
+      "aria-disabled"
+    );
   }
 
   /*
    * =========================================================
    * TIMER UJIAN
-   * =========================================================
-   *
-   * Timer ujian TETAP BERJALAN selama hukuman.
    * =========================================================
    */
 
@@ -376,9 +303,7 @@
         5 * 60 * 1000
     );
 
-    if (
-      remaining <= 0
-    ) {
+    if (remaining <= 0) {
       finish(
         "Waktu ujian telah selesai."
       );
@@ -387,367 +312,256 @@
 
   /*
    * =========================================================
-   * PENALTY STORAGE
+   * PENALTY COUNTDOWN
    * =========================================================
    */
 
-  function savePenalty(
-    until,
-    duration,
-    violationNumber
-  ) {
-    session.penaltyUntil =
-      until;
-
-    session.penaltyDurationMs =
-      duration;
-
-    session.penaltyViolation =
-      violationNumber;
-
-    session.penaltyStartedAt =
-      Date.now();
-
-    save();
-  }
-
-  function clearPenalty() {
-    delete session.penaltyUntil;
-    delete session.penaltyDurationMs;
-    delete session.penaltyViolation;
-    delete session.penaltyStartedAt;
-
-    save();
-  }
-
   function getPenaltyRemaining() {
-    const until =
-      Number(
-        session.penaltyUntil
-      ) || 0;
+    if (
+      !session.penaltyUntil
+    ) {
+      return 0;
+    }
 
     return Math.max(
       0,
-      until - Date.now()
+      Number(session.penaltyUntil) -
+        Date.now()
     );
   }
 
-  /*
-   * =========================================================
-   * BLOCK / UNBLOCK GOOGLE FORM
-   * =========================================================
-   */
-
-  function blockForm() {
-    penaltyActive = true;
-
-    frame.style.pointerEvents =
-      "none";
-
-    frame.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-  }
-
-  function unblockForm() {
-    penaltyActive = false;
-
-    frame.style.pointerEvents =
-      "";
-
-    frame.removeAttribute(
-      "aria-hidden"
-    );
-  }
-
-  /*
-   * =========================================================
-   * UPDATE PENALTY MODAL
-   * =========================================================
-   */
-
-  function updatePenaltyModal(
-    remaining,
-    violationNumber,
-    info
+  function updatePenaltyMessage(
+    remainingMs
   ) {
-    const readable =
-      formatPenaltyTime(
-        remaining
-      );
+    const info =
+      session.currentViolationInfo;
 
-    const total =
-      NEXORA_CONFIG.maxViolations;
+    const title =
+      info?.title ||
+      "Peringatan Keamanan";
+
+    const message =
+      info?.message ||
+      "Aktivitas yang tidak diperbolehkan terdeteksi selama ujian.";
+
+    const reminder =
+      info?.reminder ||
+      "Tetap berada pada halaman ujian.";
 
     violationText.innerHTML = `
-      <div class="violation-content">
-
-        <div class="violation-label">
-          PELANGGARAN ${violationNumber} DARI ${total}
-        </div>
-
-        <h3>
-          ${info.category}
-        </h3>
-
-        <p>
-          ${info.title}
-        </p>
-
-        <p>
-          ${info.message}
-        </p>
-
-        <p>
-          ${info.reminder}
-        </p>
-
-        <div class="penalty-box">
-          <span class="penalty-label">
-            AKSES SOAL DITANGGUHKAN
-          </span>
-
-          <strong
-            id="penaltyCountdown"
-          >
-            ${readable}
-          </strong>
-        </div>
-
-      </div>
+      <strong>${title}</strong>
+      <br><br>
+      ${message}
+      <br><br>
+      ${reminder}
+      <br><br>
+      <strong>
+        Waktu penalti:
+        ${formatPenaltyTime(remainingMs)}
+      </strong>
+      <br>
+      Selama penalti berlangsung, lembar ujian tidak dapat digunakan.
     `;
-
-    /*
-     * Selama hukuman tombol tidak boleh
-     * menutup modal.
-     */
-    closeViolation.disabled =
-      true;
-
-    closeViolation.textContent =
-      "Tunggu sampai waktu selesai";
   }
 
-  /*
-   * =========================================================
-   * START PENALTY
-   * =========================================================
-   */
-
-  function startPenalty(
-    violationNumber,
-    type
-  ) {
-    if (
-      finishedOnce
-    ) {
-      return;
-    }
-
-    /*
-     * Pelanggaran ketiga tidak mendapatkan
-     * hukuman waktu.
-     *
-     * Ujian langsung dihentikan.
-     */
-    if (
-      violationNumber >=
-      NEXORA_CONFIG.maxViolations
-    ) {
-      finish(
-        "Kamu telah mencapai batas pelanggaran keamanan yang diperbolehkan. Sesi ujian dihentikan."
+  function finishPenalty() {
+    if (penaltyInterval) {
+      clearInterval(
+        penaltyInterval
       );
 
+      penaltyInterval = null;
+    }
+
+    clearPenalty();
+
+    session.currentViolationInfo =
+      null;
+
+    unblockForm();
+
+    violationModal.classList.add(
+      "hidden"
+    );
+
+    tick();
+  }
+
+  function startPenalty(
+    penaltyMs
+  ) {
+    if (finishedOnce) {
       return;
     }
 
-    /*
-     * Tentukan hukuman.
-     */
-    const duration =
-      violationNumber === 1
-        ? PENALTY_FIRST
-        : PENALTY_SECOND;
+    const penaltyUntil =
+      Date.now() + penaltyMs;
 
-    const until =
-      Date.now() +
-      duration;
-
-    /*
-     * Simpan sebelum modal ditampilkan.
-     *
-     * Ini yang membuat refresh tidak
-     * menghilangkan hukuman.
-     */
     savePenalty(
-      until,
-      duration,
-      violationNumber
+      penaltyUntil
     );
 
     blockForm();
-
-    const info =
-      getStudentViolationInfo(
-        type
-      );
 
     violationModal.classList.remove(
       "hidden"
     );
 
-    updatePenaltyModal(
-      duration,
-      violationNumber,
-      info
-    );
-
     /*
-     * Hentikan interval hukuman sebelumnya
-     * jika ada.
+     * Selama penalty berjalan,
+     * tombol "Saya Mengerti" tidak boleh
+     * menutup modal.
      */
-    if (
-      penaltyInterval
-    ) {
+    if (closeViolation) {
+      closeViolation.textContent =
+        "Menunggu Penalti...";
+
+      closeViolation.disabled =
+        true;
+    }
+
+    if (penaltyInterval) {
       clearInterval(
         penaltyInterval
       );
     }
 
-    /*
-     * Countdown hukuman.
-     */
+    const update = () => {
+      if (finishedOnce) {
+        return;
+      }
+
+      const remaining =
+        getPenaltyRemaining();
+
+      if (remaining <= 0) {
+        finishPenalty();
+        return;
+      }
+
+      updatePenaltyMessage(
+        remaining
+      );
+
+      /*
+       * Timer utama tetap berjalan
+       * selama penalty.
+       */
+      tick();
+    };
+
+    update();
+
     penaltyInterval =
       setInterval(
-        () => {
-          if (
-            finishedOnce
-          ) {
-            clearInterval(
-              penaltyInterval
-            );
-
-            penaltyInterval =
-              null;
-
-            return;
-          }
-
-          const remaining =
-            getPenaltyRemaining();
-
-          const countdown =
-            document.getElementById(
-              "penaltyCountdown"
-            );
-
-          if (countdown) {
-            countdown.textContent =
-              formatPenaltyTime(
-                remaining
-              );
-          }
-
-          /*
-           * Hukuman selesai.
-           */
-          if (
-            remaining <= 0
-          ) {
-            clearInterval(
-              penaltyInterval
-            );
-
-            penaltyInterval =
-              null;
-
-            finishPenalty();
-          }
-        },
+        update,
         500
       );
   }
 
   /*
    * =========================================================
-   * FINISH PENALTY
+   * RESUME PENALTY SETELAH REFRESH
    * =========================================================
    */
 
-  function finishPenalty() {
-    if (
-      finishedOnce
-    ) {
+  function restorePenalty() {
+    const remaining =
+      getPenaltyRemaining();
+
+    if (remaining <= 0) {
+      if (session.penaltyUntil) {
+        clearPenalty();
+      }
+
+      unblockForm();
+
       return;
     }
 
-    clearPenalty();
+    blockForm();
 
-    unblockForm();
+    violationModal.classList.remove(
+      "hidden"
+    );
 
-    closeViolation.disabled =
-      false;
+    if (closeViolation) {
+      closeViolation.textContent =
+        "Menunggu Penalti...";
 
-    closeViolation.textContent =
-      "Kembali ke Ujian";
+      closeViolation.disabled =
+        true;
+    }
 
-    /*
-     * Ubah isi modal menjadi pemberitahuan
-     * bahwa hukuman sudah selesai.
-     */
-    violationText.innerHTML = `
-      <div class="violation-content">
+    if (penaltyInterval) {
+      clearInterval(
+        penaltyInterval
+      );
+    }
 
-        <div class="violation-label">
-          WAKTU PENANGGUHAN SELESAI
-        </div>
+    const update = () => {
+      if (finishedOnce) {
+        return;
+      }
 
-        <h3>
-          Kamu dapat melanjutkan ujian.
-        </h3>
+      const left =
+        getPenaltyRemaining();
 
-        <p>
-          Waktu penangguhan telah selesai.
-        </p>
+      if (left <= 0) {
+        finishPenalty();
+        return;
+      }
 
-        <p>
-          Tetap berada pada halaman ujian
-          dan jangan membuka Google, tab lain,
-          atau aplikasi lain selama ujian berlangsung.
-        </p>
+      updatePenaltyMessage(
+        left
+      );
 
-      </div>
-    `;
+      tick();
+    };
 
-    /*
-     * Modal tetap terbuka sampai siswa
-     * menekan tombol kembali.
-     */
+    update();
+
+    penaltyInterval =
+      setInterval(
+        update,
+        500
+      );
   }
 
   /*
    * =========================================================
-   * SHOW VIOLATION
+   * VIOLATION
    * =========================================================
    */
 
   function showViolation(v) {
-    if (
-      finishedOnce
-    ) {
+    if (finishedOnce) {
       return;
     }
 
-    const count =
-      Number(v.count) ||
-      getViolationCount();
+    /*
+     * Pastikan counter pada badge
+     * mengikuti security engine.
+     */
+    badge.textContent =
+      `⚠ ${v.count} / ${NEXORA_CONFIG.maxViolations}`;
+
+    badge.classList.toggle(
+      "danger",
+      v.count >=
+        NEXORA_CONFIG.maxViolations
+    );
 
     /*
-     * Simpan count di session.
+     * Simpan informasi bahasa siswa
+     * agar bisa dipulihkan jika refresh
+     * terjadi ketika modal/penalty aktif.
      */
-    session.violations =
-      count;
+    session.currentViolationInfo =
+      v.studentInfo ||
+      NexoraSecurity.getStudentViolationInfo(
+        v.type
+      );
 
     sessionStorage.setItem(
       "nexoraSession",
@@ -755,40 +569,66 @@
     );
 
     /*
-     * Badge.
+     * =====================================================
+     * PELANGGARAN KE-3
+     * =====================================================
+     *
+     * Tidak diberikan penalty.
+     * Sesi langsung dihentikan.
      */
-    badge.textContent =
-      `⚠ ${count} / ${NEXORA_CONFIG.maxViolations}`;
 
-    badge.classList.toggle(
-      "danger",
-      count >=
-        NEXORA_CONFIG.maxViolations
-    );
-
-    /*
-     * Jika sudah mencapai batas,
-     * ujian langsung dihentikan.
-     */
     if (
-      count >=
+      v.count >=
       NEXORA_CONFIG.maxViolations
     ) {
+      violationModal.classList.add(
+        "hidden"
+      );
+
       finish(
-        "Kamu telah mencapai batas pelanggaran keamanan yang diperbolehkan. Sesi ujian dihentikan."
+        "Batas 3 indikator keamanan tercapai. Sesi NEXORA dihentikan."
       );
 
       return;
     }
 
     /*
-     * Pelanggaran #1 atau #2
-     * mendapatkan penalty.
+     * =====================================================
+     * PELANGGARAN #1
+     * =====================================================
      */
-    startPenalty(
-      count,
-      v.type
+
+    if (v.count === 1) {
+      startPenalty(
+        FIRST_PENALTY_MS
+      );
+
+      return;
+    }
+
+    /*
+     * =====================================================
+     * PELANGGARAN #2
+     * =====================================================
+     */
+
+    if (v.count === 2) {
+      startPenalty(
+        SECOND_PENALTY_MS
+      );
+
+      return;
+    }
+
+    /*
+     * Fallback jika suatu saat
+     * konfigurasi berubah.
+     */
+    violationModal.classList.remove(
+      "hidden"
     );
+
+    updatePenaltyMessage(0);
   }
 
   /*
@@ -797,29 +637,17 @@
    * =========================================================
    */
 
-  closeViolation.addEventListener(
+  closeViolation?.addEventListener(
     "click",
     () => {
-      if (
-        finishedOnce
-      ) {
+      /*
+       * Selama penalty aktif,
+       * modal tidak boleh ditutup.
+       */
+      if (penaltyActive) {
         return;
       }
 
-      /*
-       * Jangan izinkan modal ditutup
-       * selama hukuman masih berjalan.
-       */
-      if (
-        penaltyActive
-      ) {
-        return;
-      }
-
-      /*
-       * Setelah hukuman selesai,
-       * siswa baru boleh kembali.
-       */
       violationModal.classList.add(
         "hidden"
       );
@@ -832,24 +660,21 @@
    * =========================================================
    */
 
-  document
-    .getElementById(
-      "fullscreenBtn"
-    )
-    .addEventListener(
-      "click",
-      () => {
-        if (
-          !finishedOnce
-        ) {
-          NexoraSecurity.enterFullscreen();
-        }
+  fullscreenBtn?.addEventListener(
+    "click",
+    () => {
+      if (
+        !finishedOnce &&
+        !penaltyActive
+      ) {
+        NexoraSecurity.enterFullscreen();
       }
-    );
+    }
+  );
 
   /*
    * =========================================================
-   * START / RESUME EXAM
+   * START EXAM
    * =========================================================
    */
 
@@ -865,12 +690,10 @@
 
     /*
      * =====================================================
-     * RESUME SESSION
+     * RESUME SESI YANG SUDAH BERJALAN
      * =====================================================
-     *
-     * Jika siswa refresh halaman ketika ujian masih
-     * ONGOING, jangan membuat sesi baru.
      */
+
     if (
       isResume &&
       session.status === "ONGOING" &&
@@ -880,79 +703,28 @@
       examStarted = true;
 
       endAt =
-        Number(
-          session.startedAt
-        ) +
-        Number(
-          session.durationMs
-        );
+        Number(session.startedAt) +
+        Number(session.durationMs);
 
       startOverlay.classList.add(
         "hidden"
       );
 
+      /*
+       * Browser bisa menolak fullscreen
+       * setelah refresh karena tidak ada
+       * user gesture. Kita tetap melanjutkan
+       * sesi agar timer tidak reset.
+       */
       await NexoraSecurity.enterFullscreen();
 
       NexoraSecurity.arm();
 
-      /*
-       * Jika masih dalam masa hukuman,
-       * pulihkan hukuman tersebut.
-       */
-      const remaining =
-        getPenaltyRemaining();
+      startHeartbeat();
 
-      if (
-        remaining > 0
-      ) {
-        restorePenalty();
-      } else {
-        /*
-         * Kalau penalty sudah lewat ketika
-         * halaman sedang direfresh, hapus
-         * data penalty lama.
-         */
-        if (
-          session.penaltyUntil
-        ) {
-          clearPenalty();
-        }
+      startTimer();
 
-        unblockForm();
-
-        violationModal.classList.add(
-          "hidden"
-        );
-      }
-
-      startIntervals();
-
-      NexoraSecurity.sendMonitoring(
-        "resume",
-        {
-          startedAt:
-            session.startedAt,
-
-          durationMs:
-            session.durationMs,
-
-          remainingMs:
-            Math.max(
-              0,
-              endAt -
-                Date.now()
-            ),
-
-          violations:
-            getViolationCount(),
-
-          penaltyRemainingMs:
-            Math.max(
-              0,
-              getPenaltyRemaining()
-            )
-        }
-      );
+      restorePenalty();
 
       tick();
 
@@ -961,7 +733,7 @@
 
     /*
      * =====================================================
-     * NEW EXAM
+     * START BARU
      * =====================================================
      */
 
@@ -975,17 +747,19 @@
       60 *
       1000;
 
-    session.status =
-      "ONGOING";
-
-    delete session.penaltyUntil;
-    delete session.penaltyDurationMs;
-    delete session.penaltyViolation;
-    delete session.penaltyStartedAt;
-
     endAt =
       session.startedAt +
       session.durationMs;
+
+    session.status =
+      "ONGOING";
+
+    session.violations =
+      NexoraSecurity.getCount();
+
+    delete session.penaltyUntil;
+
+    delete session.currentViolationInfo;
 
     sessionStorage.setItem(
       "nexoraSession",
@@ -1014,40 +788,48 @@
       }
     );
 
-    startIntervals();
+    startHeartbeat();
+
+    startTimer();
 
     tick();
   }
 
   /*
    * =========================================================
-   * START INTERVALS
+   * START TIMER
    * =========================================================
    */
 
-  function startIntervals() {
-    /*
-     * Hindari interval ganda.
-     */
-    if (
-      heartbeat
-    ) {
-      clearInterval(
-        heartbeat
-      );
-    }
-
-    if (
-      timerInterval
-    ) {
+  function startTimer() {
+    if (timerInterval) {
       clearInterval(
         timerInterval
       );
     }
 
-    /*
-     * HEARTBEAT
-     */
+    timerInterval =
+      setInterval(
+        tick,
+        500
+      );
+
+    tick();
+  }
+
+  /*
+   * =========================================================
+   * HEARTBEAT
+   * =========================================================
+   */
+
+  function startHeartbeat() {
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+    }
+
     heartbeat =
       setInterval(
         () => {
@@ -1067,153 +849,28 @@
                     Date.now()
                 ),
 
-              violations:
-                getViolationCount(),
-
               penaltyRemainingMs:
-                Math.max(
-                  0,
-                  getPenaltyRemaining()
-                )
+                getPenaltyRemaining(),
+
+              violations:
+                NexoraSecurity.getCount(),
+
+              penaltyActive:
+                penaltyActive
             }
           );
         },
         20000
       );
-
-    /*
-     * TIMER UJIAN
-     */
-    timerInterval =
-      setInterval(
-        tick,
-        500
-      );
   }
 
   /*
    * =========================================================
-   * RESTORE PENALTY AFTER REFRESH
+   * BUTTON MULAI
    * =========================================================
    */
 
-  function restorePenalty() {
-    const remaining =
-      getPenaltyRemaining();
-
-    const violationNumber =
-      Number(
-        session.penaltyViolation
-      ) || getViolationCount();
-
-    /*
-     * Tidak boleh memulihkan hukuman
-     * untuk pelanggaran ketiga.
-     */
-    if (
-      violationNumber >=
-      NEXORA_CONFIG.maxViolations
-    ) {
-      finish(
-        "Kamu telah mencapai batas pelanggaran keamanan yang diperbolehkan. Sesi ujian dihentikan."
-      );
-
-      return;
-    }
-
-    /*
-     * Tentukan jenis pesan.
-     *
-     * Jenis teknis terakhir tetap disimpan
-     * dalam lastSecurityEvent.
-     */
-    const event =
-      session.lastSecurityEvent;
-
-    const type =
-      event?.type ||
-      "WINDOW_BLUR";
-
-    const info =
-      getStudentViolationInfo(
-        type
-      );
-
-    blockForm();
-
-    violationModal.classList.remove(
-      "hidden"
-    );
-
-    updatePenaltyModal(
-      remaining,
-      violationNumber,
-      info
-    );
-
-    if (
-      penaltyInterval
-    ) {
-      clearInterval(
-        penaltyInterval
-      );
-    }
-
-    penaltyInterval =
-      setInterval(
-        () => {
-          if (
-            finishedOnce
-          ) {
-            clearInterval(
-              penaltyInterval
-            );
-
-            penaltyInterval =
-              null;
-
-            return;
-          }
-
-          const current =
-            getPenaltyRemaining();
-
-          const countdown =
-            document.getElementById(
-              "penaltyCountdown"
-            );
-
-          if (countdown) {
-            countdown.textContent =
-              formatPenaltyTime(
-                current
-              );
-          }
-
-          if (
-            current <= 0
-          ) {
-            clearInterval(
-              penaltyInterval
-            );
-
-            penaltyInterval =
-              null;
-
-            finishPenalty();
-          }
-        },
-        500
-      );
-  }
-
-  /*
-   * =========================================================
-   * START BUTTON
-   * =========================================================
-   */
-
-  beginExamBtn.addEventListener(
+  beginExamBtn?.addEventListener(
     "click",
     async () => {
       await startExam(false);
@@ -1232,28 +889,21 @@
 
   /*
    * =========================================================
-   * FINISH EXAM
+   * FINISH
    * =========================================================
    */
 
   function finish(reason) {
-    if (
-      finishedOnce
-    ) {
+    if (finishedOnce) {
       return;
     }
 
     finishedOnce = true;
 
     /*
-     * =====================================================
-     * 1. HENTIKAN TIMER
-     * =====================================================
+     * 1. Hentikan timer.
      */
-
-    if (
-      timerInterval
-    ) {
+    if (timerInterval) {
       clearInterval(
         timerInterval
       );
@@ -1262,14 +912,9 @@
     }
 
     /*
-     * =====================================================
-     * 2. HENTIKAN HEARTBEAT
-     * =====================================================
+     * 2. Hentikan heartbeat.
      */
-
-    if (
-      heartbeat
-    ) {
+    if (heartbeat) {
       clearInterval(
         heartbeat
       );
@@ -1278,14 +923,9 @@
     }
 
     /*
-     * =====================================================
-     * 3. HENTIKAN TIMER HUKUMAN
-     * =====================================================
+     * 3. Hentikan penalty timer.
      */
-
-    if (
-      penaltyInterval
-    ) {
+    if (penaltyInterval) {
       clearInterval(
         penaltyInterval
       );
@@ -1294,19 +934,21 @@
     }
 
     /*
-     * =====================================================
-     * 4. MATIKAN SECURITY
-     * =====================================================
+     * 4. Matikan security.
      */
-
     NexoraSecurity.disarm();
 
     /*
-     * =====================================================
-     * 5. TANDAI SESI SELESAI
-     * =====================================================
+     * 5. Hapus penalty.
      */
+    delete session.penaltyUntil;
 
+    session.currentViolationInfo =
+      null;
+
+    /*
+     * 6. Tandai sesi selesai.
+     */
     session.endedAt =
       Date.now();
 
@@ -1319,27 +961,21 @@
     save();
 
     /*
-     * =====================================================
-     * 6. KIRIM FINISH KE SERVER
-     * =====================================================
+     * 7. Kirim finish ke server.
      */
-
     NexoraSecurity.sendMonitoring(
       "finish",
       {
         reason,
 
         violations:
-          getViolationCount()
+          NexoraSecurity.getCount()
       }
     );
 
     /*
-     * =====================================================
-     * 7. PUTUS AKSES GOOGLE FORM
-     * =====================================================
+     * 8. Putus akses ke Google Form.
      */
-
     frame.src =
       "about:blank";
 
@@ -1351,30 +987,27 @@
       "none";
 
     /*
-     * =====================================================
-     * 8. TUTUP FULLSCREEN
-     * =====================================================
+     * 9. Tutup fullscreen.
      */
+    try {
+      const exitPromise =
+        document.exitFullscreen?.();
 
-    document.exitFullscreen?.()
-      .catch?.(() => {});
+      exitPromise?.catch?.(
+        () => {}
+      );
+    } catch {}
 
     /*
-     * =====================================================
-     * 9. TUTUP MODAL PELANGGARAN
-     * =====================================================
+     * 10. Tutup modal.
      */
-
     violationModal?.classList.add(
       "hidden"
     );
 
     /*
-     * =====================================================
-     * 10. TAMPILKAN LAYAR SELESAI
-     * =====================================================
+     * 11. Tampilkan layar selesai.
      */
-
     finished.classList.remove(
       "hidden"
     );
@@ -1387,27 +1020,12 @@
    * =========================================================
    * INITIALIZATION
    * =========================================================
-   */
-
-  /*
-   * Badge awal mengikuti data session.
-   */
-  const initialViolations =
-    getViolationCount();
-
-  badge.textContent =
-    `⚠ ${initialViolations} / ${NEXORA_CONFIG.maxViolations}`;
-
-  badge.classList.toggle(
-    "danger",
-    initialViolations >=
-      NEXORA_CONFIG.maxViolations
-  );
-
-  /*
-   * =========================================================
-   * PULIHKAN SESI SETELAH REFRESH
-   * =========================================================
+   *
+   * Jika halaman baru:
+   *   tampilkan tombol mulai.
+   *
+   * Jika refresh saat ONGOING:
+   *   lanjutkan sesi lama.
    */
 
   if (
@@ -1415,40 +1033,11 @@
     session.startedAt &&
     session.durationMs
   ) {
-    /*
-     * Jika waktu ujian sebenarnya sudah habis
-     * ketika browser direfresh, langsung selesaikan.
-     */
-    const restoredEndAt =
-      Number(
-        session.startedAt
-      ) +
-      Number(
-        session.durationMs
-      );
-
-    if (
-      restoredEndAt <=
-      Date.now()
-    ) {
-      finish(
-        "Waktu ujian telah selesai."
-      );
-
-      return;
-    }
-
-    /*
-     * Pulihkan sesi.
-     */
     startExam(true);
   } else {
-    /*
-     * Sesi baru:
-     * tampilkan layar Mulai Ujian.
-     */
     startOverlay.classList.remove(
       "hidden"
     );
   }
+
 })();
