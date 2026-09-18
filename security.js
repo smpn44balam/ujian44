@@ -4,6 +4,10 @@ window.NexoraSecurity = (() => {
   let onViolationCallback = null;
   let armed = false;
 
+  // Toleransi ketika siswa sedang masuk/interaksi
+  // dengan Google Form di dalam iframe.
+  let formFocusGraceUntil = 0;
+
   function setCallback(fn) {
     onViolationCallback = fn;
   }
@@ -27,6 +31,7 @@ window.NexoraSecurity = (() => {
 
     if (session) {
       session.violations = violationCount;
+
       session.lastSecurityEvent = {
         type,
         detail,
@@ -34,24 +39,22 @@ window.NexoraSecurity = (() => {
       };
 
       saveSession(session);
-
       appendLocalLog(
         session,
         type,
         detail
       );
 
-      sendMonitoring("violation", {
-        event: type,
-        detail,
-        violations: violationCount
-      });
+      sendMonitoring(
+        "violation",
+        {
+          event: type,
+          detail,
+          violations: violationCount
+        }
+      );
     }
 
-    /*
-     * Kirim callback terlebih dahulu agar exam.js
-     * dapat menjalankan finish().
-     */
     if (onViolationCallback) {
       onViolationCallback({
         type,
@@ -60,10 +63,9 @@ window.NexoraSecurity = (() => {
       });
     }
 
-    /*
-     * Jika sudah mencapai batas maksimum,
-     * langsung matikan sistem keamanan.
-     */
+    // Setelah mencapai batas maksimum,
+    // sistem keamanan tidak lagi mencatat
+    // indikator tambahan.
     if (
       violationCount >=
       NEXORA_CONFIG.maxViolations
@@ -84,10 +86,10 @@ window.NexoraSecurity = (() => {
     }
   }
 
-  function saveSession(s) {
+  function saveSession(session) {
     sessionStorage.setItem(
       "nexoraSession",
-      JSON.stringify(s)
+      JSON.stringify(session)
     );
   }
 
@@ -96,20 +98,35 @@ window.NexoraSecurity = (() => {
     type,
     detail
   ) {
-    const key = "nexoraMonitoring";
+    const key =
+      "nexoraMonitoring";
 
     const list = JSON.parse(
-      localStorage.getItem(key) || "[]"
+      localStorage.getItem(key) ||
+        "[]"
     );
 
     list.push({
-      sessionId: session.sessionId,
+      sessionId:
+        session.sessionId,
+
       at: Date.now(),
-      name: session.name,
-      className: session.className,
-      subjectName: session.subjectName,
-      violations: session.violations || 0,
-      event: type,
+
+      name:
+        session.name,
+
+      className:
+        session.className,
+
+      subjectName:
+        session.subjectName,
+
+      violations:
+        session.violations || 0,
+
+      event:
+        type,
+
       detail
     });
 
@@ -130,16 +147,18 @@ window.NexoraSecurity = (() => {
 
     if (!endpoint) return;
 
-    const session = getSession();
+    const session =
+      getSession();
 
     if (!session) return;
 
-    const payload = JSON.stringify({
-      action,
-      session,
-      data,
-      sentAt: Date.now()
-    });
+    const payload =
+      JSON.stringify({
+        action,
+        session,
+        data,
+        sentAt: Date.now()
+      });
 
     try {
       navigator.sendBeacon?.(
@@ -154,22 +173,30 @@ window.NexoraSecurity = (() => {
       );
     } catch {
       try {
-        await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "text/plain;charset=utf-8"
-          },
-          body: payload,
-          keepalive: true
-        });
+        await fetch(
+          endpoint,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "text/plain;charset=utf-8"
+            },
+
+            body: payload,
+
+            keepalive: true
+          }
+        );
       } catch {}
     }
   }
 
   async function enterFullscreen() {
     try {
-      if (!document.fullscreenElement) {
+      if (
+        !document.fullscreenElement
+      ) {
         await document.documentElement.requestFullscreen();
       }
 
@@ -183,6 +210,63 @@ window.NexoraSecurity = (() => {
     if (armed) return;
 
     armed = true;
+
+    /*
+     * =====================================================
+     * GOOGLE FORM / IFRAME FOCUS PROTECTION
+     * =====================================================
+     *
+     * Google Form berada di dalam iframe.
+     *
+     * Ketika siswa pertama kali mengklik Google Form,
+     * browser dapat menganggap halaman utama kehilangan
+     * fokus sehingga event "blur" muncul.
+     *
+     * Karena itu kita memberikan toleransi singkat ketika
+     * siswa sedang berinteraksi dengan iframe Google Form.
+     */
+
+    const formFrame =
+      document.getElementById(
+        "formFrame"
+      );
+
+    if (formFrame) {
+      const allowFormFocus = () => {
+        formFocusGraceUntil =
+          Date.now() + 2000;
+      };
+
+      formFrame.addEventListener(
+        "pointerdown",
+        allowFormFocus,
+        true
+      );
+
+      formFrame.addEventListener(
+        "mousedown",
+        allowFormFocus,
+        true
+      );
+
+      formFrame.addEventListener(
+        "touchstart",
+        allowFormFocus,
+        true
+      );
+
+      formFrame.addEventListener(
+        "click",
+        allowFormFocus,
+        true
+      );
+    }
+
+    /*
+     * =====================================================
+     * VISIBILITY CHANGE
+     * =====================================================
+     */
 
     document.addEventListener(
       "visibilitychange",
@@ -201,12 +285,20 @@ window.NexoraSecurity = (() => {
       }
     );
 
+    /*
+     * =====================================================
+     * FULLSCREEN
+     * =====================================================
+     */
+
     document.addEventListener(
       "fullscreenchange",
       () => {
         if (!armed) return;
 
-        if (!document.fullscreenElement) {
+        if (
+          !document.fullscreenElement
+        ) {
           record(
             "FULLSCREEN_EXIT",
             "Mode fullscreen keluar."
@@ -215,36 +307,75 @@ window.NexoraSecurity = (() => {
       }
     );
 
-window.addEventListener(
-  "blur",
-  () => {
-    if (!armed) return;
+    /*
+     * =====================================================
+     * WINDOW BLUR
+     * =====================================================
+     */
 
-    // Klik atau berpindah fokus ke Google Form
-    // di dalam iframe bukan pelanggaran.
-    const activeElement = document.activeElement;
+    window.addEventListener(
+      "blur",
+      () => {
+        if (!armed) return;
 
-    if (
-      activeElement &&
-      activeElement.tagName === "IFRAME"
-    ) {
-      return;
-    }
+        /*
+         * Jika blur terjadi sesaat setelah siswa
+         * mengklik Google Form, abaikan.
+         */
+        if (
+          Date.now() <
+          formFocusGraceUntil
+        ) {
+          return;
+        }
 
-    record(
-      "WINDOW_BLUR",
-      "Jendela kehilangan fokus."
+        /*
+         * Jika browser masih menganggap iframe sebagai
+         * elemen aktif, berarti fokus masih berada pada
+         * Google Form.
+         */
+        const activeElement =
+          document.activeElement;
+
+        if (
+          activeElement &&
+          activeElement.tagName ===
+            "IFRAME"
+        ) {
+          return;
+        }
+
+        /*
+         * Selain kondisi di atas, blur dianggap sebagai
+         * kehilangan fokus dari halaman ujian.
+         */
+        record(
+          "WINDOW_BLUR",
+          "Jendela kehilangan fokus."
+        );
+      }
     );
-  }
-);
+
+    /*
+     * =====================================================
+     * BLOK CONTEXT MENU
+     * =====================================================
+     */
 
     document.addEventListener(
       "contextmenu",
       e => {
         if (!armed) return;
+
         e.preventDefault();
       }
     );
+
+    /*
+     * =====================================================
+     * BLOK DEVTOOLS SHORTCUT
+     * =====================================================
+     */
 
     document.addEventListener(
       "keydown",
@@ -256,7 +387,11 @@ window.addEventListener(
           (
             e.ctrlKey &&
             e.shiftKey &&
-            ["I", "J", "C"].includes(
+            [
+              "I",
+              "J",
+              "C"
+            ].includes(
               e.key.toUpperCase()
             )
           )
@@ -271,6 +406,12 @@ window.addEventListener(
       }
     );
 
+    /*
+     * =====================================================
+     * BEFORE UNLOAD
+     * =====================================================
+     */
+
     window.addEventListener(
       "beforeunload",
       e => {
@@ -279,7 +420,8 @@ window.addEventListener(
         sendMonitoring(
           "unload",
           {
-            event: "BEFORE_UNLOAD"
+            event:
+              "BEFORE_UNLOAD"
           }
         );
 
