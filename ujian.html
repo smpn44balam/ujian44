@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="id">
 <head>
@@ -7,53 +8,193 @@
   <title>Ujian — NEXORA EXAM</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="exam-body">
+
+  <!-- HEADER NEXORA EXAM -->
   <header class="exam-topbar">
-    <div class="exam-brand"><div class="mini-mark">44</div><div><strong>NEXORA EXAM</strong><small id="examIdentity">Memuat...</small></div></div>
-    <div class="exam-status">
-      <div class="timer" id="timer">90:00</div>
-      <div class="violation-badge" id="violationBadge">⚠ 0</div>
-      <button id="fullscreenBtn" class="icon-btn" title="Layar penuh">⛶</button>
+
+    <div class="exam-brand">
+
+      <div class="school-logo">
+        <img
+          src="logo-sekolah.png"
+          alt="Logo SMP Negeri 44 Bandar Lampung"
+          onerror="this.style.display='none'; this.parentElement.classList.add('logo-placeholder');"
+        >
+        <span class="logo-fallback">44</span>
+      </div>
+
+      <div class="brand-text">
+        <strong>NEXORA EXAM</strong>
+        <small>SMP NEGERI 44 BANDAR LAMPUNG</small>
+      </div>
+
     </div>
+
+    <div class="exam-status">
+
+      <div class="exam-clock">
+        <span class="status-label">JAM</span>
+        <strong id="realtimeClock">--:--:--</strong>
+      </div>
+
+      <div class="exam-timer">
+        <span class="status-label">SISA WAKTU</span>
+        <strong class="timer" id="timer">90:00</strong>
+      </div>
+
+      <div class="exam-security">
+        <span class="status-label">KEAMANAN</span>
+        <strong class="violation-badge" id="violationBadge">⚠ 0 / 3</strong>
+      </div>
+
+      <button
+        id="fullscreenBtn"
+        class="icon-btn"
+        title="Layar penuh"
+        aria-label="Layar penuh"
+      >
+        ⛶
+      </button>
+
+    </div>
+
   </header>
 
-  <main class="exam-stage">
-    <div id="startOverlay" class="modal-overlay">
-      <div class="modal-card">
-        <div class="modal-icon">⛶</div>
-        <h2>Siap Memulai?</h2>
-        <p>NEXORA akan meminta mode layar penuh dan memulai timer.</p>
-        <button id="beginExamBtn" class="primary full">Mulai & Masuk Fullscreen</button>
+
+  <!-- INFORMASI PESERTA -->
+  <section class="exam-info-bar">
+
+    <div class="exam-identity-box">
+
+      <div class="identity-icon">
+        👤
       </div>
+
+      <div class="identity-content">
+        <span class="identity-label">PESERTA UJIAN</span>
+        <strong id="examIdentity">Memuat...</strong>
+      </div>
+
     </div>
 
+  </section>
+
+
+  <!-- AREA UTAMA UJIAN -->
+  <main class="exam-stage">
+
+    <!-- OVERLAY MULAI UJIAN -->
+    <div id="startOverlay" class="modal-overlay">
+
+      <div class="modal-card">
+
+        <div class="modal-icon">⛶</div>
+
+        <h2>Siap Memulai?</h2>
+
+        <p>
+          NEXORA akan meminta mode layar penuh
+          dan memulai timer ujian.
+        </p>
+
+        <button
+          id="beginExamBtn"
+          class="primary full"
+        >
+          Mulai &amp; Masuk Fullscreen
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- LOADING -->
     <div id="loading" class="loading-card">
+
       <div class="spinner"></div>
+
       <p>Memuat lembar ujian...</p>
+
     </div>
 
-    <iframe id="formFrame" class="form-frame" title="Google Form Ujian" allow="fullscreen"></iframe>
 
-    <section id="finished" class="finished-card hidden">
+    <!-- GOOGLE FORM -->
+    <iframe
+      id="formFrame"
+      class="form-frame"
+      title="Google Form Ujian"
+      allow="fullscreen"
+    ></iframe>
+
+
+    <!-- SELESAI -->
+    <section
+      id="finished"
+      class="finished-card hidden"
+    >
+
       <div class="success-icon">✓</div>
+
       <h2>Sesi Ujian Berakhir</h2>
-      <p id="finishReason">Waktu ujian telah selesai.</p>
-      <p>Jika Google Form belum terkirim, selesaikan pengiriman jawaban pada halaman Form sebelum menutup perangkat, jika masih tersedia.</p>
-      <button class="primary" onclick="location.href='index.html'">Kembali ke Beranda</button>
+
+      <p id="finishReason">
+        Waktu ujian telah selesai.
+      </p>
+
+      <p>
+        Jika Google Form belum terkirim, selesaikan
+        pengiriman jawaban pada halaman Form sebelum
+        menutup perangkat, jika masih tersedia.
+      </p>
+
+      <button
+        class="primary"
+        onclick="location.href='index.html'"
+      >
+        Kembali ke Beranda
+      </button>
+
     </section>
+
   </main>
 
-  <div id="violationModal" class="modal-overlay hidden">
+
+  <!-- MODAL PERINGATAN KEAMANAN -->
+  <div
+    id="violationModal"
+    class="modal-overlay hidden"
+  >
+
     <div class="modal-card danger-card">
+
       <div class="modal-icon">⚠</div>
+
       <h2>Peringatan Keamanan</h2>
-      <p id="violationText">NEXORA mendeteksi perubahan status halaman.</p>
-      <button id="closeViolation" class="primary full">Saya Mengerti</button>
+
+      <p id="violationText">
+        NEXORA mendeteksi perubahan status halaman.
+      </p>
+
+      <button
+        id="closeViolation"
+        class="primary full"
+      >
+        Saya Mengerti
+      </button>
+
     </div>
+
   </div>
 
+
+  <!-- JAVASCRIPT -->
   <script src="config.js"></script>
   <script src="security.js"></script>
   <script src="exam.js"></script>
+
 </body>
 </html>
+```
