@@ -12,7 +12,7 @@ const NEXORA_CONFIG = {
 
   // Opsional. Jika diisi, NEXORA mengirim log ke Google Apps Script.
   // Jangan masukkan password/API secret di frontend.
-  monitoringEndpoint: "",
+  monitoringEndpoint: "https://script.google.com/macros/s/AKfycbzVhWkrlM91mziTPBa_ExKr286ULHj8R-3IpvRes6x95696k2Wx1G4cwofYenlzohKIYw/exec",
 
   classes: {
     VII: ["VII-A","VII-B","VII-C","VII-D","VII-E","VII-F"],
