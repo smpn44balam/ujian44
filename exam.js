@@ -1,28 +1,65 @@
 (() => {
-  const session = JSON.parse(sessionStorage.getItem("nexoraSession") || "null");
+  const session = JSON.parse(
+    sessionStorage.getItem("nexoraSession") || "null"
+  );
+
   if (!session) {
     location.href = "index.html";
     return;
   }
 
-  const timerEl = document.getElementById("timer");
-  const badge = document.getElementById("violationBadge");
-  const frame = document.getElementById("formFrame");
-  const loading = document.getElementById("loading");
-  const startOverlay = document.getElementById("startOverlay");
-  const finished = document.getElementById("finished");
-  const finishReason = document.getElementById("finishReason");
-  const violationModal = document.getElementById("violationModal");
-  const violationText = document.getElementById("violationText");
+  /*
+   * Jika sesi sudah selesai, jangan izinkan
+   * halaman ujian digunakan kembali.
+   */
+  if (
+    session.status === "FINISHED" ||
+    session.endedAt
+  ) {
+    location.href = "index.html";
+    return;
+  }
 
-  document.getElementById("examIdentity").textContent =
+  const timerEl =
+    document.getElementById("timer");
+
+  const badge =
+    document.getElementById("violationBadge");
+
+  const frame =
+    document.getElementById("formFrame");
+
+  const loading =
+    document.getElementById("loading");
+
+  const startOverlay =
+    document.getElementById("startOverlay");
+
+  const finished =
+    document.getElementById("finished");
+
+  const finishReason =
+    document.getElementById("finishReason");
+
+  const violationModal =
+    document.getElementById("violationModal");
+
+  const violationText =
+    document.getElementById("violationText");
+
+  document.getElementById(
+    "examIdentity"
+  ).textContent =
     `${session.name} • ${session.className} • ${session.subjectName}`;
 
   frame.src = session.formUrl;
 
-  frame.addEventListener("load", () => {
-    loading.classList.add("hidden");
-  });
+  frame.addEventListener(
+    "load",
+    () => {
+      loading.classList.add("hidden");
+    }
+  );
 
   let endAt = 0;
   let heartbeat = null;
@@ -31,15 +68,30 @@
   let examStarted = false;
 
   function save() {
-    session.violations = NexoraSecurity.getCount();
-    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
+    session.violations =
+      NexoraSecurity.getCount();
+
+    sessionStorage.setItem(
+      "nexoraSession",
+      JSON.stringify(session)
+    );
   }
 
   function formatTime(ms) {
-    const total = Math.max(0, Math.ceil(ms / 1000));
+    const total =
+      Math.max(
+        0,
+        Math.ceil(ms / 1000)
+      );
 
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
+    const h =
+      Math.floor(total / 3600);
+
+    const m =
+      Math.floor(
+        (total % 3600) / 60
+      );
+
     const s = total % 60;
 
     return h > 0
@@ -48,38 +100,57 @@
   }
 
   function tick() {
-    if (!examStarted || finishedOnce) return;
+    if (
+      !examStarted ||
+      finishedOnce
+    ) {
+      return;
+    }
 
-    const remaining = endAt - Date.now();
+    const remaining =
+      endAt - Date.now();
 
-    timerEl.textContent = formatTime(remaining);
+    timerEl.textContent =
+      formatTime(remaining);
+
     timerEl.classList.toggle(
       "timer-danger",
-      remaining <= 5 * 60 * 1000
+      remaining <=
+        5 * 60 * 1000
     );
 
     if (remaining <= 0) {
-      finish("Waktu ujian telah selesai.");
+      finish(
+        "Waktu ujian telah selesai."
+      );
     }
   }
 
   function showViolation(v) {
     if (finishedOnce) return;
 
-    badge.textContent = `⚠ ${v.count}`;
+    badge.textContent =
+      `⚠ ${v.count}`;
 
     badge.classList.toggle(
       "danger",
-      v.count >= NEXORA_CONFIG.maxViolations
+      v.count >=
+        NEXORA_CONFIG.maxViolations
     );
 
     violationText.textContent =
-      `Indikator keamanan #${v.count}: ${v.type.replaceAll("_", " ")}. ` +
+      `Indikator keamanan #${v.count}: ` +
+      `${v.type.replaceAll("_", " ")}. ` +
       `Pastikan Anda tetap berada pada halaman ujian.`;
 
-    violationModal.classList.remove("hidden");
+    violationModal.classList.remove(
+      "hidden"
+    );
 
-    if (v.count >= NEXORA_CONFIG.maxViolations) {
+    if (
+      v.count >=
+      NEXORA_CONFIG.maxViolations
+    ) {
       finish(
         "Batas indikator keamanan tercapai. Sesi NEXORA dihentikan."
       );
@@ -88,105 +159,218 @@
 
   document
     .getElementById("closeViolation")
-    .addEventListener("click", () => {
-      violationModal.classList.add("hidden");
-    });
+    .addEventListener(
+      "click",
+      () => {
+        violationModal.classList.add(
+          "hidden"
+        );
+      }
+    );
 
   document
     .getElementById("fullscreenBtn")
-    .addEventListener("click", () => {
-      NexoraSecurity.enterFullscreen();
-    });
+    .addEventListener(
+      "click",
+      () => {
+        if (
+          !finishedOnce
+        ) {
+          NexoraSecurity.enterFullscreen();
+        }
+      }
+    );
 
   document
     .getElementById("beginExamBtn")
-    .addEventListener("click", async () => {
-      if (examStarted || finishedOnce) return;
+    .addEventListener(
+      "click",
+      async () => {
+        if (
+          examStarted ||
+          finishedOnce
+        ) {
+          return;
+        }
 
-      /*
-       * TIMER BARU DIMULAI DI SINI
-       */
-      examStarted = true;
+        examStarted = true;
 
-      session.startedAt = Date.now();
-      session.durationMs = NEXORA_CONFIG.durationMinutes * 60 * 1000;
+        session.startedAt =
+          Date.now();
 
-      endAt = session.startedAt + session.durationMs;
+        session.durationMs =
+          NEXORA_CONFIG.durationMinutes *
+          60 *
+          1000;
 
-      session.status = "ONGOING";
+        endAt =
+          session.startedAt +
+          session.durationMs;
 
-      sessionStorage.setItem(
-        "nexoraSession",
-        JSON.stringify(session)
-      );
+        session.status =
+          "ONGOING";
 
-      startOverlay.classList.add("hidden");
+        sessionStorage.setItem(
+          "nexoraSession",
+          JSON.stringify(session)
+        );
 
-      await NexoraSecurity.enterFullscreen();
+        startOverlay.classList.add(
+          "hidden"
+        );
 
-      NexoraSecurity.arm();
+        await NexoraSecurity.enterFullscreen();
 
-      NexoraSecurity.sendMonitoring("start", {
-        formUrl: session.formUrl,
-        startedAt: session.startedAt,
-        durationMs: session.durationMs
-      });
+        NexoraSecurity.arm();
 
-      heartbeat = setInterval(() => {
-        NexoraSecurity.sendMonitoring("heartbeat", {
-          remainingMs: Math.max(0, endAt - Date.now()),
-          violations: NexoraSecurity.getCount()
-        });
-      }, 20000);
+        NexoraSecurity.sendMonitoring(
+          "start",
+          {
+            formUrl:
+              session.formUrl,
+            startedAt:
+              session.startedAt,
+            durationMs:
+              session.durationMs
+          }
+        );
 
-      timerInterval = setInterval(tick, 500);
+        heartbeat =
+          setInterval(
+            () => {
+              if (
+                finishedOnce
+              ) {
+                return;
+              }
 
-      tick();
-    });
+              NexoraSecurity.sendMonitoring(
+                "heartbeat",
+                {
+                  remainingMs:
+                    Math.max(
+                      0,
+                      endAt -
+                        Date.now()
+                    ),
+                  violations:
+                    NexoraSecurity.getCount()
+                }
+              );
+            },
+            20000
+          );
 
-  NexoraSecurity.setCallback(showViolation);
+        timerInterval =
+          setInterval(
+            tick,
+            500
+          );
+
+        tick();
+      }
+    );
+
+  NexoraSecurity.setCallback(
+    showViolation
+  );
 
   function finish(reason) {
-    if (finishedOnce) return;
+    if (finishedOnce) {
+      return;
+    }
 
     finishedOnce = true;
 
     /*
-     * HENTIKAN TIMER DAN HEARTBEAT
+     * 1. Hentikan timer.
      */
-    if (heartbeat) {
-      clearInterval(heartbeat);
-      heartbeat = null;
-    }
-
     if (timerInterval) {
-      clearInterval(timerInterval);
+      clearInterval(
+        timerInterval
+      );
       timerInterval = null;
     }
 
     /*
-     * MATIKAN MONITORING KEAMANAN
-     * agar blur/fullscreen setelah selesai
-     * tidak dihitung sebagai pelanggaran baru.
+     * 2. Hentikan heartbeat.
+     */
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+      heartbeat = null;
+    }
+
+    /*
+     * 3. Matikan security.
      */
     NexoraSecurity.disarm();
 
-    session.endedAt = Date.now();
-    session.status = "FINISHED";
-    session.endReason = reason;
+    /*
+     * 4. Tandai sesi selesai.
+     */
+    session.endedAt =
+      Date.now();
+
+    session.status =
+      "FINISHED";
+
+    session.endReason =
+      reason;
 
     save();
 
-    NexoraSecurity.sendMonitoring("finish", {
-      reason,
-      violations: NexoraSecurity.getCount()
-    });
+    /*
+     * 5. Kirim finish ke server.
+     */
+    NexoraSecurity.sendMonitoring(
+      "finish",
+      {
+        reason,
+        violations:
+          NexoraSecurity.getCount()
+      }
+    );
 
-    document.exitFullscreen?.().catch?.(() => {});
+    /*
+     * 6. Putus akses ke Google Form.
+     *
+     * Form dibuat blank sehingga
+     * siswa tidak dapat melanjutkan
+     * pengerjaan setelah sesi dihentikan.
+     */
+    frame.src =
+      "about:blank";
 
-    frame.classList.add("hidden");
-    finished.classList.remove("hidden");
+    frame.classList.add(
+      "hidden"
+    );
 
-    finishReason.textContent = reason;
+    frame.style.pointerEvents =
+      "none";
+
+    /*
+     * 7. Tutup fullscreen.
+     */
+    document.exitFullscreen?.()
+      .catch?.(() => {});
+
+    /*
+     * 8. Tutup modal pelanggaran.
+     */
+    violationModal?.classList.add(
+      "hidden"
+    );
+
+    /*
+     * 9. Tampilkan layar selesai.
+     */
+    finished.classList.remove(
+      "hidden"
+    );
+
+    finishReason.textContent =
+      reason;
   }
 })();
