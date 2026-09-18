@@ -1,57 +1,622 @@
-```html
 <!doctype html>
 <html lang="id">
+
 <head>
+
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  >
+
+  <meta
+    name="theme-color"
+    content="#071a38"
+  >
+
   <title>Ujian — NEXORA EXAM</title>
-  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+
+  <!-- =====================================================
+       STYLE KHUSUS HALAMAN UJIAN
+       ===================================================== -->
+
+  <style>
+
+    /* ===================================================
+       BODY HALAMAN UJIAN
+       =================================================== */
+
+    body.exam-page {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef4fb;
+      color: #172033;
+    }
+
+
+    /* ===================================================
+       AREA UJIAN
+       =================================================== */
+
+    .exam-stage {
+      position: relative;
+      min-height: calc(100vh - 123px);
+    }
+
+
+    /* ===================================================
+       OVERLAY AWAL UJIAN
+       =================================================== */
+
+    #startOverlay {
+      position: fixed !important;
+
+      inset: 0 !important;
+
+      z-index: 1000 !important;
+
+      width: 100vw !important;
+      height: 100vh !important;
+
+      display: flex !important;
+
+      align-items: center !important;
+      justify-content: center !important;
+
+      padding: 24px !important;
+
+      /*
+       * PENTING:
+       * Tidak menggunakan backdrop-filter.
+       * Google Form di belakang ditutup penuh.
+       */
+
+      background:
+        linear-gradient(
+          135deg,
+          #06152f 0%,
+          #082451 50%,
+          #061a3a 100%
+        ) !important;
+
+      color: #ffffff !important;
+
+      overflow-y: auto !important;
+    }
+
+
+    /*
+     * Kartu "Siap Memulai?"
+     */
+
+    #startOverlay .modal-card {
+
+      width: min(440px, 100%) !important;
+
+      padding: 34px 32px !important;
+
+      border: 1px solid rgba(96, 165, 250, 0.32) !important;
+
+      border-radius: 18px !important;
+
+      background:
+        linear-gradient(
+          145deg,
+          #0d3568,
+          #082850
+        ) !important;
+
+      color: #ffffff !important;
+
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+
+      text-align: center !important;
+
+      position: relative !important;
+
+      overflow: hidden !important;
+    }
+
+
+    /*
+     * Garis biru di bagian atas kartu
+     */
+
+    #startOverlay .modal-card::before {
+
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+      left: 0;
+      right: 0;
+
+      height: 4px;
+
+      background:
+        linear-gradient(
+          90deg,
+          #2563eb,
+          #38bdf8
+        );
+    }
+
+
+    /*
+     * Icon fullscreen
+     */
+
+    #startOverlay .modal-icon {
+
+      width: 54px;
+      height: 54px;
+
+      margin: 4px auto 18px;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      border: 1px solid rgba(147, 197, 253, 0.30);
+
+      border-radius: 14px;
+
+      background:
+        rgba(37, 99, 235, 0.20);
+
+      color: #93c5fd;
+
+      font-size: 25px;
+
+      box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.18);
+    }
+
+
+    /*
+     * Judul
+     */
+
+    #startOverlay .modal-card h2 {
+
+      margin: 0 0 12px !important;
+
+      color: #ffffff !important;
+
+      font-size: 26px !important;
+
+      line-height: 1.2 !important;
+
+      font-weight: 800 !important;
+
+      letter-spacing: -0.02em !important;
+    }
+
+
+    /*
+     * Deskripsi
+     */
+
+    #startOverlay .modal-card p {
+
+      max-width: 350px;
+
+      margin: 0 auto 25px !important;
+
+      color: #b9d2ef !important;
+
+      font-size: 13px !important;
+
+      line-height: 1.65 !important;
+    }
+
+
+    /*
+     * Tombol mulai
+     */
+
+    #startOverlay #beginExamBtn {
+
+      width: 100% !important;
+
+      min-height: 50px !important;
+
+      padding: 0 18px !important;
+
+      border: 0 !important;
+
+      border-radius: 10px !important;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #0ea5e9
+        ) !important;
+
+      color: #ffffff !important;
+
+      font-size: 14px !important;
+
+      font-weight: 700 !important;
+
+      cursor: pointer !important;
+
+      box-shadow:
+        0 12px 28px rgba(37, 99, 235, 0.30) !important;
+
+      transition:
+        transform 0.15s ease,
+        filter 0.15s ease,
+        box-shadow 0.15s ease !important;
+    }
+
+
+    #startOverlay #beginExamBtn:hover {
+
+      filter: brightness(1.08);
+
+      transform: translateY(-1px);
+
+      box-shadow:
+        0 15px 32px rgba(37, 99, 235, 0.38);
+    }
+
+
+    #startOverlay #beginExamBtn:active {
+
+      transform: translateY(0);
+    }
+
+
+    /* ===================================================
+       LOADING
+       =================================================== */
+
+    #loading {
+
+      width: min(1100px, 94%);
+
+      margin: 18px auto;
+
+      padding: 40px 20px;
+
+      text-align: center;
+
+      color: #52657d;
+    }
+
+
+    /* ===================================================
+       GOOGLE FORM
+       =================================================== */
+
+    #formFrame {
+
+      display: block;
+
+      width: min(1100px, 94%);
+
+      min-height: calc(100vh - 150px);
+
+      margin: 18px auto;
+
+      border: 1px solid #dbe5f0;
+
+      border-radius: 14px;
+
+      background: #ffffff;
+
+      box-shadow:
+        0 8px 28px rgba(31, 55, 86, 0.08);
+    }
+
+
+    /* ===================================================
+       FINISHED
+       =================================================== */
+
+    #finished {
+
+      width: min(520px, 92%);
+
+      margin: 50px auto;
+
+      padding: 30px;
+
+      border-radius: 16px;
+
+      background: #ffffff;
+
+      color: #172033;
+
+      text-align: center;
+
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.16);
+    }
+
+
+    /* ===================================================
+       VIOLATION MODAL
+       =================================================== */
+
+    #violationModal {
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 2000;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
+
+      background:
+        rgba(3, 16, 36, 0.92);
+    }
+
+
+    #violationModal.hidden {
+
+      display: none !important;
+    }
+
+
+    #violationModal .modal-card {
+
+      width: min(440px, 100%);
+
+      padding: 30px;
+
+      border-radius: 16px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #0d3568,
+          #082850
+        );
+
+      color: #ffffff;
+
+      text-align: center;
+
+      border: 1px solid rgba(96, 165, 250, 0.30);
+
+      box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.45);
+    }
+
+
+    #violationModal .modal-card h2 {
+
+      color: #ffffff;
+
+      margin: 0 0 12px;
+    }
+
+
+    #violationModal .modal-card p {
+
+      color: #b9d2ef;
+
+      line-height: 1.6;
+    }
+
+
+    /* ===================================================
+       MOBILE
+       =================================================== */
+
+    @media (max-width: 600px) {
+
+      .exam-stage {
+        min-height: calc(100vh - 180px);
+      }
+
+
+      #startOverlay {
+
+        padding: 18px !important;
+      }
+
+
+      #startOverlay .modal-card {
+
+        width: 100% !important;
+
+        padding: 30px 22px !important;
+
+        border-radius: 16px !important;
+      }
+
+
+      #startOverlay .modal-icon {
+
+        width: 50px;
+        height: 50px;
+
+        margin-bottom: 16px;
+
+        font-size: 22px;
+      }
+
+
+      #startOverlay .modal-card h2 {
+
+        font-size: 23px !important;
+      }
+
+
+      #startOverlay .modal-card p {
+
+        font-size: 12px !important;
+
+        line-height: 1.6 !important;
+      }
+
+
+      #startOverlay #beginExamBtn {
+
+        min-height: 48px !important;
+
+        font-size: 13px !important;
+      }
+
+
+      #formFrame {
+
+        width: 96%;
+
+        margin: 10px auto;
+
+        border-radius: 10px;
+      }
+
+
+      #finished {
+
+        width: 92%;
+
+        padding: 24px;
+      }
+    }
+
+
+    @media (max-width: 380px) {
+
+      #startOverlay .modal-card {
+
+        padding: 26px 18px !important;
+      }
+
+
+      #startOverlay .modal-card h2 {
+
+        font-size: 21px !important;
+      }
+    }
+
+  </style>
+
 </head>
 
-<body class="exam-body">
 
-  <!-- HEADER NEXORA EXAM -->
+<body class="exam-page exam-body">
+
+
+  <!-- =====================================================
+       HEADER NEXORA EXAM
+       ===================================================== -->
+
   <header class="exam-topbar">
 
     <div class="exam-brand">
 
       <div class="school-logo">
+
         <img
           src="logo-sekolah.png"
           alt="Logo SMP Negeri 44 Bandar Lampung"
-          onerror="this.style.display='none'; this.parentElement.classList.add('logo-placeholder');"
+          onerror="
+            this.style.display='none';
+            this.parentElement.classList.add('logo-placeholder');
+          "
         >
-        <span class="logo-fallback">44</span>
+
+        <span class="logo-fallback">
+          44
+        </span>
+
       </div>
 
+
       <div class="brand-text">
-        <strong>NEXORA EXAM</strong>
-        <small>SMP NEGERI 44 BANDAR LAMPUNG</small>
+
+        <strong>
+          NEXORA EXAM
+        </strong>
+
+        <small>
+          SMP NEGERI 44 BANDAR LAMPUNG
+        </small>
+
       </div>
 
     </div>
 
+
+    <!-- ===================================================
+         STATUS UJIAN
+         =================================================== -->
+
     <div class="exam-status">
 
       <div class="exam-clock">
-        <span class="status-label">JAM</span>
-        <strong id="realtimeClock">--:--:--</strong>
+
+        <span class="status-label">
+          JAM
+        </span>
+
+        <strong id="realtimeClock">
+          --:--:--
+        </strong>
+
       </div>
+
 
       <div class="exam-timer">
-        <span class="status-label">SISA WAKTU</span>
-        <strong class="timer" id="timer">90:00</strong>
+
+        <span class="status-label">
+          SISA WAKTU
+        </span>
+
+        <strong
+          class="timer"
+          id="timer"
+        >
+          90:00
+        </strong>
+
       </div>
 
+
       <div class="exam-security">
-        <span class="status-label">KEAMANAN</span>
-        <strong class="violation-badge" id="violationBadge">⚠ 0 / 3</strong>
+
+        <span class="status-label">
+          KEAMANAN
+        </span>
+
+        <strong
+          class="violation-badge"
+          id="violationBadge"
+        >
+          ⚠ 0 / 3
+        </strong>
+
       </div>
+
 
       <button
         id="fullscreenBtn"
-        class="icon-btn"
+        class="fullscreen-btn icon-btn"
+        type="button"
         title="Layar penuh"
         aria-label="Layar penuh"
       >
@@ -63,7 +628,10 @@
   </header>
 
 
-  <!-- INFORMASI PESERTA -->
+  <!-- =====================================================
+       INFORMASI PESERTA
+       ===================================================== -->
+
   <section class="exam-info-bar">
 
     <div class="exam-identity-box">
@@ -72,9 +640,17 @@
         👤
       </div>
 
+
       <div class="identity-content">
-        <span class="identity-label">PESERTA UJIAN</span>
-        <strong id="examIdentity">Memuat...</strong>
+
+        <span class="identity-label">
+          PESERTA UJIAN
+        </span>
+
+        <strong id="examIdentity">
+          Memuat...
+        </strong>
+
       </div>
 
     </div>
@@ -82,26 +658,45 @@
   </section>
 
 
-  <!-- AREA UTAMA UJIAN -->
+  <!-- =====================================================
+       AREA UTAMA UJIAN
+       ===================================================== -->
+
   <main class="exam-stage">
 
-    <!-- OVERLAY MULAI UJIAN -->
-    <div id="startOverlay" class="modal-overlay">
+
+    <!-- ===================================================
+         OVERLAY MULAI UJIAN
+         =================================================== -->
+
+    <div
+      id="startOverlay"
+      class="modal-overlay"
+    >
 
       <div class="modal-card">
 
-        <div class="modal-icon">⛶</div>
+        <div class="modal-icon">
+          ⛶
+        </div>
 
-        <h2>Siap Memulai?</h2>
+
+        <h2>
+          Siap Memulai?
+        </h2>
+
 
         <p>
           NEXORA akan meminta mode layar penuh
           dan memulai timer ujian.
+          Pastikan Anda siap sebelum melanjutkan.
         </p>
+
 
         <button
           id="beginExamBtn"
           class="primary full"
+          type="button"
         >
           Mulai &amp; Masuk Fullscreen
         </button>
@@ -111,17 +706,28 @@
     </div>
 
 
-    <!-- LOADING -->
-    <div id="loading" class="loading-card">
+    <!-- ===================================================
+         LOADING
+         =================================================== -->
+
+    <div
+      id="loading"
+      class="loading-card"
+    >
 
       <div class="spinner"></div>
 
-      <p>Memuat lembar ujian...</p>
+      <p>
+        Memuat lembar ujian...
+      </p>
 
     </div>
 
 
-    <!-- GOOGLE FORM -->
+    <!-- ===================================================
+         GOOGLE FORM
+         =================================================== -->
+
     <iframe
       id="formFrame"
       class="form-frame"
@@ -130,28 +736,41 @@
     ></iframe>
 
 
-    <!-- SELESAI -->
+    <!-- ===================================================
+         SELESAI
+         =================================================== -->
+
     <section
       id="finished"
       class="finished-card hidden"
     >
 
-      <div class="success-icon">✓</div>
+      <div class="success-icon">
+        ✓
+      </div>
 
-      <h2>Sesi Ujian Berakhir</h2>
+
+      <h2>
+        Sesi Ujian Berakhir
+      </h2>
+
 
       <p id="finishReason">
         Waktu ujian telah selesai.
       </p>
 
+
       <p>
-        Jika Google Form belum terkirim, selesaikan
-        pengiriman jawaban pada halaman Form sebelum
-        menutup perangkat, jika masih tersedia.
+        Jika Google Form belum terkirim,
+        selesaikan pengiriman jawaban pada
+        halaman Form sebelum menutup perangkat,
+        jika masih tersedia.
       </p>
+
 
       <button
         class="primary"
+        type="button"
         onclick="location.href='index.html'"
       >
         Kembali ke Beranda
@@ -162,7 +781,10 @@
   </main>
 
 
-  <!-- MODAL PERINGATAN KEAMANAN -->
+  <!-- =====================================================
+       MODAL PERINGATAN KEAMANAN
+       ===================================================== -->
+
   <div
     id="violationModal"
     class="modal-overlay hidden"
@@ -170,17 +792,25 @@
 
     <div class="modal-card danger-card">
 
-      <div class="modal-icon">⚠</div>
+      <div class="modal-icon">
+        ⚠
+      </div>
 
-      <h2>Peringatan Keamanan</h2>
+
+      <h2>
+        Peringatan Keamanan
+      </h2>
+
 
       <p id="violationText">
         NEXORA mendeteksi perubahan status halaman.
       </p>
 
+
       <button
         id="closeViolation"
         class="primary full"
+        type="button"
       >
         Saya Mengerti
       </button>
@@ -190,11 +820,14 @@
   </div>
 
 
-  <!-- JAVASCRIPT -->
+  <!-- =====================================================
+       JAVASCRIPT
+       ===================================================== -->
+
   <script src="config.js"></script>
   <script src="security.js"></script>
   <script src="exam.js"></script>
 
 </body>
+
 </html>
-```
