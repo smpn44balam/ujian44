@@ -1,17 +1,16 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
 
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
 
-  <meta name="theme-color" content="#06152f">
+  <title>Pemeriksaan Ujian — NEXORA EXAM</title>
 
-  <title>Pemeriksaan Data dan Sistem — NEXORA EXAM</title>
-
+  <!-- MASTER CSS NEXORA EXAM -->
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -19,9 +18,9 @@
 
   <main class="shell narrow">
 
-    <!-- =========================
+    <!-- =====================================================
          BRAND / HEADER
-    ========================== -->
+         ===================================================== -->
     <section class="brand-card compact">
 
       <div class="brand-mark">
@@ -51,11 +50,14 @@
     </section>
 
 
-    <!-- =========================
-         PEMERIKSAAN
-    ========================== -->
+    <!-- =====================================================
+         MAIN CARD
+         ===================================================== -->
     <section class="card">
 
+      <!-- ===================================================
+           STEP 2
+           =================================================== -->
       <div class="section-title">
 
         <span class="section-number">
@@ -77,41 +79,79 @@
       </div>
 
 
-      <!-- =========================
+      <!-- ===================================================
            DATA PESERTA
-      ========================== -->
+           =================================================== -->
       <div class="confirmation-section">
 
         <div class="subsection-title">
+
           <span class="subsection-line"></span>
 
           <div>
-            <strong>DATA PESERTA</strong>
-            <small>Pastikan informasi berikut sudah benar.</small>
+            <strong>
+              DATA PESERTA
+            </strong>
+
+            <small>
+              Pastikan informasi berikut sudah benar.
+            </small>
           </div>
+
         </div>
 
 
         <div class="identity-grid">
 
           <div class="identity-item">
-            <small>Nama</small>
-            <strong id="name"></strong>
+
+            <small>
+              Nama
+            </small>
+
+            <strong id="name">
+              -
+            </strong>
+
           </div>
 
-          <div class="identity-item">
-            <small>Kelas</small>
-            <strong id="className"></strong>
-          </div>
 
           <div class="identity-item">
-            <small>Tingkat</small>
-            <strong id="level"></strong>
+
+            <small>
+              Kelas
+            </small>
+
+            <strong id="className">
+              -
+            </strong>
+
           </div>
 
+
           <div class="identity-item">
-            <small>Mata Pelajaran</small>
-            <strong id="subject"></strong>
+
+            <small>
+              Tingkat
+            </small>
+
+            <strong id="level">
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="identity-item">
+
+            <small>
+              Mata Pelajaran
+            </small>
+
+            <strong id="subject">
+              -
+            </strong>
+
           </div>
 
         </div>
@@ -119,78 +159,139 @@
       </div>
 
 
-      <!-- =========================
+      <!-- ===================================================
            PEMERIKSAAN SISTEM
-      ========================== -->
+           =================================================== -->
       <div class="confirmation-section system-check-section">
 
         <div class="subsection-title">
+
           <span class="subsection-line"></span>
 
           <div>
-            <strong>PEMERIKSAAN SISTEM</strong>
-            <small>Fitur yang akan digunakan selama ujian.</small>
+            <strong>
+              PEMERIKSAAN SISTEM
+            </strong>
+
+            <small>
+              Fitur yang akan digunakan selama ujian.
+            </small>
           </div>
+
         </div>
 
 
         <div class="system-check-grid">
 
+
+          <!-- CHECK 1 -->
           <div class="system-check-item">
-            <span class="check-icon">✓</span>
+
+            <span class="check-icon">
+              ✓
+            </span>
 
             <div>
-              <strong>Mode layar penuh</strong>
-              <small>Layar ujian akan menggunakan mode penuh.</small>
+
+              <strong>
+                Mode layar penuh
+              </strong>
+
+              <small>
+                Layar ujian akan menggunakan mode penuh.
+              </small>
+
             </div>
+
           </div>
 
 
+          <!-- CHECK 2 -->
           <div class="system-check-item">
-            <span class="check-icon">✓</span>
+
+            <span class="check-icon">
+              ✓
+            </span>
 
             <div>
-              <strong>Timer ujian</strong>
-              <small>Waktu pengerjaan akan dihitung selama ujian.</small>
+
+              <strong>
+                Timer ujian
+              </strong>
+
+              <small>
+                Waktu pengerjaan akan dihitung selama ujian.
+              </small>
+
             </div>
+
           </div>
 
 
+          <!-- CHECK 3 -->
           <div class="system-check-item">
-            <span class="check-icon">✓</span>
+
+            <span class="check-icon">
+              ✓
+            </span>
 
             <div>
-              <strong>Pencatatan indikator keamanan</strong>
-              <small>Aktivitas browser yang relevan akan dicatat.</small>
+
+              <strong>
+                Pencatatan indikator keamanan
+              </strong>
+
+              <small>
+                Aktivitas browser yang relevan akan dicatat.
+              </small>
+
             </div>
+
           </div>
 
 
+          <!-- CHECK 4 -->
           <div class="system-check-item">
-            <span class="check-icon">✓</span>
+
+            <span class="check-icon">
+              ✓
+            </span>
 
             <div>
-              <strong>Google Form</strong>
-              <small>Digunakan sebagai lembar jawaban ujian.</small>
+
+              <strong>
+                Google Form
+              </strong>
+
+              <small>
+                Digunakan sebagai lembar jawaban ujian.
+              </small>
+
             </div>
+
           </div>
+
 
         </div>
 
       </div>
 
 
-      <!-- =========================
-           PERINGATAN
-      ========================== -->
+      <!-- ===================================================
+           PERINGATAN SEBELUM MULAI
+           =================================================== -->
       <div class="notice warning">
 
         <div class="notice-heading">
-          <span class="notice-icon">!</span>
+
+          <span class="notice-icon">
+            !
+          </span>
 
           <strong>
             Sebelum mulai
           </strong>
+
         </div>
 
         <p>
@@ -202,9 +303,9 @@
       </div>
 
 
-      <!-- =========================
-           ACTION
-      ========================== -->
+      <!-- ===================================================
+           ACTION BUTTON
+           =================================================== -->
       <div class="actions">
 
         <button
@@ -214,6 +315,7 @@
         >
           ← Kembali
         </button>
+
 
         <button
           class="primary"
@@ -226,6 +328,9 @@
       </div>
 
 
+      <!-- ===================================================
+           ERROR MESSAGE
+           =================================================== -->
       <p
         id="confirmError"
         class="error hidden"
@@ -234,12 +339,20 @@
     </section>
 
 
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
     <p class="page-caption">
       NEXORA EXAM · SMP NEGERI 44 BANDAR LAMPUNG · 2026
     </p>
 
   </main>
 
+
+  <!-- =======================================================
+       JAVASCRIPT
+       Jangan mengubah urutan dan fungsi file yang sudah ada.
+       ======================================================= -->
 
   <script src="config.js"></script>
   <script src="exam-config.js"></script>
