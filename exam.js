@@ -20,7 +20,7 @@
    * - Penalty pelanggaran:
    *   #1 = 1 menit 30 detik
    *   #2 = 5 menit
-   *   #3 = ujian dihentikan
+   *   #3 = tunggu 60 detik, lalu wajib login kembali
    * - Penalty tetap berjalan setelah refresh
    * - Timer ujian tetap berjalan selama penalty
    * - Google Form diblokir selama penalty
@@ -120,6 +120,8 @@
 
   let penaltyActive = false;
 
+  let thirdViolationInterval = null;
+
   /*
    * =========================================================
    * PENALTY CONFIG
@@ -131,6 +133,9 @@
 
   const SECOND_PENALTY_MS =
     5 * 60 * 1000;
+
+  const THIRD_RELOGIN_WAIT_MS =
+    60 * 1000;
 
   /*
    * =========================================================
@@ -209,11 +214,6 @@
    * =========================================================
    * FORMAT WAKTU PENALTI
    * =========================================================
-   *
-   * Contoh:
-   * 90 detik -> "1 menit 30 detik"
-   * 60 detik -> "1 menit"
-   * 5 menit  -> "5 menit"
    */
 
   function formatPenaltyTime(ms) {
@@ -407,11 +407,6 @@
       "hidden"
     );
 
-    /*
-     * Selama penalty berjalan,
-     * tombol "Saya Mengerti" tidak boleh
-     * menutup modal.
-     */
     if (closeViolation) {
       closeViolation.textContent =
         "Menunggu Penalti...";
@@ -466,6 +461,10 @@
    */
 
   function restorePenalty() {
+    if (restoreThirdReloginLock()) {
+      return;
+    }
+
     const remaining =
       getPenaltyRemaining();
 
@@ -530,6 +529,328 @@
 
   /*
    * =========================================================
+   * PELANGGARAN KE-3 — RELOGIN LOCK
+   * =========================================================
+   *
+   * Alur:
+   *
+   * 1. Pelanggaran #3 terdeteksi.
+   * 2. Form langsung dikunci.
+   * 3. Siswa melihat timer 60 detik.
+   * 4. Setelah 60 detik, sesi ujian ditutup.
+   * 5. Siswa diarahkan kembali ke halaman login.
+   * 6. Login kembali menggunakan identitas seperti awal.
+   *
+   * Data sesi penting tetap dipertahankan:
+   * - startedAt
+   * - durationMs
+   * - violations
+   * - formUrl
+   * - identitas siswa
+   *
+   * Sehingga login ulang tidak membuat timer kembali
+   * ke awal dan jumlah pelanggaran tidak kembali ke 0.
+   * =========================================================
+   */
+
+  function getThirdReloginRemaining() {
+    if (!session.thirdReloginUntil) {
+      return 0;
+    }
+
+    return Math.max(
+      0,
+      Number(session.thirdReloginUntil) -
+        Date.now()
+    );
+  }
+
+  function updateThirdReloginMessage(
+    remainingMs
+  ) {
+    const info =
+      session.currentViolationInfo;
+
+    const title =
+      info?.title ||
+      "Pelanggaran keamanan terdeteksi.";
+
+    const message =
+      info?.message ||
+      "Sistem mendeteksi aktivitas yang tidak diperbolehkan selama ujian.";
+
+    violationText.innerHTML = `
+      <strong>Pelanggaran ke-3 Terdeteksi</strong>
+      <br><br>
+      ${title}
+      <br><br>
+      ${message}
+      <br><br>
+      <strong>
+        Ujian sementara dikunci.
+      </strong>
+      <br>
+      Silakan tetap berada di tempat dan tunggu sampai proses ini selesai.
+      <br><br>
+      <strong>
+        Sesi akan ditutup dalam:
+        ${formatPenaltyTime(remainingMs)}
+      </strong>
+      <br><br>
+      Setelah waktu tunggu selesai, kamu akan dikembalikan ke halaman login.
+      Untuk masuk kembali ke ujian, kamu harus login lagi seperti sebelumnya.
+    `;
+  }
+
+  function redirectToRelogin() {
+    if (thirdViolationInterval) {
+      clearInterval(
+        thirdViolationInterval
+      );
+
+      thirdViolationInterval = null;
+    }
+
+    /*
+     * Status ini BUKAN FINISHED.
+     * Tujuannya agar sesi tetap dapat dilanjutkan
+     * setelah login ulang.
+     */
+    session.status =
+      "RELOGIN_REQUIRED";
+
+    session.reloginRequired =
+      true;
+
+    session.reloginAt =
+      Date.now();
+
+    delete session.thirdReloginUntil;
+
+    session.currentViolationInfo =
+      null;
+
+    sessionStorage.setItem(
+      "nexoraSession",
+      JSON.stringify(session)
+    );
+
+    /*
+     * Matikan monitoring halaman ujian.
+     */
+    NexoraSecurity.disarm();
+
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+
+      heartbeat = null;
+    }
+
+    if (timerInterval) {
+      clearInterval(
+        timerInterval
+      );
+
+      timerInterval = null;
+    }
+
+    if (penaltyInterval) {
+      clearInterval(
+        penaltyInterval
+      );
+
+      penaltyInterval = null;
+    }
+
+    /*
+     * Putus Google Form agar tidak dapat
+     * dikerjakan sebelum login kembali.
+     */
+    frame.src =
+      "about:blank";
+
+    frame.classList.add(
+      "hidden"
+    );
+
+    frame.style.pointerEvents =
+      "none";
+
+    /*
+     * Keluar dari fullscreen.
+     */
+    try {
+      const exitPromise =
+        document.exitFullscreen?.();
+
+      exitPromise?.catch?.(
+        () => {}
+      );
+    } catch {}
+
+    /*
+     * Catat bahwa siswa dikunci dan
+     * diarahkan untuk login ulang.
+     */
+    NexoraSecurity.sendMonitoring(
+      "relogin_required",
+      {
+        reason:
+          "Pelanggaran ke-3",
+
+        violations:
+          NexoraSecurity.getCount(),
+
+        remainingMs:
+          Math.max(
+            0,
+            endAt - Date.now()
+          )
+      }
+    );
+
+    /*
+     * Jangan tampilkan layar FINISHED.
+     * Langsung kembali ke halaman login.
+     */
+    window.location.replace(
+      "index.html"
+    );
+  }
+
+  function startThirdReloginLock() {
+    if (finishedOnce) {
+      return;
+    }
+
+    session.thirdReloginUntil =
+      Date.now() +
+      THIRD_RELOGIN_WAIT_MS;
+
+    session.reloginRequired =
+      false;
+
+    sessionStorage.setItem(
+      "nexoraSession",
+      JSON.stringify(session)
+    );
+
+    blockForm();
+
+    violationModal.classList.remove(
+      "hidden"
+    );
+
+    if (closeViolation) {
+      closeViolation.textContent =
+        "Menunggu 60 Detik...";
+
+      closeViolation.disabled =
+        true;
+    }
+
+    if (thirdViolationInterval) {
+      clearInterval(
+        thirdViolationInterval
+      );
+    }
+
+    const update = () => {
+      if (finishedOnce) {
+        return;
+      }
+
+      const remaining =
+        getThirdReloginRemaining();
+
+      if (remaining <= 0) {
+        updateThirdReloginMessage(0);
+
+        redirectToRelogin();
+
+        return;
+      }
+
+      updateThirdReloginMessage(
+        remaining
+      );
+
+      /*
+       * Timer ujian tetap dihitung dari startedAt,
+       * sehingga waktu 60 detik ini tetap mengurangi
+       * waktu ujian sebagaimana penalty sebelumnya.
+       */
+      tick();
+    };
+
+    update();
+
+    thirdViolationInterval =
+      setInterval(
+        update,
+        500
+      );
+  }
+
+  function restoreThirdReloginLock() {
+    /*
+     * Jika status ini ditemukan setelah refresh,
+     * jangan langsung membuka Google Form.
+     */
+    if (!session.thirdReloginUntil) {
+      return false;
+    }
+
+    blockForm();
+
+    violationModal.classList.remove(
+      "hidden"
+    );
+
+    if (thirdViolationInterval) {
+      clearInterval(
+        thirdViolationInterval
+      );
+    }
+
+    const update = () => {
+      if (finishedOnce) {
+        return;
+      }
+
+      const remaining =
+        getThirdReloginRemaining();
+
+      if (remaining <= 0) {
+        updateThirdReloginMessage(0);
+
+        redirectToRelogin();
+
+        return;
+      }
+
+      updateThirdReloginMessage(
+        remaining
+      );
+
+      tick();
+    };
+
+    update();
+
+    thirdViolationInterval =
+      setInterval(
+        update,
+        500
+      );
+
+    return true;
+  }
+
+  /*
+   * =========================================================
    * VIOLATION
    * =========================================================
    */
@@ -573,21 +894,17 @@
      * PELANGGARAN KE-3
      * =====================================================
      *
-     * Tidak diberikan penalty.
-     * Sesi langsung dihentikan.
+     * Siswa tidak langsung dikeluarkan.
+     * Sistem memberikan waktu tunggu 60 detik.
+     * Setelah itu halaman ujian ditutup dan siswa
+     * wajib login kembali.
      */
 
     if (
       v.count >=
       NEXORA_CONFIG.maxViolations
     ) {
-      violationModal.classList.add(
-        "hidden"
-      );
-
-      finish(
-        "Batas 3 indikator keamanan tercapai. Sesi NEXORA dihentikan."
-      );
+      startThirdReloginLock();
 
       return;
     }
@@ -759,6 +1076,12 @@
 
     delete session.penaltyUntil;
 
+    delete session.thirdReloginUntil;
+
+    delete session.reloginRequired;
+
+    delete session.reloginAt;
+
     delete session.currentViolationInfo;
 
     sessionStorage.setItem(
@@ -769,6 +1092,13 @@
     startOverlay.classList.add(
       "hidden"
     );
+
+    /*
+     * Inisialisasi audio dari user gesture.
+     * Browser tidak mengizinkan website mengatur
+     * volume perangkat secara paksa.
+     */
+    NexoraSecurity.initializeAudio?.();
 
     await NexoraSecurity.enterFullscreen();
 
@@ -934,6 +1264,17 @@
     }
 
     /*
+     * 3b. Hentikan timer pelanggaran ke-3.
+     */
+    if (thirdViolationInterval) {
+      clearInterval(
+        thirdViolationInterval
+      );
+
+      thirdViolationInterval = null;
+    }
+
+    /*
      * 4. Matikan security.
      */
     NexoraSecurity.disarm();
@@ -942,6 +1283,12 @@
      * 5. Hapus penalty.
      */
     delete session.penaltyUntil;
+
+    delete session.thirdReloginUntil;
+
+    delete session.reloginRequired;
+
+    delete session.reloginAt;
 
     session.currentViolationInfo =
       null;
