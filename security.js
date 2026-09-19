@@ -1,35 +1,172 @@
 window.NexoraSecurity = (() => {
   /*
    * =========================================================
-   * NEXORA EXAM — SECURITY ENGINE
+   * NEXORA SECURITY ENGINE
    * SMP NEGERI 44 BANDAR LAMPUNG
    * =========================================================
    *
-   * Catatan:
-   * - Kode teknis pelanggaran tetap disimpan untuk pengawas.
-   * - Bahasa yang ditampilkan kepada siswa dibuat sederhana.
-   * - WINDOW_BLUR dan VISIBILITY_HIDDEN tetap dicatat terpisah
-   *   di monitoring, tetapi ditampilkan kepada siswa sebagai
-   *   satu jenis kejadian: "Meninggalkan halaman ujian".
-   * - Jumlah pelanggaran dipulihkan dari sessionStorage agar
-   *   refresh halaman tidak mengembalikan jumlah menjadi 0.
+   * Fungsi:
+   * - Deteksi keluar fullscreen
+   * - Deteksi meninggalkan halaman
+   * - Deteksi visibility hidden
+   * - Deteksi shortcut Developer Tools
+   * - Pencatatan pelanggaran
+   * - Penyimpanan jumlah pelanggaran
+   * - Monitoring heartbeat / security event
+   * - Warning audio setiap pelanggaran
+   *
+   * CATATAN:
+   * Heartbeat TIDAK memanggil record().
+   * Oleh karena itu heartbeat TIDAK menghasilkan beep.
    * =========================================================
    */
 
-  let violationCount = readStoredViolationCount();
+  let violationCount =
+    readStoredViolationCount();
+
   let lastViolationAt = 0;
-  let onViolationCallback = null;
+
+  let onViolationCallback =
+    null;
+
   let armed = false;
 
   /*
-   * Toleransi ketika siswa sedang masuk/interaksi
-   * dengan Google Form di dalam iframe.
-   *
-   * BAGIAN INI DIPERTAHANKAN agar bug WINDOW_BLUR
-   * saat siswa mengklik/interaksi dengan Google Form
-   * tidak muncul kembali.
+   * Digunakan untuk mencegah false positive
+   * ketika siswa berinteraksi dengan Google Form.
    */
   let formFocusGraceUntil = 0;
+
+  /*
+   * =========================================================
+   * AUDIO
+   * =========================================================
+   */
+
+  let audioContext = null;
+
+  /*
+   * Membuat / mengaktifkan AudioContext.
+   *
+   * Fungsi ini dipanggil dari tombol "Mulai Ujian"
+   * sehingga browser memiliki user gesture yang sah
+   * untuk mengizinkan Web Audio.
+   */
+  function initializeAudio() {
+    try {
+      const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioContext) {
+        return false;
+      }
+
+      if (!audioContext) {
+        audioContext =
+          new AudioContext();
+      }
+
+      if (
+        audioContext.state ===
+        "suspended"
+      ) {
+        audioContext.resume().catch(
+          () => {}
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.warn(
+        "NEXORA Audio initialization failed:",
+        error
+      );
+
+      return false;
+    }
+  }
+
+  /*
+   * Bunyi peringatan pelanggaran.
+   *
+   * Durasi sekitar 2 detik.
+   *
+   * Web Audio hanya mengatur volume internal
+   * suara yang dibuat oleh halaman.
+   * Website TIDAK dapat mengunci / memaksa
+   * volume hardware HP atau laptop.
+   */
+  function playViolationBeep() {
+    try {
+      if (!audioContext) {
+        return;
+      }
+
+      if (
+        audioContext.state ===
+        "suspended"
+      ) {
+        audioContext.resume().catch(
+          () => {}
+        );
+      }
+
+      const oscillator =
+        audioContext.createOscillator();
+
+      const gain =
+        audioContext.createGain();
+
+      oscillator.type = "sine";
+
+      oscillator.frequency.setValueAtTime(
+        880,
+        audioContext.currentTime
+      );
+
+      const start =
+        audioContext.currentTime;
+
+      const end =
+        start + 2;
+
+      /*
+       * Volume internal suara.
+       */
+      gain.gain.setValueAtTime(
+        0.22,
+        start
+      );
+
+      /*
+       * Hubungkan:
+       * oscillator → gain → speaker
+       */
+      oscillator.connect(gain);
+
+      gain.connect(
+        audioContext.destination
+      );
+
+      oscillator.start(start);
+
+      /*
+       * Fade out agar tidak terputus kasar.
+       */
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        end
+      );
+
+      oscillator.stop(end);
+    } catch (error) {
+      console.warn(
+        "NEXORA violation beep failed:",
+        error
+      );
+    }
+  }
 
   /*
    * =========================================================
@@ -40,7 +177,9 @@ window.NexoraSecurity = (() => {
   function getSession() {
     try {
       return JSON.parse(
-        sessionStorage.getItem("nexoraSession") || "null"
+        sessionStorage.getItem(
+          "nexoraSession"
+        ) || "null"
       );
     } catch {
       return null;
@@ -48,26 +187,39 @@ window.NexoraSecurity = (() => {
   }
 
   function saveSession(session) {
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
+    try {
+      sessionStorage.setItem(
+        "nexoraSession",
+        JSON.stringify(session)
+      );
+    } catch {}
   }
 
+  /*
+   * =========================================================
+   * VIOLATION COUNT
+   * =========================================================
+   */
+
   function readStoredViolationCount() {
-    const session = getSession();
+    const session =
+      getSession();
 
     if (!session) {
       return 0;
     }
 
-    const count = Number(session.violations);
+    const count =
+      Number(session.violations);
 
-    if (!Number.isFinite(count) || count < 0) {
-      return 0;
+    if (
+      Number.isFinite(count) &&
+      count >= 0
+    ) {
+      return count;
     }
 
-    return count;
+    return 0;
   }
 
   /*
@@ -77,87 +229,197 @@ window.NexoraSecurity = (() => {
    */
 
   function setCallback(fn) {
-    onViolationCallback = fn;
+    onViolationCallback =
+      typeof fn === "function"
+        ? fn
+        : null;
   }
 
   /*
    * =========================================================
-   * STUDENT-FACING VIOLATION INFORMATION
-   * =========================================================
-   *
-   * Kode teknis tetap digunakan untuk monitoring.
-   * Fungsi ini hanya menentukan bahasa yang mudah dipahami
-   * siswa SMP.
+   * STUDENT-FACING VIOLATION MESSAGE
    * =========================================================
    */
 
-  function getStudentViolationInfo(type) {
-    /*
-     * 1. KELUAR DARI FULLSCREEN
-     */
-    if (type === "FULLSCREEN_EXIT") {
+  function getStudentViolationInfo(
+    type
+  ) {
+    if (
+      type === "FULLSCREEN_EXIT"
+    ) {
       return {
-        category: "Keluar dari Mode Layar Penuh",
+        category:
+          "Keluar dari Mode Layar Penuh",
+
         title:
           "Kamu terdeteksi keluar dari mode layar penuh.",
+
         message:
           "Silakan kembali ke mode layar penuh (Fullscreen) untuk melanjutkan ujian.",
+
         reminder:
           "Dilarang membuka Google, tab lain, atau aplikasi lain selama ujian berlangsung."
       };
     }
 
-    /*
-     * 2. WINDOW BLUR + VISIBILITY HIDDEN
-     *
-     * Bagi siswa keduanya dianggap satu kejadian:
-     * meninggalkan halaman ujian.
-     */
     if (
       type === "WINDOW_BLUR" ||
       type === "VISIBILITY_HIDDEN"
     ) {
       return {
-        category: "Meninggalkan Halaman Ujian",
+        category:
+          "Meninggalkan Halaman Ujian",
+
         title:
           "Kamu terdeteksi meninggalkan halaman ujian.",
+
         message:
           "Jangan membuka Google, tab lain, aplikasi lain, atau berpindah dari halaman ujian selama ujian berlangsung.",
+
         reminder:
           "Silakan kembali ke halaman ujian untuk melanjutkan."
       };
     }
 
-    /*
-     * 3. DEVELOPER TOOLS
-     */
-    if (type === "DEVTOOLS_SHORTCUT") {
+    if (
+      type === "DEVTOOLS_SHORTCUT"
+    ) {
       return {
-        category: "Fitur yang Tidak Diizinkan",
+        category:
+          "Fitur yang Tidak Diizinkan",
+
         title:
           "Kamu terdeteksi mencoba membuka fitur yang tidak diperbolehkan selama ujian.",
+
         message:
           "Jangan membuka Developer Tools atau fitur pengembang browser selama ujian berlangsung.",
+
         reminder:
           "Tetap berada pada halaman ujian dan gunakan browser hanya untuk mengerjakan soal."
       };
     }
 
-    /*
-     * FALLBACK
-     *
-     * Jika suatu hari ada indikator baru yang belum
-     * memiliki bahasa khusus.
-     */
     return {
-      category: "Aktivitas Tidak Diizinkan",
+      category:
+        "Aktivitas Tidak Diizinkan",
+
       title:
         "Sistem mendeteksi aktivitas yang tidak diperbolehkan selama ujian.",
+
       message:
         "Tetap berada pada halaman ujian dan jangan membuka hal lain selama pengerjaan.",
+
       reminder:
         "Silakan kembali fokus mengerjakan ujian."
     };
+  }
+
+  /*
+   * =========================================================
+   * SEND MONITORING
+   * =========================================================
+   */
+
+  function sendMonitoring(
+    type,
+    payload = {}
+  ) {
+    try {
+      const session =
+        getSession();
+
+      if (!session) {
+        return;
+      }
+
+      /*
+       * Jika fungsi backend tersedia melalui
+       * konfigurasi NEXORA, gunakan fungsi tersebut.
+       */
+      if (
+        window.NEXORA_CONFIG &&
+        typeof
+          window.NEXORA_CONFIG.sendMonitoring ===
+          "function"
+      ) {
+        try {
+          window.NEXORA_CONFIG.sendMonitoring(
+            type,
+            payload
+          );
+
+          return;
+        } catch {}
+      }
+
+      /*
+       * Fallback:
+       * jika proyek memiliki fungsi global
+       * sendMonitoring, gunakan fungsi tersebut.
+       */
+      if (
+        typeof window.sendMonitoring ===
+        "function"
+      ) {
+        try {
+          window.sendMonitoring(
+            type,
+            payload
+          );
+
+          return;
+        } catch {}
+      }
+
+      /*
+       * Jika backend menggunakan URL monitoring
+       * dari konfigurasi, kirim melalui fetch.
+       */
+      const endpoint =
+        window.NEXORA_CONFIG?.monitoringUrl;
+
+      if (!endpoint) {
+        return;
+      }
+
+      const body = {
+        type,
+        payload,
+        sessionId:
+          session.sessionId ||
+          session.id ||
+          "",
+        name:
+          session.name || "",
+        className:
+          session.className || "",
+        subjectName:
+          session.subjectName || "",
+        violations:
+          Number(
+            session.violations || 0
+          ),
+        timestamp:
+          Date.now()
+      };
+
+      /*
+       * keepalive membantu request tetap dikirim
+       * ketika halaman akan ditutup / berpindah.
+       */
+      fetch(
+        endpoint,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify(body),
+          keepalive: true
+        }
+      ).catch(() => {});
+    } catch {}
   }
 
   /*
@@ -166,39 +428,68 @@ window.NexoraSecurity = (() => {
    * =========================================================
    */
 
-  function record(type, detail = "") {
+  function record(
+    type,
+    detail = ""
+  ) {
+    /*
+     * Jangan mencatat apa pun jika security
+     * sedang tidak aktif.
+     */
     if (!armed) {
       return;
     }
 
-    const now = Date.now();
+    const now =
+      Date.now();
 
     /*
-     * Hindari satu tindakan yang menghasilkan beberapa
-     * event dalam waktu sangat berdekatan.
+     * Cooldown mencegah satu tindakan menghasilkan
+     * beberapa pelanggaran dalam waktu sangat dekat.
      */
+    const cooldown =
+      Number(
+        window.NEXORA_CONFIG
+          ?.warningCooldownMs
+      ) || 1500;
+
     if (
       now - lastViolationAt <
-      NEXORA_CONFIG.warningCooldownMs
+      cooldown
     ) {
       return;
     }
 
-    lastViolationAt = now;
+    lastViolationAt =
+      now;
+
     violationCount += 1;
 
-    const session = getSession();
+    /*
+     * =====================================================
+     * BEEP
+     * =====================================================
+     *
+     * Beep hanya dipanggil di sini.
+     *
+     * Heartbeat tidak masuk ke fungsi record(),
+     * sehingga heartbeat tidak akan membunyikan beep.
+     */
+    playViolationBeep();
+
+    const session =
+      getSession();
 
     if (session) {
       /*
-       * Simpan jumlah pelanggaran ke session.
-       * Ini penting agar refresh tidak mengembalikan
-       * counter menjadi 0.
+       * Simpan counter secara permanen
+       * selama sesi browser berlangsung.
        */
-      session.violations = violationCount;
+      session.violations =
+        violationCount;
 
       /*
-       * Simpan KODE TEKNIS ASLI untuk pengawas.
+       * Simpan event terakhir.
        */
       session.lastSecurityEvent = {
         type,
@@ -209,7 +500,7 @@ window.NexoraSecurity = (() => {
       saveSession(session);
 
       /*
-       * Local monitoring tetap menggunakan kode asli.
+       * Simpan log lokal.
        */
       appendLocalLog(
         session,
@@ -218,39 +509,53 @@ window.NexoraSecurity = (() => {
       );
 
       /*
-       * Server monitoring tetap menerima event teknis.
+       * Kirim monitoring.
        */
       sendMonitoring(
         "violation",
         {
           event: type,
           detail,
-          violations: violationCount
+          violations:
+            violationCount
         }
       );
     }
 
     /*
-     * Kirim informasi lengkap ke exam.js.
+     * Kirim data ke exam.js.
      */
     if (onViolationCallback) {
       onViolationCallback({
         type,
         detail,
-        count: violationCount,
+        count:
+          violationCount,
+
         studentInfo:
-          getStudentViolationInfo(type)
+          getStudentViolationInfo(
+            type
+          )
       });
     }
 
     /*
-     * Setelah mencapai batas maksimum,
-     * sistem keamanan tidak lagi mencatat
-     * indikator tambahan.
+     * Setelah pelanggaran maksimum tercapai,
+     * security tidak lagi membuat violation berikutnya
+     * pada halaman sesi tersebut.
+     *
+     * exam.js akan menangani alur pelanggaran ke-3:
+     * 60 detik → logout → login ulang.
      */
+    const maxViolations =
+      Number(
+        window.NEXORA_CONFIG
+          ?.maxViolations
+      ) || 3;
+
     if (
       violationCount >=
-      NEXORA_CONFIG.maxViolations
+      maxViolations
     ) {
       armed = false;
     }
@@ -258,7 +563,7 @@ window.NexoraSecurity = (() => {
 
   /*
    * =========================================================
-   * LOCAL MONITORING LOG
+   * LOCAL LOG
    * =========================================================
    */
 
@@ -267,114 +572,69 @@ window.NexoraSecurity = (() => {
     type,
     detail
   ) {
-    const key = "nexoraMonitoring";
-
-    let list = [];
-
     try {
-      list = JSON.parse(
-        localStorage.getItem(key) || "[]"
-      );
-    } catch {
-      list = [];
-    }
+      const key =
+        "nexoraSecurityLogs";
 
-    list.push({
-      sessionId:
-        session.sessionId,
+      const raw =
+        localStorage.getItem(key);
 
-      at: Date.now(),
+      let logs = [];
 
-      name:
-        session.name,
+      try {
+        logs =
+          raw
+            ? JSON.parse(raw)
+            : [];
+      } catch {
+        logs = [];
+      }
 
-      className:
-        session.className,
+      if (!Array.isArray(logs)) {
+        logs = [];
+      }
 
-      subjectName:
-        session.subjectName,
+      logs.push({
+        sessionId:
+          session.sessionId ||
+          session.id ||
+          "",
 
-      violations:
-        session.violations || 0,
+        name:
+          session.name || "",
 
-      /*
-       * Tetap simpan kode teknis asli.
-       */
-      event:
+        className:
+          session.className || "",
+
+        subjectName:
+          session.subjectName || "",
+
         type,
 
-      detail
-    });
+        detail,
 
-    localStorage.setItem(
-      key,
-      JSON.stringify(
-        list.slice(-500)
-      )
-    );
-  }
+        violations:
+          violationCount,
 
-  /*
-   * =========================================================
-   * SERVER MONITORING
-   * =========================================================
-   */
-
-  async function sendMonitoring(
-    action,
-    data = {}
-  ) {
-    const endpoint =
-      NEXORA_CONFIG.monitoringEndpoint;
-
-    if (!endpoint) {
-      return;
-    }
-
-    const session =
-      getSession();
-
-    if (!session) {
-      return;
-    }
-
-    const payload =
-      JSON.stringify({
-        action,
-        session,
-        data,
-        sentAt: Date.now()
+        at:
+          Date.now()
       });
 
-    try {
-      navigator.sendBeacon?.(
-        endpoint,
-        new Blob(
-          [payload],
-          {
-            type:
-              "text/plain;charset=utf-8"
-          }
-        )
+      /*
+       * Jangan biarkan localStorage membesar tanpa batas.
+       */
+      if (logs.length > 500) {
+        logs =
+          logs.slice(
+            -500
+          );
+      }
+
+      localStorage.setItem(
+        key,
+        JSON.stringify(logs)
       );
-    } catch {
-      try {
-        await fetch(
-          endpoint,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "text/plain;charset=utf-8"
-            },
-
-            body: payload,
-            keepalive: true
-          }
-        );
-      } catch {}
-    }
+    } catch {}
   }
 
   /*
@@ -385,21 +645,91 @@ window.NexoraSecurity = (() => {
 
   async function enterFullscreen() {
     try {
+      const element =
+        document.documentElement;
+
       if (
-        !document.fullscreenElement
+        document.fullscreenElement ||
+        document.webkitFullscreenElement
       ) {
-        await document.documentElement.requestFullscreen();
+        return true;
       }
 
-      return true;
-    } catch {
-      return false;
+      if (
+        element.requestFullscreen
+      ) {
+        await element.requestFullscreen();
+
+        return true;
+      }
+
+      if (
+        element.webkitRequestFullscreen
+      ) {
+        element.webkitRequestFullscreen();
+
+        return true;
+      }
+    } catch (error) {
+      console.warn(
+        "NEXORA fullscreen request failed:",
+        error
+      );
     }
+
+    return false;
   }
 
   /*
    * =========================================================
-   * ARM SECURITY
+   * FORM FOCUS GRACE
+   * =========================================================
+   *
+   * Google Form berada dalam iframe.
+   *
+   * Ketika siswa menyentuh / mengklik iframe,
+   * browser dapat mengubah activeElement atau
+   * memicu blur pada window.
+   *
+   * Jangan menganggap hal tersebut sebagai
+   * pelanggaran.
+   * =========================================================
+   */
+
+  function armFormFocusGrace() {
+    formFocusGraceUntil =
+      Date.now() + 2000;
+  }
+
+  function isFormFocusGraceActive() {
+    return (
+      Date.now() <
+      formFocusGraceUntil
+    );
+  }
+
+  function isFormFrameActive() {
+    const frame =
+      document.getElementById(
+        "formFrame"
+      );
+
+    if (!frame) {
+      return false;
+    }
+
+    return (
+      document.activeElement ===
+        frame ||
+      frame.contains(
+        document.activeElement
+      )
+    );
+  }
+
+  /*
+   * =========================================================
+   * ARM
    * =========================================================
    */
 
@@ -409,64 +739,67 @@ window.NexoraSecurity = (() => {
     }
 
     /*
-     * Pastikan jumlah pelanggaran selalu mengikuti
-     * data terakhir yang tersimpan.
+     * Baca ulang counter dari sessionStorage.
+     *
+     * Ini penting ketika siswa login kembali
+     * setelah pelanggaran ke-3.
      */
     violationCount =
       readStoredViolationCount();
 
-    armed = true;
-
     /*
-     * =====================================================
-     * GOOGLE FORM / IFRAME FOCUS PROTECTION
-     * =====================================================
+     * Jika counter sudah mencapai batas maksimum,
+     * jangan mengaktifkan listener violation lagi.
      *
-     * BAGIAN INI DIPERTAHANKAN.
-     *
-     * Google Form berada di dalam iframe.
-     *
-     * Ketika siswa pertama kali mengklik Google Form,
-     * browser dapat menganggap halaman utama kehilangan
-     * fokus sehingga event "blur" muncul.
-     *
-     * Karena itu diberikan toleransi singkat ketika siswa
-     * sedang berinteraksi dengan iframe Google Form.
+     * exam.js tetap dapat menjalankan timer / sesi,
+     * tetapi counter tidak kembali ke 0.
      */
+    const maxViolations =
+      Number(
+        window.NEXORA_CONFIG
+          ?.maxViolations
+      ) || 3;
+
+    if (
+      violationCount >=
+      maxViolations
+    ) {
+      armed = false;
+
+      return;
+    }
+
+    armed = true;
 
     const formFrame =
       document.getElementById(
         "formFrame"
       );
 
+    /*
+     * =====================================================
+     * GOOGLE FORM FOCUS GRACE
+     * =====================================================
+     */
+
     if (formFrame) {
-      const allowFormFocus = () => {
-        formFocusGraceUntil =
-          Date.now() + 2000;
-      };
-
-      formFrame.addEventListener(
+      const formEvents = [
         "pointerdown",
-        allowFormFocus,
-        true
-      );
-
-      formFrame.addEventListener(
         "mousedown",
-        allowFormFocus,
-        true
-      );
-
-      formFrame.addEventListener(
         "touchstart",
-        allowFormFocus,
-        true
-      );
+        "click"
+      ];
 
-      formFrame.addEventListener(
-        "click",
-        allowFormFocus,
-        true
+      formEvents.forEach(
+        (eventName) => {
+          formFrame.addEventListener(
+            eventName,
+            armFormFocusGrace,
+            {
+              passive: true
+            }
+          );
+        }
       );
     }
 
@@ -488,13 +821,19 @@ window.NexoraSecurity = (() => {
           "hidden"
         ) {
           /*
-           * Kode teknis tetap VISIBILITY_HIDDEN.
-           * Nanti siswa akan melihat:
-           * "Meninggalkan Halaman Ujian".
+           * Jika siswa memang sedang berinteraksi
+           * dengan Google Form, jangan langsung
+           * membuat false positive.
            */
+          if (
+            isFormFocusGraceActive()
+          ) {
+            return;
+          }
+
           record(
             "VISIBILITY_HIDDEN",
-            "Halaman menjadi tidak terlihat."
+            "Halaman ujian menjadi tidak terlihat."
           );
         }
       }
@@ -502,7 +841,7 @@ window.NexoraSecurity = (() => {
 
     /*
      * =====================================================
-     * FULLSCREEN
+     * FULLSCREEN CHANGE
      * =====================================================
      */
 
@@ -513,9 +852,36 @@ window.NexoraSecurity = (() => {
           return;
         }
 
-        if (
-          !document.fullscreenElement
-        ) {
+        const isFullscreen =
+          Boolean(
+            document.fullscreenElement
+          );
+
+        if (!isFullscreen) {
+          record(
+            "FULLSCREEN_EXIT",
+            "Mode fullscreen keluar."
+          );
+        }
+      }
+    );
+
+    /*
+     * Dukungan browser WebKit.
+     */
+    document.addEventListener(
+      "webkitfullscreenchange",
+      () => {
+        if (!armed) {
+          return;
+        }
+
+        const isFullscreen =
+          Boolean(
+            document.webkitFullscreenElement
+          );
+
+        if (!isFullscreen) {
           record(
             "FULLSCREEN_EXIT",
             "Mode fullscreen keluar."
@@ -538,98 +904,137 @@ window.NexoraSecurity = (() => {
         }
 
         /*
-         * Jika blur terjadi sesaat setelah siswa
-         * mengklik Google Form, abaikan.
+         * Google Form iframe sebelumnya menjadi
+         * sumber false positive.
+         *
+         * Jangan catat jika:
+         * - sedang dalam grace period
+         * - activeElement adalah iframe form
          */
         if (
-          Date.now() <
-          formFocusGraceUntil
+          isFormFocusGraceActive() ||
+          isFormFrameActive()
         ) {
           return;
         }
 
-        /*
-         * Jika browser masih menganggap iframe sebagai
-         * elemen aktif, berarti fokus masih berada pada
-         * Google Form.
-         */
-        const activeElement =
-          document.activeElement;
-
-        if (
-          activeElement &&
-          activeElement.tagName ===
-            "IFRAME"
-        ) {
-          return;
-        }
-
-        /*
-         * Kode teknis tetap WINDOW_BLUR.
-         * Bagi siswa ini akan diterjemahkan menjadi:
-         * "Meninggalkan Halaman Ujian".
-         */
         record(
           "WINDOW_BLUR",
-          "Jendela kehilangan fokus."
+          "Jendela / halaman ujian kehilangan fokus."
         );
       }
     );
 
     /*
      * =====================================================
-     * BLOK CONTEXT MENU
-     * =====================================================
-     *
-     * Klik kanan tetap diblokir.
-     * Klik kanan BUKAN indikator pelanggaran.
-     */
-
-    document.addEventListener(
-      "contextmenu",
-      e => {
-        if (!armed) {
-          return;
-        }
-
-        e.preventDefault();
-      }
-    );
-
-    /*
-     * =====================================================
-     * BLOK DEVTOOLS SHORTCUT
+     * DEVTOOLS / SHORTCUT
      * =====================================================
      */
 
     document.addEventListener(
       "keydown",
-      e => {
+      (event) => {
         if (!armed) {
           return;
         }
 
+        const key =
+          String(
+            event.key || ""
+          ).toLowerCase();
+
+        /*
+         * F12
+         */
         if (
-          e.key === "F12" ||
-          (
-            e.ctrlKey &&
-            e.shiftKey &&
-            [
-              "I",
-              "J",
-              "C"
-            ].includes(
-              e.key.toUpperCase()
-            )
-          )
+          event.key ===
+          "F12"
         ) {
-          e.preventDefault();
+          event.preventDefault();
 
           record(
             "DEVTOOLS_SHORTCUT",
-            "Shortcut pengembang ditekan."
+            "Shortcut F12 terdeteksi."
           );
+
+          return;
         }
+
+        /*
+         * Ctrl + Shift + I
+         */
+        if (
+          event.ctrlKey &&
+          event.shiftKey &&
+          key === "i"
+        ) {
+          event.preventDefault();
+
+          record(
+            "DEVTOOLS_SHORTCUT",
+            "Shortcut Ctrl+Shift+I terdeteksi."
+          );
+
+          return;
+        }
+
+        /*
+         * Ctrl + Shift + J
+         */
+        if (
+          event.ctrlKey &&
+          event.shiftKey &&
+          key === "j"
+        ) {
+          event.preventDefault();
+
+          record(
+            "DEVTOOLS_SHORTCUT",
+            "Shortcut Ctrl+Shift+J terdeteksi."
+          );
+
+          return;
+        }
+
+        /*
+         * Ctrl + Shift + C
+         */
+        if (
+          event.ctrlKey &&
+          event.shiftKey &&
+          key === "c"
+        ) {
+          event.preventDefault();
+
+          record(
+            "DEVTOOLS_SHORTCUT",
+            "Shortcut Ctrl+Shift+C terdeteksi."
+          );
+
+          return;
+        }
+      }
+    );
+
+    /*
+     * =====================================================
+     * CONTEXT MENU
+     * =====================================================
+     *
+     * Klik kanan diblokir, tetapi TIDAK dianggap
+     * sebagai pelanggaran.
+     *
+     * Ini sengaja supaya siswa tidak langsung
+     * mendapat violation hanya karena klik kanan.
+     */
+    document.addEventListener(
+      "contextmenu",
+      (event) => {
+        if (!armed) {
+          return;
+        }
+
+        event.preventDefault();
       }
     );
 
@@ -637,25 +1042,37 @@ window.NexoraSecurity = (() => {
      * =====================================================
      * BEFORE UNLOAD
      * =====================================================
+     *
+     * Ini hanya monitoring.
+     *
+     * TIDAK dihitung sebagai violation.
      */
-
     window.addEventListener(
       "beforeunload",
-      e => {
-        if (!armed) {
+      () => {
+        const currentSession =
+          getSession();
+
+        if (!currentSession) {
           return;
         }
 
         sendMonitoring(
           "unload",
           {
-            event:
-              "BEFORE_UNLOAD"
+            violations:
+              violationCount,
+
+            status:
+              currentSession.status ||
+              "",
+
+            reason:
+              currentSession.reloginRequired
+                ? "RELOGIN_REQUIRED"
+                : "PAGE_UNLOAD"
           }
         );
-
-        e.preventDefault();
-        e.returnValue = "";
       }
     );
   }
@@ -688,12 +1105,21 @@ window.NexoraSecurity = (() => {
 
   return {
     setCallback,
+
     record,
+
     arm,
+
     disarm,
+
     enterFullscreen,
+
     getCount,
+
     getStudentViolationInfo,
-    sendMonitoring
+
+    sendMonitoring,
+
+    initializeAudio
   };
 })();
