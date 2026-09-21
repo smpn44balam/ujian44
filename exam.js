@@ -8,13 +8,6 @@
     return;
   }
 
-  /*
-   * =========================================================
-   * NEXORA EXAM — EXAM ENGINE
-   * SMP NEGERI 44 BANDAR LAMPUNG
-   * =========================================================
-   */
-
   if (
     session.status === "FINISHED" ||
     session.endedAt
@@ -22,12 +15,6 @@
     location.href = "index.html";
     return;
   }
-
-  /*
-   * =========================================================
-   * ELEMENT
-   * =========================================================
-   */
 
   const timerEl = document.getElementById("timer");
   const badge = document.getElementById("violationBadge");
@@ -51,14 +38,8 @@
     loading.classList.add("hidden");
   });
 
-  /*
-   * =========================================================
-   * JAM REAL-TIME (CLIENT-SIDE)
-   * =========================================================
-   */
   function updateRealtimeClock() {
     const now = new Date();
-    
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
@@ -83,14 +64,8 @@
   updateRealtimeClock();
   setInterval(updateRealtimeClock, 1000);
 
-  /*
-   * =========================================================
-   * STATE
-   * =========================================================
-   */
-
   let endAt = 0;
-  let heartbeat = null; // Dibiarkan null, interval sengaja dinonaktifkan
+  let heartbeat = null;
   let timerInterval = null;
   let penaltyInterval = null;
   let finishedOnce = false;
@@ -98,21 +73,9 @@
   let penaltyActive = false;
   let thirdViolationInterval = null;
 
-  /*
-   * =========================================================
-   * PENALTY CONFIG
-   * =========================================================
-   */
-
   const FIRST_PENALTY_MS = 90 * 1000;
   const SECOND_PENALTY_MS = 5 * 60 * 1000;
   const THIRD_RELOGIN_WAIT_MS = 60 * 1000;
-
-  /*
-   * =========================================================
-   * SESSION STORAGE
-   * =========================================================
-   */
 
   function save() {
     session.violations = NexoraSecurity.getCount();
@@ -128,12 +91,6 @@
     delete session.penaltyUntil;
     sessionStorage.setItem("nexoraSession", JSON.stringify(session));
   }
-
-  /*
-   * =========================================================
-   * FORMAT WAKTU
-   * =========================================================
-   */
 
   function formatTime(ms) {
     const total = Math.max(0, Math.ceil(ms / 1000));
@@ -159,12 +116,6 @@
     return `${seconds} detik`;
   }
 
-  /*
-   * =========================================================
-   * BLOCK / UNBLOCK GOOGLE FORM
-   * =========================================================
-   */
-
   function blockForm() {
     penaltyActive = true;
     frame.style.pointerEvents = "none";
@@ -177,12 +128,6 @@
     frame.removeAttribute("aria-disabled");
   }
 
-  /*
-   * =========================================================
-   * TIMER UJIAN
-   * =========================================================
-   */
-
   function tick() {
     if (!examStarted || finishedOnce) return;
 
@@ -194,12 +139,6 @@
       finish("Waktu ujian telah selesai.");
     }
   }
-
-  /*
-   * =========================================================
-   * PENALTY COUNTDOWN
-   * =========================================================
-   */
 
   function getPenaltyRemaining() {
     if (!session.penaltyUntil) return 0;
@@ -305,12 +244,6 @@
     update();
     penaltyInterval = setInterval(update, 500);
   }
-
-  /*
-   * =========================================================
-   * PELANGGARAN KE-3 — RELOGIN LOCK
-   * =========================================================
-   */
 
   function getThirdReloginRemaining() {
     if (!session.thirdReloginUntil) return 0;
@@ -438,12 +371,6 @@
     return true;
   }
 
-  /*
-   * =========================================================
-   * VIOLATION
-   * =========================================================
-   */
-
   function showViolation(v) {
     if (finishedOnce) return;
 
@@ -483,12 +410,6 @@
     }
   });
 
-  /*
-   * =========================================================
-   * START EXAM
-   * =========================================================
-   */
-
   async function startExam(isResume = false) {
     if (examStarted || finishedOnce) return;
 
@@ -499,7 +420,6 @@
 
       await NexoraSecurity.enterFullscreen();
       NexoraSecurity.arm();
-      startHeartbeat();
       startTimer();
       restorePenalty();
       tick();
@@ -526,14 +446,12 @@
     await NexoraSecurity.enterFullscreen();
     NexoraSecurity.arm();
 
-    // Data "start" tidak lagi dikirim berkat Gatekeeper di security.js
     NexoraSecurity.sendMonitoring("start", {
       formUrl: session.formUrl,
       startedAt: session.startedAt,
       durationMs: session.durationMs
     });
 
-    startHeartbeat();
     startTimer();
     tick();
   }
@@ -544,28 +462,11 @@
     tick();
   }
 
-  /*
-   * =========================================================
-   * MATIKAN HEARTBEAT
-   * =========================================================
-   */
-  function startHeartbeat() {
-    // Fungsi ini dikosongkan. 
-    // Sistem tidak akan lagi melempar request setiap 20/90 detik ke Google Apps Script.
-    // Ini menghemat kuota server dan mencegah lag.
-  }
-
   beginExamBtn?.addEventListener("click", async () => {
     await startExam(false);
   });
 
   NexoraSecurity.setCallback(showViolation);
-
-  /*
-   * =========================================================
-   * FINISH
-   * =========================================================
-   */
 
   function finish(reason) {
     if (finishedOnce) return;
@@ -574,8 +475,6 @@
     if (timerInterval) clearInterval(timerInterval);
     if (penaltyInterval) clearInterval(penaltyInterval);
     if (thirdViolationInterval) clearInterval(thirdViolationInterval);
-    
-    // Heartbeat variabel ada tetapi sengaja dihiraukan.
 
     NexoraSecurity.disarm();
 
@@ -591,7 +490,6 @@
 
     save();
 
-    // Data "finish" tidak lagi dikirim berkat Gatekeeper di security.js
     NexoraSecurity.sendMonitoring("finish", {
       reason,
       violations: NexoraSecurity.getCount()
@@ -614,7 +512,7 @@
   if (session.status === "ONGOING" && session.startedAt && session.durationMs) {
     startExam(true);
   } else {
-    startOverlay.classList.remove("hidden");
+    startOverlay.classList.add("hidden");
   }
 
 })();
