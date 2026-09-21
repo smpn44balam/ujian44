@@ -1,41 +1,19 @@
 window.NexoraSecurity = (() => {
-  /*
-   * =========================================================
-   * NEXORA SECURITY ENGINE
-   * SMP NEGERI 44 BANDAR LAMPUNG
-   * =========================================================
-   */
-
   let violationCount = readStoredViolationCount();
   let lastViolationAt = 0;
   let onViolationCallback = null;
   let armed = false;
   let formFocusGraceUntil = 0;
-
-  /*
-   * =========================================================
-   * AUDIO
-   * =========================================================
-   */
-
   let audioContext = null;
 
   function initializeAudio() {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!AudioContext) return false;
-
-      if (!audioContext) {
-        audioContext = new AudioContext();
-      }
-
-      if (audioContext.state === "suspended") {
-        audioContext.resume().catch(() => {});
-      }
-
+      if (!audioContext) audioContext = new AudioContext();
+      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
       return true;
     } catch (error) {
-      console.warn("NEXORA Audio initialization failed:", error);
       return false;
     }
   }
@@ -43,37 +21,21 @@ window.NexoraSecurity = (() => {
   function playViolationBeep() {
     try {
       if (!audioContext) return;
-
-      if (audioContext.state === "suspended") {
-        audioContext.resume().catch(() => {});
-      }
-
+      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
-
       oscillator.type = "sine";
       oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-
       const start = audioContext.currentTime;
       const end = start + 2;
-
       gain.gain.setValueAtTime(0.22, start);
-
       oscillator.connect(gain);
       gain.connect(audioContext.destination);
       oscillator.start(start);
       gain.gain.exponentialRampToValueAtTime(0.001, end);
       oscillator.stop(end);
-    } catch (error) {
-      console.warn("NEXORA violation beep failed:", error);
-    }
+    } catch (error) {}
   }
-
-  /*
-   * =========================================================
-   * SESSION
-   * =========================================================
-   */
 
   function getSession() {
     try {
@@ -89,38 +51,17 @@ window.NexoraSecurity = (() => {
     } catch {}
   }
 
-  /*
-   * =========================================================
-   * VIOLATION COUNT
-   * =========================================================
-   */
-
   function readStoredViolationCount() {
     const session = getSession();
     if (!session) return 0;
-
     const count = Number(session.violations);
-    if (Number.isFinite(count) && count >= 0) {
-      return count;
-    }
+    if (Number.isFinite(count) && count >= 0) return count;
     return 0;
   }
-
-  /*
-   * =========================================================
-   * CALLBACK
-   * =========================================================
-   */
 
   function setCallback(fn) {
     onViolationCallback = typeof fn === "function" ? fn : null;
   }
-
-  /*
-   * =========================================================
-   * STUDENT-FACING VIOLATION MESSAGE
-   * =========================================================
-   */
 
   function getStudentViolationInfo(type) {
     if (type === "FULLSCREEN_EXIT") {
@@ -131,7 +72,6 @@ window.NexoraSecurity = (() => {
         reminder: "Dilarang membuka Google, tab lain, atau aplikasi lain selama ujian berlangsung."
       };
     }
-
     if (type === "WINDOW_BLUR" || type === "VISIBILITY_HIDDEN") {
       return {
         category: "Meninggalkan Halaman Ujian",
@@ -140,7 +80,6 @@ window.NexoraSecurity = (() => {
         reminder: "Silakan kembali ke halaman ujian untuk melanjutkan."
       };
     }
-
     if (type === "DEVTOOLS_SHORTCUT") {
       return {
         category: "Fitur yang Tidak Diizinkan",
@@ -149,7 +88,6 @@ window.NexoraSecurity = (() => {
         reminder: "Tetap berada pada halaman ujian dan gunakan browser hanya untuk mengerjakan soal."
       };
     }
-
     return {
       category: "Aktivitas Tidak Diizinkan",
       title: "Sistem mendeteksi aktivitas yang tidak diperbolehkan selama ujian.",
@@ -158,42 +96,12 @@ window.NexoraSecurity = (() => {
     };
   }
 
-  /*
-   * =========================================================
-   * SEND MONITORING
-   * =========================================================
-   */
-
   function sendMonitoring(type, payload = {}) {
-    /*
-     * =====================================================
-     * GERBANG PENJAGA KETAT
-     * =====================================================
-     * BLOKIR "heartbeat" (sumber spam) dan "unload".
-     * IZINKAN "start", "finish", "violation", "relogin_required".
-     */
-    if (type === "heartbeat" || type === "unload") {
-      return; 
-    }
+    if (type === "heartbeat" || type === "unload") return; 
 
     try {
       const session = getSession();
       if (!session) return;
-
-      if (window.NEXORA_CONFIG && typeof window.NEXORA_CONFIG.sendMonitoring === "function") {
-        try {
-          window.NEXORA_CONFIG.sendMonitoring(type, payload);
-          return;
-        } catch {}
-      }
-
-      if (typeof window.sendMonitoring === "function") {
-        try {
-          window.sendMonitoring(type, payload);
-          return;
-        } catch {}
-      }
-
       const endpoint = window.NEXORA_CONFIG?.monitoringUrl;
       if (!endpoint) return;
 
@@ -208,60 +116,31 @@ window.NexoraSecurity = (() => {
         timestamp: Date.now()
       };
 
-      /*
-       * Fungsi fetch ini dikembalikan sama persis seperti kode
-       * asli milik Anda yang terbukti aman dari blokir CORS.
-       */
-      fetch(
-        endpoint,
-        {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body),
-          keepalive: true
-        }
-      ).catch(() => {});
+      fetch(endpoint, {
+        method: "POST",
+        body: JSON.stringify(body)
+      }).catch(() => {});
+      
     } catch {}
   }
 
-  /*
-   * =========================================================
-   * RECORD VIOLATION
-   * =========================================================
-   */
-
   function record(type, detail = "") {
     if (!armed) return;
-
     const now = Date.now();
     const cooldown = Number(window.NEXORA_CONFIG?.warningCooldownMs) || 1500;
-
-    if (now - lastViolationAt < cooldown) {
-      return;
-    }
+    if (now - lastViolationAt < cooldown) return;
 
     lastViolationAt = now;
     violationCount += 1;
-
     playViolationBeep();
 
     const session = getSession();
-
     if (session) {
       session.violations = violationCount;
       session.lastSecurityEvent = { type, detail, at: now };
-      
       saveSession(session);
       appendLocalLog(session, type, detail);
-      
-      sendMonitoring("violation", {
-        event: type,
-        detail,
-        violations: violationCount
-      });
+      sendMonitoring("violation", { event: type, detail, violations: violationCount });
     }
 
     if (onViolationCallback) {
@@ -274,29 +153,15 @@ window.NexoraSecurity = (() => {
     }
 
     const maxViolations = Number(window.NEXORA_CONFIG?.maxViolations) || 3;
-    if (violationCount >= maxViolations) {
-      armed = false;
-    }
+    if (violationCount >= maxViolations) armed = false;
   }
-
-  /*
-   * =========================================================
-   * LOCAL LOG
-   * =========================================================
-   */
 
   function appendLocalLog(session, type, detail) {
     try {
       const key = "nexoraSecurityLogs";
       const raw = localStorage.getItem(key);
       let logs = [];
-
-      try {
-        logs = raw ? JSON.parse(raw) : [];
-      } catch {
-        logs = [];
-      }
-
+      try { logs = raw ? JSON.parse(raw) : []; } catch { logs = []; }
       if (!Array.isArray(logs)) logs = [];
 
       logs.push({
@@ -309,85 +174,37 @@ window.NexoraSecurity = (() => {
         violations: violationCount,
         at: Date.now()
       });
-
-      if (logs.length > 500) {
-        logs = logs.slice(-500);
-      }
-
+      if (logs.length > 500) logs = logs.slice(-500);
       localStorage.setItem(key, JSON.stringify(logs));
     } catch {}
   }
 
-  /*
-   * =========================================================
-   * FULLSCREEN
-   * =========================================================
-   */
-
   async function enterFullscreen() {
     try {
       const element = document.documentElement;
-
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
-        return true;
-      }
-
-      if (element.requestFullscreen) {
-        await element.requestFullscreen();
-        return true;
-      }
-
-      if (element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen();
-        return true;
-      }
-    } catch (error) {
-      console.warn("NEXORA fullscreen request failed:", error);
-    }
+      if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+      if (element.requestFullscreen) { await element.requestFullscreen(); return true; }
+      if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); return true; }
+    } catch (error) {}
     return false;
   }
 
-  /*
-   * =========================================================
-   * FORM FOCUS GRACE
-   * =========================================================
-   */
-
-  function armFormFocusGrace() {
-    formFocusGraceUntil = Date.now() + 2000;
-  }
-
-  function isFormFocusGraceActive() {
-    return Date.now() < formFocusGraceUntil;
-  }
-
+  function armFormFocusGrace() { formFocusGraceUntil = Date.now() + 2000; }
+  function isFormFocusGraceActive() { return Date.now() < formFocusGraceUntil; }
   function isFormFrameActive() {
     const frame = document.getElementById("formFrame");
     if (!frame) return false;
     return document.activeElement === frame || frame.contains(document.activeElement);
   }
 
-  /*
-   * =========================================================
-   * ARM
-   * =========================================================
-   */
-
   function arm() {
     if (armed) return;
-
     violationCount = readStoredViolationCount();
-
     const maxViolations = Number(window.NEXORA_CONFIG?.maxViolations) || 3;
-    if (violationCount >= maxViolations) {
-      armed = false;
-      return;
-    }
-
+    if (violationCount >= maxViolations) { armed = false; return; }
     armed = true;
 
     const formFrame = document.getElementById("formFrame");
-
     if (formFrame) {
       const formEvents = ["pointerdown", "mousedown", "touchstart", "click"];
       formEvents.forEach((eventName) => {
@@ -406,17 +223,13 @@ window.NexoraSecurity = (() => {
     document.addEventListener("fullscreenchange", () => {
       if (!armed) return;
       const isFullscreen = Boolean(document.fullscreenElement);
-      if (!isFullscreen) {
-        record("FULLSCREEN_EXIT", "Mode fullscreen keluar.");
-      }
+      if (!isFullscreen) record("FULLSCREEN_EXIT", "Mode fullscreen keluar.");
     });
 
     document.addEventListener("webkitfullscreenchange", () => {
       if (!armed) return;
       const isFullscreen = Boolean(document.webkitFullscreenElement);
-      if (!isFullscreen) {
-        record("FULLSCREEN_EXIT", "Mode fullscreen keluar.");
-      }
+      if (!isFullscreen) record("FULLSCREEN_EXIT", "Mode fullscreen keluar.");
     });
 
     window.addEventListener("blur", () => {
@@ -428,63 +241,18 @@ window.NexoraSecurity = (() => {
     document.addEventListener("keydown", (event) => {
       if (!armed) return;
       const key = String(event.key || "").toLowerCase();
-
-      if (event.key === "F12") {
-        event.preventDefault();
-        record("DEVTOOLS_SHORTCUT", "Shortcut F12 terdeteksi.");
-        return;
-      }
-      if (event.ctrlKey && event.shiftKey && key === "i") {
-        event.preventDefault();
-        record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+I terdeteksi.");
-        return;
-      }
-      if (event.ctrlKey && event.shiftKey && key === "j") {
-        event.preventDefault();
-        record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+J terdeteksi.");
-        return;
-      }
-      if (event.ctrlKey && event.shiftKey && key === "c") {
-        event.preventDefault();
-        record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+C terdeteksi.");
-        return;
-      }
-    });
-
-    document.addEventListener("contextmenu", (event) => {
-      if (!armed) return;
-      event.preventDefault();
-    });
-
-    window.addEventListener("beforeunload", () => {
-      const currentSession = getSession();
-      if (!currentSession) return;
-
-      sendMonitoring("unload", {
-        violations: violationCount,
-        status: currentSession.status || "",
-        reason: currentSession.reloginRequired ? "RELOGIN_REQUIRED" : "PAGE_UNLOAD"
-      });
+      if (event.key === "F12") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut F12 terdeteksi."); return; }
+      if (event.ctrlKey && event.shiftKey && key === "i") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+I terdeteksi."); return; }
+      if (event.ctrlKey && event.shiftKey && key === "j") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+J terdeteksi."); return; }
+      if (event.ctrlKey && event.shiftKey && key === "c") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+C terdeteksi."); return; }
     });
   }
 
-  function disarm() {
-    armed = false;
-  }
-
-  function getCount() {
-    return violationCount;
-  }
+  function disarm() { armed = false; }
+  function getCount() { return violationCount; }
 
   return {
-    setCallback,
-    record,
-    arm,
-    disarm,
-    enterFullscreen,
-    getCount,
-    getStudentViolationInfo,
-    sendMonitoring,
-    initializeAudio
+    setCallback, record, arm, disarm, enterFullscreen, getCount,
+    getStudentViolationInfo, sendMonitoring, initializeAudio
   };
 })();
