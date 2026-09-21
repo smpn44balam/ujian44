@@ -10,8 +10,8 @@ const NEXORA_CONFIG = {
   maxViolations: 3,
   warningCooldownMs: 2500,
 
-  // URL Google Apps Script yang baru untuk Monitoring & Log
-  monitoringUrl: "https://script.google.com/macros/s/AKfycbwAqqRde_yQA4PV3SsYZwfpmFuf5uTvp7xmzGIpJg6SUByYc0NtlczlR54TcgXCAeJfnw/exec",
+  // URL Web App Google Apps Script Anda yang terbaru
+  monitoringUrl: "https://script.google.com/macros/s/AKfycbzksIqZr6gJZ-PaXoTe9QpzhnP_D8DzusrV_pyUP9SAcBdkzzlY_7s7pw3LxwHnKrVEuA/exec",
 
   classes: {
     VII: ["VII-A","VII-B","VII-C","VII-D","VII-E","VII-F"],
