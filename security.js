@@ -1,11 +1,11 @@
 /**
  * NEXORA EXAM - Security & Monitoring Engine
- * File: security.js (VERSI PERBAIKAN)
+ * File: security.js (VERSI PERBAIKAN & TERHUBUNG EXAM)
  * SMP Negeri 44 Bandar Lampung
  */
 
 const NEXORA_SECURITY = (function () {
-    // 1. Fungsi Bantuan untuk Sinkronisasi Sesi (PERBAIKAN BUG #2 & #9)
+    // 1. Fungsi Bantuan untuk Sinkronisasi Sesi
     function getSessionData() {
         let rawSession = localStorage.getItem('nexora_session') || sessionStorage.getItem('nexora_session') || localStorage.getItem('nexoraCandidate') || '{}';
         try {
@@ -92,7 +92,7 @@ const NEXORA_SECURITY = (function () {
     // 5. Pengiriman Log Pelanggaran ke Google Apps Script (Spreadsheet)
     function sendMonitoring(type, details) {
         const session = getSessionData();
-        const scriptUrl = (window.NEXORA_CONFIG && window.NEXORA_CONFIG.scriptUrl) ? window.NEXORA_CONFIG.scriptUrl : '';
+        const scriptUrl = (window.NEXORA_CONFIG && (window.NEXORA_CONFIG.scriptUrl || window.NEXORA_CONFIG.monitoringUrl)) ? (window.NEXORA_CONFIG.scriptUrl || window.NEXORA_CONFIG.monitoringUrl) : '';
 
         if (!scriptUrl) {
             console.warn("[NEXORA SECURITY] scriptUrl belum diset di config.js!");
@@ -107,7 +107,7 @@ const NEXORA_SECURITY = (function () {
             violationType: type,
             details: details || '',
             violationsCount: violationCount,
-            timestamp: new Date().toLocaleString('id-ID')
+            timestamp: new Date().toISOString()
         };
 
         fetch(scriptUrl, {
@@ -129,12 +129,14 @@ const NEXORA_SECURITY = (function () {
         if (!isArmed) return;
 
         violationCount++;
-        saveViolationToSession(violationCount); // Sync dengan LocalStorage
+        saveViolationToSession(violationCount); // Sync dengan LocalStorage & SessionStorage
         playViolationBeep(2000);
         sendMonitoring(type, details);
 
         if (typeof onViolationCallback === 'function') {
-            onViolationCallback(violationCount, type, details);
+            // Mengakomodasi 2 tipe signature callback (Count, Type, Details) atau (Reason string)
+            const reasonString = details || type;
+            onViolationCallback(reasonString, type, violationCount);
         }
     }
 
@@ -144,18 +146,17 @@ const NEXORA_SECURITY = (function () {
         if (listenersAttached) return;
         listenersAttached = true;
 
-        // A. Deteksi Keluar Fullscreen (PERBAIKAN BUG #1: Mobile Keyboard)
+        // A. Deteksi Keluar Fullscreen
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && !document.webkitFullscreenElement && isArmed) {
-                // Beri jeda 500ms untuk memastikan ini bukan pergeseran layout akibat keyboard
                 setTimeout(() => {
                     const activeEl = document.activeElement;
                     if (activeEl && activeEl.tagName === 'IFRAME') {
                         console.warn("[NEXORA SECURITY] Indikasi Keyboard Virtual. Pelanggaran diabaikan.");
-                        enterFullscreen(); // Coba paksa masuk fullscreen kembali
+                        enterFullscreen();
                         return;
                     }
-                    recordViolation('FULLSCREEN_EXIT', 'Siswa keluar dari mode Layar Penuh (Fullscreen)');
+                    recordViolation('FULLSCREEN_EXIT', 'Keluar dari mode Layar Penuh (Fullscreen)');
                 }, 500);
             }
         });
@@ -163,11 +164,11 @@ const NEXORA_SECURITY = (function () {
         // B. Deteksi Pindah Tab / Minimalize Browser
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && isArmed) {
-                recordViolation('VISIBILITY_HIDDEN', 'Siswa beralih tab atau meminimalkan browser');
+                recordViolation('VISIBILITY_HIDDEN', 'Beralih tab atau meminimalkan browser');
             }
         });
 
-        // C. Deteksi Blur Window (Abaikan jika siswa klik Google Form iframe)
+        // C. Deteksi Blur Window
         window.addEventListener('blur', () => {
             if (!isArmed) return;
             setTimeout(() => {
@@ -204,7 +205,7 @@ const NEXORA_SECURITY = (function () {
             }
         });
 
-        // E. Deteksi Tombol Back / Reload Tanpa Sengaja (PERBAIKAN BUG #8)
+        // E. Deteksi Tombol Back / Reload
         window.addEventListener('beforeunload', (e) => {
             if (isArmed) {
                 e.preventDefault();
@@ -213,14 +214,24 @@ const NEXORA_SECURITY = (function () {
         });
     }
 
+    // Mengaktifkan sistem keamanan
+    function armEngine() {
+        isArmed = true;
+        const currentSession = getSessionData();
+        violationCount = currentSession.violations || 0; 
+        setupEventListeners();
+    }
+
     return {
-        arm: function () {
-            isArmed = true;
-            // Sinkronisasi terakhir sebelum ujian berjalan
-            const currentSession = getSessionData();
-            violationCount = currentSession.violations || 0; 
-            setupEventListeners();
+        // Alias agar 100% cocok dengan panggillan di exam.js
+        init: function (callback) {
+            if (callback) onViolationCallback = callback;
+            armEngine();
         },
+        requestFullscreen: enterFullscreen,
+
+        // Method asli milik Anda
+        arm: armEngine,
         disarm: function () {
             isArmed = false;
         },
@@ -234,9 +245,12 @@ const NEXORA_SECURITY = (function () {
         },
         setViolationCount: function (val) {
             violationCount = val;
-            saveViolationToSession(val); // Pastikan tersimpan di memori jangka panjang
+            saveViolationToSession(val);
         },
         recordManual: recordViolation,
         sendMonitoring: sendMonitoring
     };
 })();
+
+// Menghubungkan ke object Window agar global
+window.NEXORA_SECURITY = NEXORA_SECURITY;
