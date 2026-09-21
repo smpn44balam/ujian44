@@ -206,19 +206,18 @@ window.NexoraSecurity = (() => {
         timestamp: Date.now()
       };
 
-      try {
-        if (navigator.sendBeacon) {
-          const blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
-          navigator.sendBeacon(endpoint, blob);
-        } else {
-          fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-            keepalive: true
-          }).catch(() => {});
-        }
-      } catch (e) {}
+      /*
+       * KEMBALI MENGGUNAKAN FETCH ASLI
+       * (Apps Script sangat ketat soal CORS. Menggunakan fetch
+       * dengan keepalive adalah cara paling stabil untuk Apps Script).
+       */
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        keepalive: true
+      }).catch(() => {});
+      
     } catch {}
   }
 
