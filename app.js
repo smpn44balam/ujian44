@@ -6,47 +6,57 @@
   const info = document.getElementById("formInfo");
   const nameInput = document.getElementById("studentName"); 
 
-  // Load opsi kelas dari config
-  Object.entries(NEXORA_CONFIG.classes).forEach(([level, classes]) => {
-    const group = document.createElement("optgroup");
-    group.label = `Kelas ${level}`;
-    classes.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      group.appendChild(opt);
+  // 1. Load opsi kelas dari config
+  if (classSelect && window.NEXORA_CONFIG && NEXORA_CONFIG.classes) {
+    Object.entries(NEXORA_CONFIG.classes).forEach(([level, classes]) => {
+      const group = document.createElement("optgroup");
+      group.label = `Kelas ${level}`;
+      classes.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        group.appendChild(opt);
+      });
+      classSelect.appendChild(group);
     });
-    classSelect.appendChild(group);
-  });
+  }
 
-  // Load opsi mata pelajaran dari config
-  NEXORA_CONFIG.subjects.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = s.name;
-    subjectSelect.appendChild(opt);
-  });
+  // 2. Load opsi mata pelajaran dari config
+  if (subjectSelect && window.NEXORA_CONFIG && NEXORA_CONFIG.subjects) {
+    NEXORA_CONFIG.subjects.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.name;
+      subjectSelect.appendChild(opt);
+    });
+  }
 
-  // Update info ketersediaan form
+  // 3. Update info ketersediaan form
   function updateInfo() {
-    const level = getLevelFromClass(classSelect.value);
+    if (!classSelect || !subjectSelect || !info) return;
+    const level = typeof getLevelFromClass === "function" ? getLevelFromClass(classSelect.value) : "";
     const sid = subjectSelect.value;
-    const url = getFormUrl(level, sid);
+    const url = typeof getFormUrl === "function" ? getFormUrl(level, sid) : "";
+    
     if (level && sid) {
       info.classList.remove("hidden");
+      const currentSubject = NEXORA_CONFIG.subjects.find(x => x.id === sid);
+      const subjectName = currentSubject ? currentSubject.name : sid;
+
       info.innerHTML = url
-        ? `<strong>Form tersedia.</strong><br>Kelas ${level} akan menggunakan paket soal ${NEXORA_CONFIG.subjects.find(x=>x.id===sid).name} tingkat ${level}.`
+        ? `<strong>Form tersedia.</strong><br>Kelas ${level} akan menggunakan paket soal ${subjectName} tingkat ${level}.`
         : `<strong>Form belum dikonfigurasi.</strong><br>Administrator perlu mengisi link Google Form untuk kelas ${level}.`;
     } else {
       info.classList.add("hidden");
     }
   }
-  classSelect.addEventListener("change", updateInfo);
-  subjectSelect.addEventListener("change", updateInfo);
+
+  if (classSelect) classSelect.addEventListener("change", updateInfo);
+  if (subjectSelect) subjectSelect.addEventListener("change", updateInfo);
 
 
   // =======================================================
-  // SISTEM RELOGIN LOCK & PENALTI
+  // 4. SISTEM RELOGIN LOCK & PENALTI
   // =======================================================
   let originalCreatedAt = null;
   const existingStateStr = sessionStorage.getItem("NEXORA_EXAM_STATE");
@@ -62,20 +72,25 @@
       }
 
       if (state.violations > 0 || state.isFrozen) {
-        nameInput.value = candidate.name;
-        nameInput.readOnly = true; 
-        classSelect.value = candidate.className;
-        subjectSelect.value = candidate.subjectId;
-        
-        classSelect.style.pointerEvents = "none";
-        subjectSelect.style.pointerEvents = "none";
-        classSelect.style.backgroundColor = "#eef4fb";
-        subjectSelect.style.backgroundColor = "#eef4fb";
+        if (nameInput) {
+          nameInput.value = candidate.name || candidate.nama || "";
+          nameInput.readOnly = true; 
+        }
+        if (classSelect) {
+          classSelect.value = candidate.className || candidate.kelas || "";
+          classSelect.style.pointerEvents = "none";
+          classSelect.style.backgroundColor = "#eef4fb";
+        }
+        if (subjectSelect) {
+          subjectSelect.value = candidate.subjectId || "";
+          subjectSelect.style.pointerEvents = "none";
+          subjectSelect.style.backgroundColor = "#eef4fb";
+        }
 
         updateInfo();
 
         if (state.isFrozen) {
-          showError("Sesi Anda ditangguhkan karena pelanggaran. Silakan klik Masuk untuk melanjutkan masa penalti Anda.");
+          showError("Sesi Anda ditangguhkan karena pelanggaran. Silakan klik Lanjutkan untuk menjalani masa penalti.");
         } else {
           showError(`Melanjutkan sesi ujian... (Anda tercatat memiliki ${state.violations} pelanggaran).`);
         }
@@ -84,62 +99,84 @@
       console.error("Gagal memuat status sesi sebelumnya:", e);
     }
   }
-  // =======================================================
 
 
   // =======================================================
-  // PROSES SUBMIT LOGIN (YANG SUDAH DIPERBAIKI)
+  // 5. PROSES SUBMIT LOGIN
   // =======================================================
-  form.addEventListener("submit", e => {
-    e.preventDefault();
-    error.classList.add("hidden");
+  if (form) {
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      if (error) error.classList.add("hidden");
 
-    const name = nameInput.value.trim().replace(/\s+/g, " ");
-    const className = classSelect.value;
-    const subjectId = subjectSelect.value;
-    const level = getLevelFromClass(className);
-    const subject = NEXORA_CONFIG.subjects.find(s => s.id === subjectId);
-    const formUrl = getFormUrl(level, subjectId);
-
-    if (name.length < 3) return showError("Nama lengkap harus diisi.");
-    if (!className || !level) return showError("Pilih kelas.");
-    if (!subject) return showError("Pilih mata pelajaran.");
-    if (!formUrl) return showError(`Google Form untuk ${level} — ${subject.name} belum diatur oleh administrator.`);
-
-    // Menggabungkan format data agar bisa dibaca oleh app.js maupun exam.js
-    const candidateData = {
-      // Format bawaan app.js
-      name: name, 
-      className: className, 
-      level: level, 
-      subjectId: subjectId, 
-      subjectName: subject.name,
-      formUrl: formUrl, 
-      createdAt: originalCreatedAt ? originalCreatedAt : Date.now(),
+      const name = nameInput ? nameInput.value.trim().replace(/\s+/g, " ") : "";
+      const className = classSelect ? classSelect.value : "";
+      const subjectId = subjectSelect ? subjectSelect.value : "";
       
-      // Format kompatibilitas untuk dibaca oleh exam.js / security.js
-      nama: name,
-      kelas: className,
-      mapel: subject.name,
-      status: "ONGOING",
-      violations: 0
-    };
-    
-    const jsonString = JSON.stringify(candidateData);
+      const level = typeof getLevelFromClass === "function" ? getLevelFromClass(className) : "";
+      const subject = NEXORA_CONFIG.subjects.find(s => s.id === subjectId);
+      const formUrl = typeof getFormUrl === "function" ? getFormUrl(level, subjectId) : "";
 
-    // Simpan ke semua Storage dan dengan semua nama Key 
-    // agar exam.js tidak gagal membacanya!
-    sessionStorage.setItem("nexoraCandidate", jsonString);
-    sessionStorage.setItem("nexora_session", jsonString);
-    localStorage.setItem("nexoraCandidate", jsonString);
-    localStorage.setItem("nexora_session", jsonString);
+      // Validasi Input
+      if (name.length < 3) return showError("Nama lengkap harus diisi (minimal 3 karakter).");
+      if (!className || !level) return showError("Pilih kelas Anda.");
+      if (!subject) return showError("Pilih mata pelajaran.");
+      if (!formUrl) return showError(`Google Form untuk ${level} — ${subject.name} belum diatur oleh administrator.`);
 
-    // Lanjut ke halaman berikutnya
-    location.href = "siswa.html";
-  });
+      // Format data ganda untuk menjamin kompatibilitas app.js, exam.js, dan security.js
+      const candidateData = {
+        name: name, 
+        className: className, 
+        level: level, 
+        subjectId: subjectId, 
+        subjectName: subject.name,
+        formUrl: formUrl, 
+        createdAt: originalCreatedAt ? originalCreatedAt : Date.now(),
+        durationMinutes: NEXORA_CONFIG.durationMinutes || 90,
+        
+        nisn: name.toLowerCase().replace(/\s+/g, "_"),
+        nama: name,
+        kelas: className,
+        mapel: subject.name,
+        status: "ONGOING",
+        violations: 0
+      };
+      
+      const jsonString = JSON.stringify(candidateData);
+
+      // Simpan Sesi ke Seluruh Storage Key
+      sessionStorage.setItem("nexoraCandidate", jsonString);
+      sessionStorage.setItem("nexora_session", jsonString);
+      localStorage.setItem("nexoraCandidate", jsonString);
+      localStorage.setItem("nexora_session", jsonString);
+
+      // Kirim Log Aktivitas Login ke Google Apps Script (Server)
+      const scriptEndpoint = NEXORA_CONFIG.scriptUrl || NEXORA_CONFIG.monitoringUrl;
+      if (scriptEndpoint) {
+        fetch(scriptEndpoint, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'loginLog',
+            nisn: candidateData.nisn,
+            nama: candidateData.nama,
+            kelas: candidateData.kelas,
+            mapel: candidateData.mapel,
+            timestamp: new Date().toISOString()
+          })
+        }).catch(err => console.log("Gagal mengirim log login:", err));
+      }
+
+      // Mengarahkan ke halaman ujian utama
+      location.href = "ujian.html";
+    });
+  }
 
   function showError(msg) {
-    error.textContent = msg;
-    error.classList.remove("hidden");
+    if (error) {
+      error.textContent = msg;
+      error.classList.remove("hidden");
+    }
   }
 })();
