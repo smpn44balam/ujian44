@@ -4,6 +4,7 @@
   const form = document.getElementById("loginForm");
   const error = document.getElementById("loginError");
   const info = document.getElementById("formInfo");
+  const nameInput = document.getElementById("studentName"); // Tambahan referensi input nama
 
   Object.entries(NEXORA_CONFIG.classes).forEach(([level, classes]) => {
     const group = document.createElement("optgroup");
@@ -40,11 +41,61 @@
   classSelect.addEventListener("change", updateInfo);
   subjectSelect.addEventListener("change", updateInfo);
 
+
+  // =======================================================
+  // [TAMBAHAN] SISTEM RELOGIN LOCK & PENALTI
+  // =======================================================
+  let originalCreatedAt = null;
+  const existingStateStr = sessionStorage.getItem("NEXORA_EXAM_STATE");
+  const existingCandidateStr = sessionStorage.getItem("nexoraCandidate");
+
+  if (existingStateStr && existingCandidateStr) {
+    try {
+      const state = JSON.parse(existingStateStr);
+      const candidate = JSON.parse(existingCandidateStr);
+
+      // Simpan waktu mulai asli agar timer TIDAK kereset jadi 90 menit lagi!
+      if (candidate.createdAt) {
+        originalCreatedAt = candidate.createdAt;
+      }
+
+      // Jika siswa sudah punya pelanggaran / sedang dibekukan
+      if (state.violations > 0 || state.isFrozen) {
+        // Auto-fill dan Kunci Nama
+        nameInput.value = candidate.name;
+        nameInput.readOnly = true; 
+
+        // Auto-fill Kelas dan Mapel
+        classSelect.value = candidate.className;
+        subjectSelect.value = candidate.subjectId;
+        
+        // Kunci Dropdown agar tidak bisa ganti identitas
+        classSelect.style.pointerEvents = "none";
+        subjectSelect.style.pointerEvents = "none";
+        classSelect.style.backgroundColor = "#eef4fb";
+        subjectSelect.style.backgroundColor = "#eef4fb";
+
+        updateInfo();
+
+        if (state.isFrozen) {
+          showError("Sesi Anda ditangguhkan karena pelanggaran. Silakan klik Masuk untuk melanjutkan masa penalti Anda.");
+        } else {
+          showError(`Melanjutkan sesi ujian... (Anda tercatat memiliki ${state.violations} pelanggaran).`);
+        }
+      }
+    } catch (e) {
+      console.error("Gagal memuat status sesi sebelumnya:", e);
+    }
+  }
+  // =======================================================
+
+
   form.addEventListener("submit", e => {
     e.preventDefault();
     error.classList.add("hidden");
 
-    const name = document.getElementById("studentName").value.trim().replace(/\s+/g, " ");
+    // Ambil value dari nameInput yang sudah kita definisikan di atas
+    const name = nameInput.value.trim().replace(/\s+/g, " ");
     const className = classSelect.value;
     const subjectId = subjectSelect.value;
     const level = getLevelFromClass(className);
@@ -57,9 +108,16 @@
     if (!formUrl) return showError(`Google Form untuk ${level} — ${subject.name} belum diatur oleh administrator.`);
 
     const candidate = {
-      name, className, level, subjectId, subjectName: subject.name,
-      formUrl, createdAt: Date.now()
+      name, 
+      className, 
+      level, 
+      subjectId, 
+      subjectName: subject.name,
+      formUrl, 
+      // Logika Penting: Gunakan waktu lama jika ada, agar sisa waktu tetap akurat
+      createdAt: originalCreatedAt ? originalCreatedAt : Date.now()
     };
+    
     sessionStorage.setItem("nexoraCandidate", JSON.stringify(candidate));
     location.href = "siswa.html";
   });
