@@ -10,9 +10,8 @@ const NEXORA_CONFIG = {
   maxViolations: 3,
   warningCooldownMs: 2500,
 
-  // Opsional. Jika diisi, NEXORA mengirim log ke Google Apps Script.
-  // Jangan masukkan password/API secret di frontend.
-  monitoringEndpoint: "https://script.google.com/macros/s/AKfycbzVhWkrlM91mziTPBa_ExKr286ULHj8R-3IpvRes6x95696k2Wx1G4cwofYenlzohKIYw/exec",
+  // URL Google Apps Script yang baru untuk Monitoring & Log
+  monitoringUrl: "https://script.google.com/macros/s/AKfycbwAqqRde_yQA4PV3SsYZwfpmFuf5uTvp7xmzGIpJg6SUByYc0NtlczlR54TcgXCAeJfnw/exec",
 
   classes: {
     VII: ["VII-A","VII-B","VII-C","VII-D","VII-E","VII-F"],
