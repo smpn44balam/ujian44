@@ -15,7 +15,7 @@ const NEXORA_CONFIG = {
   // window.NEXORA_CONFIG.scriptUrl. Sebelumnya key ini bernama "monitoringUrl"
   // sehingga tidak pernah terbaca dan semua log pelanggaran/heartbeat GAGAL TERKIRIM
   // secara diam-diam (silent fail). Jangan ganti nama key ini lagi.
-  scriptUrl: "https://script.google.com/macros/s/AKfycbx9JYuBxjMj_iieOsTtiw1DEto8tyWg0EcdGH6SyCW99lxpRVA8rpVchJnkyYdjyZC8QQ/exec",
+  scriptUrl: "https://script.google.com/macros/s/AKfycby6ZRGlptPUQDotepFbdCoxuE5KIZcxMrLJcU8eGZ0OyO5_5spz-96G2DzzbcQp98dp_A/exec",
   // Alias lama, dipertahankan agar kode lama yang mungkin masih memanggil
   // monitoringUrl tidak langsung pecah.
   get monitoringUrl() { return this.scriptUrl; },
