@@ -1,6 +1,6 @@
 /**
  * NEXORA EXAM - Next Generation Examination & Assessment System
- * File: exam.js (FULL FIXED VERSION)
+ * File: exam.js (FULL FIXED VERSION - TERINTEGRASI SECURITY.JS BARU)
  * SMP Negeri 44 Bandar Lampung
  */
 
@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 1. VALIDASI SESI UJIAN (PEMBERSIHAN & SAFETY CHECK)
     // ==========================================
-    // Cek di localStorage dan sessionStorage agar kompatibel
     let rawSession = localStorage.getItem('nexora_session') || sessionStorage.getItem('nexora_session') || localStorage.getItem('NEXORA_SESSION') || sessionStorage.getItem('NEXORA_SESSION');
     let session = null;
 
@@ -69,13 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.violationBadge.textContent = `⚠ ${session.violations || 0} / 3`;
     }
 
-    // Set jumlah pelanggaran ke modul security jika ada
+    // Set jumlah pelanggaran ke modul security dari sesi yang tersimpan
     if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setViolationCount === 'function') {
         NEXORA_SECURITY.setViolationCount(session.violations || 0);
     }
 
     // ==========================================
-    // 3. FITUR JAM REAL-TIME (TAHAP 1 - PRIORITAS Utama)
+    // 3. FITUR JAM REAL-TIME 
     // ==========================================
     function updateRealtimeClock() {
         const now = new Date();
@@ -131,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 5. SISTEM PENALTY & RELOGIN (#1, #2, #3)
+    // 5. SISTEM PENALTY & RELOGIN (Pelanggaran 1, 2, 3)
     // ==========================================
     let penaltyInterval = null;
     let penaltyRemainingMs = 0;
@@ -242,11 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
             triggerPenaltyUI(count, details);
 
             if (count === 1) {
-                applyPenalty(90, false);
+                applyPenalty(90, false); // Penalti 1.5 Menit
             } else if (count === 2) {
-                applyPenalty(300, false);
+                applyPenalty(300, false); // Penalti 5 Menit
             } else if (count >= 3) {
-                applyPenalty(60, true);
+                applyPenalty(60, true); // Penalti ke-3 (Bekukan Sesi)
             }
         });
     }
@@ -315,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     if (DOM.beginExamBtn) {
         DOM.beginExamBtn.addEventListener('click', () => {
-            // Safe call inisialisasi Audio
+            // Safe call inisialisasi Audio dan Keamanan
             if (typeof NEXORA_SECURITY !== 'undefined') {
                 if (typeof NEXORA_SECURITY.initializeAudio === 'function') {
                     NEXORA_SECURITY.initializeAudio();
@@ -330,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Muat Form Google Form
+            // Muat URL Google Form ke Iframe
             if (session.formUrl && DOM.formFrame) {
                 if (DOM.loading) DOM.loading.style.display = 'flex';
                 DOM.formFrame.src = session.formUrl;
