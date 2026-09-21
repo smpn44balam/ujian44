@@ -1,102 +1,144 @@
-/**
- * NEXORA EXAM — Google Apps Script monitoring endpoint
- *
- * 1. Buat Google Spreadsheet.
- * 2. Extensions > Apps Script.
- * 3. Tempel file ini.
- * 4. Deploy > New deployment > Web app.
- * 5. Execute as: Me
- * 6. Who has access: Anyone
- * 7. Salin URL /exec ke NEXORA_CONFIG.monitoringEndpoint.
- *
- * Catatan: endpoint publik bukan sistem autentikasi kuat. Jangan simpan
- * password/secret penting di frontend GitHub Pages.
- */
+/*******************************************************
+ * NEXORA EXAM - MONITORING SERVER
+ * SMPN 44 BANDAR LAMPUNG
+ *******************************************************/
 
-const SHEETS = {
-  sessions: "NEXORA_SESSIONS",
-  events: "NEXORA_EVENTS"
-};
+const SHEET_LOG = "LOG_UJIAN";
+const SHEET_VIOLATION = "PELANGGARAN";
+const SHEET_DASHBOARD = "DASHBOARD";
 
-function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ensureSheet_(ss, SHEETS.sessions, [
-    "UpdatedAt","SessionId","Nama","Kelas","Tingkat","Mapel",
-    "StartedAt","LastSeenAt","EndedAt","Violations","Status","LastEvent"
-  ]);
-  ensureSheet_(ss, SHEETS.events, [
-    "Timestamp","SessionId","Nama","Kelas","Tingkat","Mapel",
-    "Action","Event","Detail","Violations","RemainingMs"
-  ]);
-}
-
-function doGet() {
-  return json_({ok:true, service:"NEXORA EXAM monitoring", time:new Date().toISOString()});
+function doGet(e) {
+  return jsonResponse({
+    success: true,
+    status: "OK",
+    message: "Monitoring server aktif"
+  });
 }
 
 function doPost(e) {
   try {
-    const body = JSON.parse(e.postData.contents || "{}");
-    const s = body.session || {};
-    const d = body.data || {};
-    const action = body.action || "unknown";
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonResponse({ success: false, message: "Data POST kosong" });
+    }
 
-    const eventSheet = ensureSheet_(ss, SHEETS.events, [
-      "Timestamp","SessionId","Nama","Kelas","Tingkat","Mapel",
-      "Action","Event","Detail","Violations","RemainingMs"
-    ]);
+    let payload;
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (error) {
+      return jsonResponse({ success: false, message: "Payload bukan JSON" });
+    }
 
-    eventSheet.appendRow([
-      new Date(), s.sessionId || "", s.name || "", s.className || "",
-      s.level || "", s.subjectName || "", action,
-      d.event || d.type || "", d.detail || d.reason || "",
-      d.violations ?? s.violations ?? 0, d.remainingMs ?? ""
-    ]);
+    const type = payload.type || "";
+    const data = payload.payload || {};
+    const sessionId = payload.sessionId || "";
+    const name = payload.name || "";
+    const className = payload.className || "";
+    const subjectName = payload.subjectName || "";
+    const violations = Number(payload.violations || 0);
+    const timestamp = new Date(payload.timestamp || Date.now());
 
-    upsertSession_(ss, s, action, d);
-    return json_({ok:true});
-  } catch (err) {
-    return json_({ok:false,error:String(err)});
+    // MENGUNCI 100% KE SPREADSHEET ANDA
+    const ss = SpreadsheetApp.openById("1faX_8kSHtlUfc_AeSWRV7h3TS5U9Q4RpW5BTzXIBSo8");
+    ensureSheets_(ss); 
+
+    // 1. REKAP LOG UJIAN
+    upsertLogUjian_(ss, { sessionId, name, className, subjectName, type, violations, timestamp, data });
+
+    // 2. REKAP PELANGGARAN
+    if (type === "violation" || type === "relogin_required") {
+      const eventName = data.event || type;
+      const detail = data.detail || data.reason || "";
+      savePelanggaran_(ss, { timestamp, name, className, subjectName, eventName, detail, violations });
+    }
+
+    return jsonResponse({ success: true, action: type, sessionId: sessionId });
+
+  } catch (error) {
+    console.error(error);
+    return jsonResponse({ success: false, message: error.message });
   }
 }
 
-function upsertSession_(ss, s, action, d) {
-  const sh = ensureSheet_(ss, SHEETS.sessions, [
-    "UpdatedAt","SessionId","Nama","Kelas","Tingkat","Mapel",
-    "StartedAt","LastSeenAt","EndedAt","Violations","Status","LastEvent"
-  ]);
+function upsertLogUjian_(ss, info) {
+  const sheet = ss.getSheetByName(SHEET_LOG);
+  if (!sheet || !info.sessionId) return;
 
-  const values = sh.getDataRange().getValues();
-  let row = -1;
-  for (let i=1;i<values.length;i++) {
-    if (String(values[i][1]) === String(s.sessionId)) { row=i+1; break; }
+  const values = sheet.getDataRange().getValues();
+  let rowNumber = -1;
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]) === String(info.sessionId)) {
+      rowNumber = i + 1;
+      break;
+    }
   }
 
-  const now = new Date();
-  const status = action === "finish" ? "SELESAI" :
-                 (Number(d.violations ?? s.violations ?? 0) >= 3 ? "PERLU DIPERIKSA" : "AKTIF");
+  let status = "UJIAN";
+  if (info.type === "finish") status = "SELESAI";
+  if (info.type === "relogin_required") status = "DIBLOKIR SEMENTARA";
 
-  const data = [
-    now, s.sessionId || "", s.name || "", s.className || "", s.level || "",
-    s.subjectName || "", s.startedAt ? new Date(s.startedAt) : "",
-    now, s.endedAt ? new Date(s.endedAt) : "",
-    Number(d.violations ?? s.violations ?? 0), status,
-    d.event || d.type || action
-  ];
+  if (rowNumber !== -1 && String(values[rowNumber - 1][5]) === "SELESAI") {
+    status = "SELESAI";
+  }
 
-  if (row === -1) sh.appendRow(data);
-  else sh.getRange(row,1,1,data.length).setValues([data]);
+  const row = [info.timestamp, info.sessionId, info.name, info.className, info.subjectName, status, info.violations];
+
+  if (rowNumber === -1) {
+    sheet.appendRow(row); 
+  } else {
+    sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]); 
+  }
 }
 
-function ensureSheet_(ss, name, headers) {
-  let sh = ss.getSheetByName(name);
-  if (!sh) sh = ss.insertSheet(name);
-  if (sh.getLastRow() === 0) sh.appendRow(headers);
-  return sh;
+function savePelanggaran_(ss, info) {
+  const sheet = ss.getSheetByName(SHEET_VIOLATION);
+  if (!sheet) return;
+
+  sheet.appendRow([info.timestamp, info.name, info.className, info.subjectName, info.eventName, info.detail, info.violations]);
 }
 
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+function ensureSheets_(ss) {
+  let sheetLog = ss.getSheetByName(SHEET_LOG);
+  if (!sheetLog) {
+    sheetLog = ss.insertSheet(SHEET_LOG);
+    sheetLog.appendRow(["Waktu Terakhir", "Session ID", "Nama Siswa", "Kelas", "Mata Pelajaran", "Status", "Total Pelanggaran"]);
+    formatHeader_(sheetLog);
+    sheetLog.setFrozenRows(1);
+    sheetLog.setColumnWidth(2, 200); 
+  }
+
+  let sheetViol = ss.getSheetByName(SHEET_VIOLATION);
+  if (!sheetViol) {
+    sheetViol = ss.insertSheet(SHEET_VIOLATION);
+    sheetViol.appendRow(["Waktu Kejadian", "Nama Siswa", "Kelas", "Mata Pelajaran", "Jenis Event", "Detail Catatan", "Pelanggaran Ke-"]);
+    formatHeader_(sheetViol);
+    sheetViol.setFrozenRows(1);
+    sheetViol.setColumnWidth(5, 180); 
+    sheetViol.setColumnWidth(6, 250); 
+  }
+
+  let dashboard = ss.getSheetByName(SHEET_DASHBOARD);
+  if (!dashboard) {
+    dashboard = ss.insertSheet(SHEET_DASHBOARD);
+    dashboard.getRange("A1").setValue("NEXORA EXAM - DASHBOARD");
+    dashboard.getRange("A2").setValue("SMPN 44 BANDAR LAMPUNG");
+    
+    dashboard.getRange("A4").setValue("TOTAL SESI TERCATAT");
+    dashboard.getRange("B4").setFormula(`=COUNTA(${SHEET_LOG}!B2:B)`);
+    
+    dashboard.getRange("A5").setValue("TOTAL KASUS PELANGGARAN");
+    dashboard.getRange("B5").setFormula(`=COUNTA(${SHEET_VIOLATION}!B2:B)`);
+    
+    dashboard.getRange("A1").setFontWeight("bold").setFontSize(16);
+    dashboard.setColumnWidth(1, 300);
+  }
+}
+
+function formatHeader_(sheet) {
+  const range = sheet.getRange(1, 1, 1, sheet.getLastColumn());
+  range.setFontWeight("bold").setBackground("#c9daf8"); 
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
