@@ -513,6 +513,53 @@
       }
     }
 
+    /* ===================================================
+       PERBAIKAN LAYOUT HEADER (ATAS-BAWAH)
+       =================================================== */
+    
+    /* Memaksa setiap kotak status menjadi kolom (atas-bawah) */
+    .exam-clock, 
+    .exam-timer, 
+    .exam-security {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      padding: 6px !important;
+      gap: 4px !important;
+    }
+
+    /* Merapikan label kecil di atas (JAM, SISA WAKTU, KEAMANAN) */
+    .status-label {
+      display: block !important;
+      font-size: 0.75rem !important;
+      color: #93c5fd !important; /* Warna biru muda agar elegan */
+      letter-spacing: 0.5px !important;
+      margin: 0 !important;
+    }
+
+    /* Merapikan font ukuran besar untuk Jam, Sisa Waktu, dan Badge Keamanan */
+    #realtimeClock, 
+    #timer, 
+    #violationBadge {
+      display: block !important;
+      font-size: 1.15rem !important;
+      font-weight: bold !important;
+      color: #ffffff !important;
+      margin: 0 !important;
+      line-height: 1.2 !important;
+    }
+
+    /* Merapikan penempatan hari dan tanggal */
+    #realtimeDate {
+      display: block !important;
+      font-size: 0.75rem !important;
+      color: #e2e8f0 !important;
+      margin-top: 2px !important;
+      font-weight: normal !important;
+    }
+
   </style>
 
 </head>
@@ -578,8 +625,7 @@
           --:--:--
         </strong>
 
-        <!-- ELEMEN TANGGAL DITAMBAHKAN DI SINI -->
-        <div id="realtimeDate" style="font-size: 0.75rem; margin-top: 4px; font-weight: normal; opacity: 0.9;">
+        <div id="realtimeDate">
           <!-- Akan diisi otomatis oleh exam.js -->
         </div>
 
