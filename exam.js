@@ -60,6 +60,55 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('nexora_session', JSON.stringify(session));
     }
 
+    // ==========================================
+    // HELPER TAMPIL/SEMBUNYI ELEMEN (berbasis class "hidden")
+    // ==========================================
+    // PENTING: jangan pakai el.style.display = 'none' / 'flex' untuk
+    // #startOverlay, #violationModal, dan #finished. Elemen-elemen itu
+    // punya CSS `display: ... !important` (ujian.html / style.css) atau
+    // class ".hidden { display:none !important }". Deklarasi !important
+    // SELALU mengalahkan inline style biasa, jadi:
+    //  - overlay "Siap Memulai?" tidak pernah hilang (menutupi Google Form),
+    //  - modal pelanggaran tidak pernah muncul (padahal beep sudah bunyi).
+    // Solusinya: toggle class "hidden" saja, dan kosongkan inline display.
+    function showEl(el) {
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.style.display = '';
+    }
+
+    function hideEl(el) {
+        if (!el) return;
+        el.classList.add('hidden');
+        el.style.display = '';
+    }
+
+    // Tampilkan modal pelanggaran dengan teks berwarna terang (kartu modal
+    // berlatar biru tua; warna abu gelap lama membuat teks nyaris tak terbaca).
+    function showViolationModal(title, message) {
+        if (!DOM.violationModal || !DOM.violationText) return;
+        DOM.violationText.innerHTML = `
+            <div style="text-align:center; color:#fca5a5; font-weight:800; font-size:1.2rem; margin-bottom:10px;">
+                ${title}
+            </div>
+            <p style="margin:0; font-size:1rem; color:#dbeafe;">${message}</p>
+        `;
+        showEl(DOM.violationModal);
+    }
+
+    // Google Form: paksa mode embed bila memakai URL docs.google.com/forms
+    // (link pendek forms.gle tidak bisa diberi parameter, dibiarkan apa adanya).
+    function normalizeFormUrl(url) {
+        try {
+            const u = new URL(url);
+            if (u.hostname === 'docs.google.com' && u.pathname.indexOf('/forms/') === 0 && !u.searchParams.has('embedded')) {
+                u.searchParams.set('embedded', 'true');
+                return u.toString();
+            }
+        } catch (e) { /* URL tidak valid: pakai apa adanya */ }
+        return url;
+    }
+
     // Tampilkan identitas peserta jika elemen tersedia
     if (DOM.examIdentity && session.nama) {
         DOM.examIdentity.textContent = `${session.nama} (${session.kelas || 'Siswa'})`;
@@ -213,21 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function triggerPenaltyUI(count, details) {
-        if (DOM.startOverlay) DOM.startOverlay.style.display = 'none'; 
+        hideEl(DOM.startOverlay);
         if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.arm === 'function') {
             NEXORA_SECURITY.arm();
         }
-        
-        if (DOM.violationModal && DOM.violationText) {
-            DOM.violationText.innerHTML = `
-                <div style="text-align: center; color: #dc2626; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px;">
-                    PELANGGARAN TERDETEKSI (${count}/3)
-                </div>
-                <p style="margin: 0; font-size: 1rem; color: #374151;">${details}</p>
-            `;
-            DOM.violationModal.style.display = 'flex';
-            DOM.violationModal.classList.add('active');
-        }
+
+        showViolationModal(`PELANGGARAN TERDETEKSI (${count}/3)`, details);
     }
 
     // ==========================================
@@ -254,10 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (DOM.closeViolationBtn) {
         DOM.closeViolationBtn.addEventListener('click', () => {
-            if (DOM.violationModal) {
-                DOM.violationModal.style.display = 'none';
-                DOM.violationModal.classList.remove('active');
-            }
+            hideEl(DOM.violationModal);
             if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.enterFullscreen === 'function') {
                 NEXORA_SECURITY.enterFullscreen();
             }
@@ -325,21 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cegah tombol Back browser menutup/keluar dari halaman ujian: kita
     // "kunci" satu history entry ekstra, sehingga menekan Back hanya
     // membatalkan entry itu dan tetap berada di ujian.html.
+    let backGuardArmed = false;
     function armBackButtonGuard() {
+        if (backGuardArmed) return; // cegah listener ganda
+        backGuardArmed = true;
         history.pushState({ nexoraGuard: true }, document.title, location.href);
         window.addEventListener('popstate', () => {
             if (!isExamActiveNow()) return;
             history.pushState({ nexoraGuard: true }, document.title, location.href);
-            if (DOM.violationModal && DOM.violationText) {
-                DOM.violationText.innerHTML = `
-                    <div style="text-align: center; color: #dc2626; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px;">
-                        JANGAN TEKAN TOMBOL KEMBALI
-                    </div>
-                    <p style="margin: 0; font-size: 1rem; color: #374151;">Ujian masih berlangsung. Gunakan tombol yang tersedia di halaman ini saja.</p>
-                `;
-                DOM.violationModal.style.display = 'flex';
-                DOM.violationModal.classList.add('active');
-            }
+            showViolationModal('JANGAN TEKAN TOMBOL KEMBALI', 'Ujian masih berlangsung. Gunakan tombol yang tersedia di halaman ini saja.');
         });
     }
 
@@ -355,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (DOM.finished && DOM.finishReason) {
             DOM.finishReason.textContent = reasonStr;
-            DOM.finished.style.display = 'flex';
+            showEl(DOM.finished);
         }
 
         examActiveForNavGuard = false;
@@ -386,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Muat Form Google Form
             if (session.formUrl && DOM.formFrame) {
                 if (DOM.loading) DOM.loading.style.display = 'flex';
-                DOM.formFrame.src = session.formUrl;
+                DOM.formFrame.src = normalizeFormUrl(session.formUrl);
                 
                 DOM.formFrame.onload = () => {
                     if (DOM.loading) DOM.loading.style.display = 'none';
@@ -394,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Sembunyikan Overlay Mulai
-            if (DOM.startOverlay) DOM.startOverlay.style.display = 'none';
+            hideEl(DOM.startOverlay);
             
             // Tandai status bahwa ujian telah dimulai
             session.isStarted = true;
@@ -439,10 +470,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Jika siswa merefresh saat ujian sedang berjalan (di luar masa penalti)
     if ((session.startedAt || session.isStarted) && !isPenalty3Locked && !inPenaltyNow) {
-        if (DOM.startOverlay) DOM.startOverlay.style.display = 'none';
+        hideEl(DOM.startOverlay);
         
         if (DOM.formFrame && session.formUrl) {
-            DOM.formFrame.src = session.formUrl;
+            DOM.formFrame.src = normalizeFormUrl(session.formUrl);
         }
         
         if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.arm === 'function') {

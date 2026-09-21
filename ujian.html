@@ -93,6 +93,17 @@
 
 
     /*
+     * Saat class "hidden" dipasang oleh exam.js, overlay HARUS hilang.
+     * Selector ber-ID + class (spesifisitas lebih tinggi) supaya menang
+     * atas "display: flex !important" di atas.
+     */
+
+    #startOverlay.hidden {
+      display: none !important;
+    }
+
+
+    /*
      * Kartu "Siap Memulai?"
      */
 
