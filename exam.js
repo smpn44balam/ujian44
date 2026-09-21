@@ -102,6 +102,44 @@
 
   /*
    * =========================================================
+   * JAM REAL-TIME (CLIENT-SIDE)
+   * =========================================================
+   */
+  function updateRealtimeClock() {
+    const now = new Date();
+    
+    // Format Jam (HH:MM:SS)
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timeString = `${hours}:${minutes}:${seconds}`;
+    
+    // Format Tanggal
+    const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    
+    const hari = namaHari[now.getDay()];
+    const tanggal = now.getDate();
+    const bulan = namaBulan[now.getMonth()];
+    const tahun = now.getFullYear();
+    const dateString = `${hari}, ${tanggal} ${bulan} ${tahun}`;
+
+    // Update elemen DOM (aman meskipun elemen tidak ditemukan)
+    const clockEl = document.getElementById('realtimeClock');
+    const dateEl = document.getElementById('realtimeDate');
+    
+    if (clockEl) clockEl.textContent = timeString;
+    if (dateEl) dateEl.textContent = dateString;
+  }
+
+  // Inisialisasi awal agar jam langsung tampil
+  updateRealtimeClock();
+  // Jalankan interval per detik tanpa membebani server
+  setInterval(updateRealtimeClock, 1000);
+
+
+  /*
+   * =========================================================
    * STATE
    * =========================================================
    */
