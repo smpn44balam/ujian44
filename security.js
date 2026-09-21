@@ -1,258 +1,126 @@
-window.NexoraSecurity = (() => {
-  let violationCount = readStoredViolationCount();
-  let lastViolationAt = 0;
-  let onViolationCallback = null;
-  let armed = false;
-  let formFocusGraceUntil = 0;
-  let audioContext = null;
+/**
+ * NEXORA EXAM - Security & Monitoring Module
+ */
+const NEXORA_SECURITY = (function () {
+    let violationCount = 0;
+    let onViolationCallback = null;
+    let isArmed = false;
+    let audioCtx = null;
 
-  function initializeAudio() {
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return false;
-      if (!audioContext) audioContext = new AudioContext();
-      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
-      return true;
-    } catch (error) {
-      return false;
+    function initAudio() {
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch (e) {
+            console.warn("Audio Context init failed", e);
+        }
     }
-  }
 
-  function playViolationBeep() {
-    try {
-      if (!audioContext) return;
-      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-      const start = audioContext.currentTime;
-      const end = start + 2;
-      gain.gain.setValueAtTime(0.22, start);
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start(start);
-      gain.gain.exponentialRampToValueAtTime(0.001, end);
-      oscillator.stop(end);
-    } catch (error) {}
-  }
-
-  function getSession() {
-    try {
-      return JSON.parse(sessionStorage.getItem("nexoraSession") || "null");
-    } catch {
-      return null;
+    function playBeep(durationMs = 2000) {
+        try {
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            setTimeout(() => {
+                try { osc.stop(); } catch(e){}
+            }, durationMs);
+        } catch (e) {
+            console.error("Beep error:", e);
+        }
     }
-  }
 
-  function saveSession(session) {
-    try {
-      sessionStorage.setItem("nexoraSession", JSON.stringify(session));
-    } catch {}
-  }
-
-  function readStoredViolationCount() {
-    const session = getSession();
-    if (!session) return 0;
-    const count = Number(session.violations);
-    if (Number.isFinite(count) && count >= 0) return count;
-    return 0;
-  }
-
-  function setCallback(fn) {
-    onViolationCallback = typeof fn === "function" ? fn : null;
-  }
-
-  function getStudentViolationInfo(type) {
-    if (type === "FULLSCREEN_EXIT") {
-      return {
-        category: "Keluar dari Mode Layar Penuh",
-        title: "Kamu terdeteksi keluar dari mode layar penuh.",
-        message: "Silakan kembali ke mode layar penuh (Fullscreen) untuk melanjutkan ujian.",
-        reminder: "Dilarang membuka Google, tab lain, atau aplikasi lain selama ujian berlangsung."
-      };
+    function enterFullscreen() {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+            docEl.requestFullscreen().catch(err => console.log("Fullscreen restriction:", err));
+        } else if (docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen();
+        } else if (docEl.msRequestFullscreen) {
+            docEl.msRequestFullscreen();
+        }
     }
-    if (type === "WINDOW_BLUR" || type === "VISIBILITY_HIDDEN") {
-      return {
-        category: "Meninggalkan Halaman Ujian",
-        title: "Kamu terdeteksi meninggalkan halaman ujian.",
-        message: "Jangan membuka Google, tab lain, aplikasi lain, atau berpindah dari halaman ujian selama ujian berlangsung.",
-        reminder: "Silakan kembali ke halaman ujian untuk melanjutkan."
-      };
+
+    function sendMonitoring(type, details = "") {
+        const session = JSON.parse(localStorage.getItem('nexora_session') || '{}');
+        const scriptUrl = window.NEXORA_CONFIG ? window.NEXORA_CONFIG.scriptUrl : '';
+
+        if (!scriptUrl) return;
+
+        const payload = {
+            action: 'logViolation',
+            nisn: session.nisn || '-',
+            nama: session.nama || 'Siswa',
+            kelas: session.kelas || '-',
+            violationType: type,
+            details: details,
+            violationsCount: violationCount,
+            timestamp: new Date().toISOString()
+        };
+
+        // Kirim log ke Google Apps Script / Spreadsheet
+        fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).catch(err => console.error("Gagal kirim log kecurangan:", err));
     }
-    if (type === "DEVTOOLS_SHORTCUT") {
-      return {
-        category: "Fitur yang Tidak Diizinkan",
-        title: "Kamu terdeteksi mencoba membuka fitur yang tidak diperbolehkan selama ujian.",
-        message: "Jangan membuka Developer Tools atau fitur pengembang browser selama ujian berlangsung.",
-        reminder: "Tetap berada pada halaman ujian dan gunakan browser hanya untuk mengerjakan soal."
-      };
+
+    function recordViolation(type, details) {
+        if (!isArmed) return;
+        
+        violationCount++;
+        playBeep(2000);
+        sendMonitoring(type, details);
+
+        if (typeof onViolationCallback === 'function') {
+            onViolationCallback(violationCount, type, details);
+        }
     }
+
+    function setupEventListeners() {
+        // Deteksi Keluar Fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isArmed) {
+                recordViolation('FULLSCREEN_EXIT', 'Siswa keluar dari mode Layar Penuh');
+            }
+        });
+
+        // Deteksi Pindah Tab / Minimalize Browser
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isArmed) {
+                recordViolation('VISIBILITY_HIDDEN', 'Siswa berpindah tab / aplikasi');
+            }
+        });
+
+        // Deteksi Shortcut DevTools (F12, Ctrl+Shift+I, dll)
+        window.addEventListener('keydown', (e) => {
+            if (!isArmed) return;
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+                e.preventDefault();
+                recordViolation('DEVTOOLS_SHORTCUT', 'Membuka DevTools / Mode Pengembang');
+            }
+        });
+    }
+
     return {
-      category: "Aktivitas Tidak Diizinkan",
-      title: "Sistem mendeteksi aktivitas yang tidak diperbolehkan selama ujian.",
-      message: "Tetap berada pada halaman ujian dan jangan membuka hal lain selama pengerjaan.",
-      reminder: "Silakan kembali fokus mengerjakan ujian."
+        arm: function() { isArmed = true; setupEventListeners(); },
+        disarm: function() { isArmed = false; },
+        enterFullscreen: enterFullscreen,
+        initAudio: initAudio,
+        setCallback: function(fn) { onViolationCallback = fn; },
+        getViolationCount: function() { return violationCount; },
+        recordManual: recordViolation
     };
-  }
-
-  function sendMonitoring(type, payload = {}) {
-    if (type === "heartbeat" || type === "unload") return; 
-
-    try {
-      const session = getSession();
-      if (!session) return;
-      const endpoint = window.NEXORA_CONFIG?.monitoringUrl;
-      if (!endpoint) return;
-
-      const body = {
-        type,
-        payload,
-        sessionId: session.sessionId || session.id || "",
-        name: session.name || "",
-        className: session.className || "",
-        subjectName: session.subjectName || "",
-        violations: Number(session.violations || 0),
-        timestamp: Date.now()
-      };
-
-      fetch(endpoint, {
-        method: "POST",
-        body: JSON.stringify(body)
-      }).catch(() => {});
-      
-    } catch {}
-  }
-
-  function record(type, detail = "") {
-    if (!armed) return;
-    const now = Date.now();
-    const cooldown = Number(window.NEXORA_CONFIG?.warningCooldownMs) || 1500;
-    if (now - lastViolationAt < cooldown) return;
-
-    lastViolationAt = now;
-    violationCount += 1;
-    playViolationBeep();
-
-    const session = getSession();
-    if (session) {
-      session.violations = violationCount;
-      session.lastSecurityEvent = { type, detail, at: now };
-      saveSession(session);
-      appendLocalLog(session, type, detail);
-      sendMonitoring("violation", { event: type, detail, violations: violationCount });
-    }
-
-    if (onViolationCallback) {
-      onViolationCallback({
-        type,
-        detail,
-        count: violationCount,
-        studentInfo: getStudentViolationInfo(type)
-      });
-    }
-
-    const maxViolations = Number(window.NEXORA_CONFIG?.maxViolations) || 3;
-    if (violationCount >= maxViolations) armed = false;
-  }
-
-  function appendLocalLog(session, type, detail) {
-    try {
-      const key = "nexoraSecurityLogs";
-      const raw = localStorage.getItem(key);
-      let logs = [];
-      try { logs = raw ? JSON.parse(raw) : []; } catch { logs = []; }
-      if (!Array.isArray(logs)) logs = [];
-
-      logs.push({
-        sessionId: session.sessionId || session.id || "",
-        name: session.name || "",
-        className: session.className || "",
-        subjectName: session.subjectName || "",
-        type,
-        detail,
-        violations: violationCount,
-        at: Date.now()
-      });
-      if (logs.length > 500) logs = logs.slice(-500);
-      localStorage.setItem(key, JSON.stringify(logs));
-    } catch {}
-  }
-
-  async function enterFullscreen() {
-    try {
-      const element = document.documentElement;
-      if (document.fullscreenElement || document.webkitFullscreenElement) return true;
-      if (element.requestFullscreen) { await element.requestFullscreen(); return true; }
-      if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); return true; }
-    } catch (error) {}
-    return false;
-  }
-
-  function armFormFocusGrace() { formFocusGraceUntil = Date.now() + 2000; }
-  function isFormFocusGraceActive() { return Date.now() < formFocusGraceUntil; }
-  function isFormFrameActive() {
-    const frame = document.getElementById("formFrame");
-    if (!frame) return false;
-    return document.activeElement === frame || frame.contains(document.activeElement);
-  }
-
-  function arm() {
-    if (armed) return;
-    violationCount = readStoredViolationCount();
-    const maxViolations = Number(window.NEXORA_CONFIG?.maxViolations) || 3;
-    if (violationCount >= maxViolations) { armed = false; return; }
-    armed = true;
-
-    const formFrame = document.getElementById("formFrame");
-    if (formFrame) {
-      const formEvents = ["pointerdown", "mousedown", "touchstart", "click"];
-      formEvents.forEach((eventName) => {
-        formFrame.addEventListener(eventName, armFormFocusGrace, { passive: true });
-      });
-    }
-
-    document.addEventListener("visibilitychange", () => {
-      if (!armed) return;
-      if (document.visibilityState === "hidden") {
-        if (isFormFocusGraceActive()) return;
-        record("VISIBILITY_HIDDEN", "Halaman ujian menjadi tidak terlihat.");
-      }
-    });
-
-    document.addEventListener("fullscreenchange", () => {
-      if (!armed) return;
-      const isFullscreen = Boolean(document.fullscreenElement);
-      if (!isFullscreen) record("FULLSCREEN_EXIT", "Mode fullscreen keluar.");
-    });
-
-    document.addEventListener("webkitfullscreenchange", () => {
-      if (!armed) return;
-      const isFullscreen = Boolean(document.webkitFullscreenElement);
-      if (!isFullscreen) record("FULLSCREEN_EXIT", "Mode fullscreen keluar.");
-    });
-
-    window.addEventListener("blur", () => {
-      if (!armed) return;
-      if (isFormFocusGraceActive() || isFormFrameActive()) return;
-      record("WINDOW_BLUR", "Jendela / halaman ujian kehilangan fokus.");
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (!armed) return;
-      const key = String(event.key || "").toLowerCase();
-      if (event.key === "F12") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut F12 terdeteksi."); return; }
-      if (event.ctrlKey && event.shiftKey && key === "i") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+I terdeteksi."); return; }
-      if (event.ctrlKey && event.shiftKey && key === "j") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+J terdeteksi."); return; }
-      if (event.ctrlKey && event.shiftKey && key === "c") { event.preventDefault(); record("DEVTOOLS_SHORTCUT", "Shortcut Ctrl+Shift+C terdeteksi."); return; }
-    });
-  }
-
-  function disarm() { armed = false; }
-  function getCount() { return violationCount; }
-
-  return {
-    setCallback, record, arm, disarm, enterFullscreen, getCount,
-    getStudentViolationInfo, sendMonitoring, initializeAudio
-  };
 })();
