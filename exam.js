@@ -13,24 +13,8 @@
    * NEXORA EXAM — EXAM ENGINE
    * SMP NEGERI 44 BANDAR LAMPUNG
    * =========================================================
-   *
-   * FUNGSI UTAMA:
-   * - Timer ujian 90 menit
-   * - Resume sesi setelah refresh
-   * - Penalty pelanggaran:
-   *   #1 = 1 menit 30 detik
-   *   #2 = 5 menit
-   *   #3 = tunggu 60 detik, lalu wajib login kembali
-   * - Penalty tetap berjalan setelah refresh
-   * - Timer ujian tetap berjalan selama penalty
-   * - Google Form diblokir selama penalty
-   * =========================================================
    */
 
-  /*
-   * Jika sesi sudah selesai, jangan izinkan
-   * halaman ujian digunakan kembali.
-   */
   if (
     session.status === "FINISHED" ||
     session.endedAt
@@ -45,60 +29,27 @@
    * =========================================================
    */
 
-  const timerEl =
-    document.getElementById("timer");
+  const timerEl = document.getElementById("timer");
+  const badge = document.getElementById("violationBadge");
+  const frame = document.getElementById("formFrame");
+  const loading = document.getElementById("loading");
+  const startOverlay = document.getElementById("startOverlay");
+  const finished = document.getElementById("finished");
+  const finishReason = document.getElementById("finishReason");
+  const violationModal = document.getElementById("violationModal");
+  const violationText = document.getElementById("violationText");
+  const closeViolation = document.getElementById("closeViolation");
+  const beginExamBtn = document.getElementById("beginExamBtn");
+  const fullscreenBtn = document.getElementById("fullscreenBtn");
+  const examIdentity = document.getElementById("examIdentity");
 
-  const badge =
-    document.getElementById("violationBadge");
+  examIdentity.textContent = `${session.name} • ${session.className} • ${session.subjectName}`;
 
-  const frame =
-    document.getElementById("formFrame");
-
-  const loading =
-    document.getElementById("loading");
-
-  const startOverlay =
-    document.getElementById("startOverlay");
-
-  const finished =
-    document.getElementById("finished");
-
-  const finishReason =
-    document.getElementById("finishReason");
-
-  const violationModal =
-    document.getElementById("violationModal");
-
-  const violationText =
-    document.getElementById("violationText");
-
-  const closeViolation =
-    document.getElementById("closeViolation");
-
-  const beginExamBtn =
-    document.getElementById("beginExamBtn");
-
-  const fullscreenBtn =
-    document.getElementById("fullscreenBtn");
-
-  const examIdentity =
-    document.getElementById("examIdentity");
-
-  examIdentity.textContent =
-    `${session.name} • ${session.className} • ${session.subjectName}`;
-
-  /*
-   * URL Google Form tetap menggunakan URL
-   * yang sudah dipilih pada halaman sebelumnya.
-   */
   frame.src = session.formUrl;
 
-  frame.addEventListener(
-    "load",
-    () => {
-      loading.classList.add("hidden");
-    }
-  );
+  frame.addEventListener("load", () => {
+    loading.classList.add("hidden");
+  });
 
   /*
    * =========================================================
@@ -108,13 +59,11 @@
   function updateRealtimeClock() {
     const now = new Date();
     
-    // Format Jam (HH:MM:SS)
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
     const timeString = `${hours}:${minutes}:${seconds}`;
     
-    // Format Tanggal
     const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     
@@ -124,7 +73,6 @@
     const tahun = now.getFullYear();
     const dateString = `${hari}, ${tanggal} ${bulan} ${tahun}`;
 
-    // Update elemen DOM (aman meskipun elemen tidak ditemukan)
     const clockEl = document.getElementById('realtimeClock');
     const dateEl = document.getElementById('realtimeDate');
     
@@ -132,11 +80,8 @@
     if (dateEl) dateEl.textContent = dateString;
   }
 
-  // Inisialisasi awal agar jam langsung tampil
   updateRealtimeClock();
-  // Jalankan interval per detik tanpa membebani server
   setInterval(updateRealtimeClock, 1000);
-
 
   /*
    * =========================================================
@@ -145,19 +90,12 @@
    */
 
   let endAt = 0;
-
-  let heartbeat = null;
-
+  let heartbeat = null; // Dibiarkan null, interval sengaja dinonaktifkan
   let timerInterval = null;
-
   let penaltyInterval = null;
-
   let finishedOnce = false;
-
   let examStarted = false;
-
   let penaltyActive = false;
-
   let thirdViolationInterval = null;
 
   /*
@@ -166,14 +104,9 @@
    * =========================================================
    */
 
-  const FIRST_PENALTY_MS =
-    90 * 1000;
-
-  const SECOND_PENALTY_MS =
-    5 * 60 * 1000;
-
-  const THIRD_RELOGIN_WAIT_MS =
-    60 * 1000;
+  const FIRST_PENALTY_MS = 90 * 1000;
+  const SECOND_PENALTY_MS = 5 * 60 * 1000;
+  const THIRD_RELOGIN_WAIT_MS = 60 * 1000;
 
   /*
    * =========================================================
@@ -182,107 +115,47 @@
    */
 
   function save() {
-    session.violations =
-      NexoraSecurity.getCount();
-
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
+    session.violations = NexoraSecurity.getCount();
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
   }
 
   function savePenalty(penaltyUntil) {
-    session.penaltyUntil =
-      penaltyUntil;
-
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
+    session.penaltyUntil = penaltyUntil;
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
   }
 
   function clearPenalty() {
     delete session.penaltyUntil;
-
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
   }
 
   /*
    * =========================================================
-   * FORMAT WAKTU UJIAN
+   * FORMAT WAKTU
    * =========================================================
    */
 
   function formatTime(ms) {
-    const total =
-      Math.max(
-        0,
-        Math.ceil(ms / 1000)
-      );
-
-    const h =
-      Math.floor(total / 3600);
-
-    const m =
-      Math.floor(
-        (total % 3600) / 60
-      );
-
-    const s =
-      total % 60;
+    const total = Math.max(0, Math.ceil(ms / 1000));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
 
     if (h > 0) {
-      return (
-        `${String(h).padStart(2, "0")}:` +
-        `${String(m).padStart(2, "0")}:` +
-        `${String(s).padStart(2, "0")}`
-      );
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     }
-
-    return (
-      `${String(m).padStart(2, "0")}:` +
-      `${String(s).padStart(2, "0")}`
-    );
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
-  /*
-   * =========================================================
-   * FORMAT WAKTU PENALTI
-   * =========================================================
-   */
-
   function formatPenaltyTime(ms) {
-    const totalSeconds =
-      Math.max(
-        0,
-        Math.ceil(ms / 1000)
-      );
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
 
-    const minutes =
-      Math.floor(
-        totalSeconds / 60
-      );
-
-    const seconds =
-      totalSeconds % 60;
-
-    if (
-      minutes > 0 &&
-      seconds > 0
-    ) {
-      return (
-        `${minutes} menit ` +
-        `${seconds} detik`
-      );
+    if (minutes > 0 && seconds > 0) {
+      return `${minutes} menit ${seconds} detik`;
     }
-
-    if (minutes > 0) {
-      return `${minutes} menit`;
-    }
-
+    if (minutes > 0) return `${minutes} menit`;
     return `${seconds} detik`;
   }
 
@@ -294,25 +167,14 @@
 
   function blockForm() {
     penaltyActive = true;
-
-    frame.style.pointerEvents =
-      "none";
-
-    frame.setAttribute(
-      "aria-disabled",
-      "true"
-    );
+    frame.style.pointerEvents = "none";
+    frame.setAttribute("aria-disabled", "true");
   }
 
   function unblockForm() {
     penaltyActive = false;
-
-    frame.style.pointerEvents =
-      "auto";
-
-    frame.removeAttribute(
-      "aria-disabled"
-    );
+    frame.style.pointerEvents = "auto";
+    frame.removeAttribute("aria-disabled");
   }
 
   /*
@@ -322,29 +184,14 @@
    */
 
   function tick() {
-    if (
-      !examStarted ||
-      finishedOnce
-    ) {
-      return;
-    }
+    if (!examStarted || finishedOnce) return;
 
-    const remaining =
-      endAt - Date.now();
-
-    timerEl.textContent =
-      formatTime(remaining);
-
-    timerEl.classList.toggle(
-      "timer-danger",
-      remaining <=
-        5 * 60 * 1000
-    );
+    const remaining = endAt - Date.now();
+    timerEl.textContent = formatTime(remaining);
+    timerEl.classList.toggle("timer-danger", remaining <= 5 * 60 * 1000);
 
     if (remaining <= 0) {
-      finish(
-        "Waktu ujian telah selesai."
-      );
+      finish("Waktu ujian telah selesai.");
     }
   }
 
@@ -355,36 +202,15 @@
    */
 
   function getPenaltyRemaining() {
-    if (
-      !session.penaltyUntil
-    ) {
-      return 0;
-    }
-
-    return Math.max(
-      0,
-      Number(session.penaltyUntil) -
-        Date.now()
-    );
+    if (!session.penaltyUntil) return 0;
+    return Math.max(0, Number(session.penaltyUntil) - Date.now());
   }
 
-  function updatePenaltyMessage(
-    remainingMs
-  ) {
-    const info =
-      session.currentViolationInfo;
-
-    const title =
-      info?.title ||
-      "Peringatan Keamanan";
-
-    const message =
-      info?.message ||
-      "Aktivitas yang tidak diperbolehkan terdeteksi selama ujian.";
-
-    const reminder =
-      info?.reminder ||
-      "Tetap berada pada halaman ujian.";
+  function updatePenaltyMessage(remainingMs) {
+    const info = session.currentViolationInfo;
+    const title = info?.title || "Peringatan Keamanan";
+    const message = info?.message || "Aktivitas yang tidak diperbolehkan terdeteksi selama ujian.";
+    const reminder = info?.reminder || "Tetap berada pada halaman ujian.";
 
     violationText.innerHTML = `
       <strong>${title}</strong>
@@ -404,218 +230,97 @@
 
   function finishPenalty() {
     if (penaltyInterval) {
-      clearInterval(
-        penaltyInterval
-      );
-
+      clearInterval(penaltyInterval);
       penaltyInterval = null;
     }
 
     clearPenalty();
-
-    session.currentViolationInfo =
-      null;
-
+    session.currentViolationInfo = null;
     unblockForm();
-
-    violationModal.classList.add(
-      "hidden"
-    );
-
+    violationModal.classList.add("hidden");
     tick();
   }
 
-  function startPenalty(
-    penaltyMs
-  ) {
-    if (finishedOnce) {
-      return;
-    }
+  function startPenalty(penaltyMs) {
+    if (finishedOnce) return;
 
-    const penaltyUntil =
-      Date.now() + penaltyMs;
-
-    savePenalty(
-      penaltyUntil
-    );
-
+    const penaltyUntil = Date.now() + penaltyMs;
+    savePenalty(penaltyUntil);
     blockForm();
-
-    violationModal.classList.remove(
-      "hidden"
-    );
+    violationModal.classList.remove("hidden");
 
     if (closeViolation) {
-      closeViolation.textContent =
-        "Menunggu Penalti...";
-
-      closeViolation.disabled =
-        true;
+      closeViolation.textContent = "Menunggu Penalti...";
+      closeViolation.disabled = true;
     }
 
-    if (penaltyInterval) {
-      clearInterval(
-        penaltyInterval
-      );
-    }
+    if (penaltyInterval) clearInterval(penaltyInterval);
 
     const update = () => {
-      if (finishedOnce) {
-        return;
-      }
-
-      const remaining =
-        getPenaltyRemaining();
-
+      if (finishedOnce) return;
+      const remaining = getPenaltyRemaining();
       if (remaining <= 0) {
         finishPenalty();
         return;
       }
-
-      updatePenaltyMessage(
-        remaining
-      );
-
-      /*
-       * Timer utama tetap berjalan
-       * selama penalty.
-       */
+      updatePenaltyMessage(remaining);
       tick();
     };
 
     update();
-
-    penaltyInterval =
-      setInterval(
-        update,
-        500
-      );
+    penaltyInterval = setInterval(update, 500);
   }
 
-  /*
-   * =========================================================
-   * RESUME PENALTY SETELAH REFRESH
-   * =========================================================
-   */
-
   function restorePenalty() {
-    if (restoreThirdReloginLock()) {
-      return;
-    }
+    if (restoreThirdReloginLock()) return;
 
-    const remaining =
-      getPenaltyRemaining();
-
+    const remaining = getPenaltyRemaining();
     if (remaining <= 0) {
-      if (session.penaltyUntil) {
-        clearPenalty();
-      }
-
+      if (session.penaltyUntil) clearPenalty();
       unblockForm();
-
       return;
     }
 
     blockForm();
-
-    violationModal.classList.remove(
-      "hidden"
-    );
+    violationModal.classList.remove("hidden");
 
     if (closeViolation) {
-      closeViolation.textContent =
-        "Menunggu Penalti...";
-
-      closeViolation.disabled =
-        true;
+      closeViolation.textContent = "Menunggu Penalti...";
+      closeViolation.disabled = true;
     }
 
-    if (penaltyInterval) {
-      clearInterval(
-        penaltyInterval
-      );
-    }
+    if (penaltyInterval) clearInterval(penaltyInterval);
 
     const update = () => {
-      if (finishedOnce) {
-        return;
-      }
-
-      const left =
-        getPenaltyRemaining();
-
+      if (finishedOnce) return;
+      const left = getPenaltyRemaining();
       if (left <= 0) {
         finishPenalty();
         return;
       }
-
-      updatePenaltyMessage(
-        left
-      );
-
+      updatePenaltyMessage(left);
       tick();
     };
 
     update();
-
-    penaltyInterval =
-      setInterval(
-        update,
-        500
-      );
+    penaltyInterval = setInterval(update, 500);
   }
 
   /*
    * =========================================================
    * PELANGGARAN KE-3 — RELOGIN LOCK
    * =========================================================
-   *
-   * Alur:
-   *
-   * 1. Pelanggaran #3 terdeteksi.
-   * 2. Form langsung dikunci.
-   * 3. Siswa melihat timer 60 detik.
-   * 4. Setelah 60 detik, sesi ujian ditutup.
-   * 5. Siswa diarahkan kembali ke halaman login.
-   * 6. Login kembali menggunakan identitas seperti awal.
-   *
-   * Data sesi penting tetap dipertahankan:
-   * - startedAt
-   * - durationMs
-   * - violations
-   * - formUrl
-   * - identitas siswa
-   *
-   * Sehingga login ulang tidak membuat timer kembali
-   * ke awal dan jumlah pelanggaran tidak kembali ke 0.
-   * =========================================================
    */
 
   function getThirdReloginRemaining() {
-    if (!session.thirdReloginUntil) {
-      return 0;
-    }
-
-    return Math.max(
-      0,
-      Number(session.thirdReloginUntil) -
-        Date.now()
-    );
+    if (!session.thirdReloginUntil) return 0;
+    return Math.max(0, Number(session.thirdReloginUntil) - Date.now());
   }
 
-  function updateThirdReloginMessage(
-    remainingMs
-  ) {
-    const info =
-      session.currentViolationInfo;
-
-    const title =
-      info?.title ||
-      "Pelanggaran keamanan terdeteksi.";
-
-    const message =
-      info?.message ||
-      "Sistem mendeteksi aktivitas yang tidak diperbolehkan selama ujian.";
+  function updateThirdReloginMessage(remainingMs) {
+    const info = session.currentViolationInfo;
+    const title = info?.title || "Pelanggaran keamanan terdeteksi.";
+    const message = info?.message || "Sistem mendeteksi aktivitas yang tidak diperbolehkan selama ujian.";
 
     violationText.innerHTML = `
       <strong>Pelanggaran ke-3 Terdeteksi</strong>
@@ -624,9 +329,7 @@
       <br><br>
       ${message}
       <br><br>
-      <strong>
-        Ujian sementara dikunci.
-      </strong>
+      <strong>Ujian sementara dikunci.</strong>
       <br>
       Silakan tetap berada di tempat dan tunggu sampai proses ini selesai.
       <br><br>
@@ -642,247 +345,95 @@
 
   function redirectToRelogin() {
     if (thirdViolationInterval) {
-      clearInterval(
-        thirdViolationInterval
-      );
-
+      clearInterval(thirdViolationInterval);
       thirdViolationInterval = null;
     }
 
-    /*
-     * Status ini BUKAN FINISHED.
-     * Tujuannya agar sesi tetap dapat dilanjutkan
-     * setelah login ulang.
-     */
-    session.status =
-      "RELOGIN_REQUIRED";
-
-    session.reloginRequired =
-      true;
-
-    session.reloginAt =
-      Date.now();
-
+    session.status = "RELOGIN_REQUIRED";
+    session.reloginRequired = true;
+    session.reloginAt = Date.now();
     delete session.thirdReloginUntil;
+    session.currentViolationInfo = null;
 
-    session.currentViolationInfo =
-      null;
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
 
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
-
-    /*
-     * Matikan monitoring halaman ujian.
-     */
     NexoraSecurity.disarm();
+    if (timerInterval) clearInterval(timerInterval);
+    if (penaltyInterval) clearInterval(penaltyInterval);
 
-    if (heartbeat) {
-      clearInterval(
-        heartbeat
-      );
+    frame.src = "about:blank";
+    frame.classList.add("hidden");
+    frame.style.pointerEvents = "none";
 
-      heartbeat = null;
-    }
-
-    if (timerInterval) {
-      clearInterval(
-        timerInterval
-      );
-
-      timerInterval = null;
-    }
-
-    if (penaltyInterval) {
-      clearInterval(
-        penaltyInterval
-      );
-
-      penaltyInterval = null;
-    }
-
-    /*
-     * Putus Google Form agar tidak dapat
-     * dikerjakan sebelum login kembali.
-     */
-    frame.src =
-      "about:blank";
-
-    frame.classList.add(
-      "hidden"
-    );
-
-    frame.style.pointerEvents =
-      "none";
-
-    /*
-     * Keluar dari fullscreen.
-     */
     try {
-      const exitPromise =
-        document.exitFullscreen?.();
-
-      exitPromise?.catch?.(
-        () => {}
-      );
+      const exitPromise = document.exitFullscreen?.();
+      exitPromise?.catch?.(() => {});
     } catch {}
 
-    /*
-     * Catat bahwa siswa dikunci dan
-     * diarahkan untuk login ulang.
-     */
-    NexoraSecurity.sendMonitoring(
-      "relogin_required",
-      {
-        reason:
-          "Pelanggaran ke-3",
+    NexoraSecurity.sendMonitoring("relogin_required", {
+      reason: "Pelanggaran ke-3",
+      violations: NexoraSecurity.getCount(),
+      remainingMs: Math.max(0, endAt - Date.now())
+    });
 
-        violations:
-          NexoraSecurity.getCount(),
-
-        remainingMs:
-          Math.max(
-            0,
-            endAt - Date.now()
-          )
-      }
-    );
-
-    /*
-     * Jangan tampilkan layar FINISHED.
-     * Langsung kembali ke halaman login.
-     */
-    window.location.replace(
-      "index.html"
-    );
+    window.location.replace("index.html");
   }
 
   function startThirdReloginLock() {
-    if (finishedOnce) {
-      return;
-    }
+    if (finishedOnce) return;
 
-    session.thirdReloginUntil =
-      Date.now() +
-      THIRD_RELOGIN_WAIT_MS;
-
-    session.reloginRequired =
-      false;
-
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
+    session.thirdReloginUntil = Date.now() + THIRD_RELOGIN_WAIT_MS;
+    session.reloginRequired = false;
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
 
     blockForm();
-
-    violationModal.classList.remove(
-      "hidden"
-    );
+    violationModal.classList.remove("hidden");
 
     if (closeViolation) {
-      closeViolation.textContent =
-        "Menunggu 60 Detik...";
-
-      closeViolation.disabled =
-        true;
+      closeViolation.textContent = "Menunggu 60 Detik...";
+      closeViolation.disabled = true;
     }
 
-    if (thirdViolationInterval) {
-      clearInterval(
-        thirdViolationInterval
-      );
-    }
+    if (thirdViolationInterval) clearInterval(thirdViolationInterval);
 
     const update = () => {
-      if (finishedOnce) {
-        return;
-      }
-
-      const remaining =
-        getThirdReloginRemaining();
-
+      if (finishedOnce) return;
+      const remaining = getThirdReloginRemaining();
       if (remaining <= 0) {
         updateThirdReloginMessage(0);
-
         redirectToRelogin();
-
         return;
       }
-
-      updateThirdReloginMessage(
-        remaining
-      );
-
-      /*
-       * Timer ujian tetap dihitung dari startedAt,
-       * sehingga waktu 60 detik ini tetap mengurangi
-       * waktu ujian sebagaimana penalty sebelumnya.
-       */
+      updateThirdReloginMessage(remaining);
       tick();
     };
 
     update();
-
-    thirdViolationInterval =
-      setInterval(
-        update,
-        500
-      );
+    thirdViolationInterval = setInterval(update, 500);
   }
 
   function restoreThirdReloginLock() {
-    /*
-     * Jika status ini ditemukan setelah refresh,
-     * jangan langsung membuka Google Form.
-     */
-    if (!session.thirdReloginUntil) {
-      return false;
-    }
+    if (!session.thirdReloginUntil) return false;
 
     blockForm();
+    violationModal.classList.remove("hidden");
 
-    violationModal.classList.remove(
-      "hidden"
-    );
-
-    if (thirdViolationInterval) {
-      clearInterval(
-        thirdViolationInterval
-      );
-    }
+    if (thirdViolationInterval) clearInterval(thirdViolationInterval);
 
     const update = () => {
-      if (finishedOnce) {
-        return;
-      }
-
-      const remaining =
-        getThirdReloginRemaining();
-
+      if (finishedOnce) return;
+      const remaining = getThirdReloginRemaining();
       if (remaining <= 0) {
         updateThirdReloginMessage(0);
-
         redirectToRelogin();
-
         return;
       }
-
-      updateThirdReloginMessage(
-        remaining
-      );
-
+      updateThirdReloginMessage(remaining);
       tick();
     };
 
     update();
-
-    thirdViolationInterval =
-      setInterval(
-        update,
-        500
-      );
+    thirdViolationInterval = setInterval(update, 500);
 
     return true;
   }
@@ -894,138 +445,43 @@
    */
 
   function showViolation(v) {
-    if (finishedOnce) {
-      return;
-    }
+    if (finishedOnce) return;
 
-    /*
-     * Pastikan counter pada badge
-     * mengikuti security engine.
-     */
-    badge.textContent =
-      `⚠ ${v.count} / ${NEXORA_CONFIG.maxViolations}`;
+    badge.textContent = `⚠ ${v.count} / ${NEXORA_CONFIG.maxViolations}`;
+    badge.classList.toggle("danger", v.count >= NEXORA_CONFIG.maxViolations);
 
-    badge.classList.toggle(
-      "danger",
-      v.count >=
-        NEXORA_CONFIG.maxViolations
-    );
+    session.currentViolationInfo = v.studentInfo || NexoraSecurity.getStudentViolationInfo(v.type);
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
 
-    /*
-     * Simpan informasi bahasa siswa
-     * agar bisa dipulihkan jika refresh
-     * terjadi ketika modal/penalty aktif.
-     */
-    session.currentViolationInfo =
-      v.studentInfo ||
-      NexoraSecurity.getStudentViolationInfo(
-        v.type
-      );
-
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
-
-    /*
-     * =====================================================
-     * PELANGGARAN KE-3
-     * =====================================================
-     *
-     * Siswa tidak langsung dikeluarkan.
-     * Sistem memberikan waktu tunggu 60 detik.
-     * Setelah itu halaman ujian ditutup dan siswa
-     * wajib login kembali.
-     */
-
-    if (
-      v.count >=
-      NEXORA_CONFIG.maxViolations
-    ) {
+    if (v.count >= NEXORA_CONFIG.maxViolations) {
       startThirdReloginLock();
-
       return;
     }
-
-    /*
-     * =====================================================
-     * PELANGGARAN #1
-     * =====================================================
-     */
 
     if (v.count === 1) {
-      startPenalty(
-        FIRST_PENALTY_MS
-      );
-
+      startPenalty(FIRST_PENALTY_MS);
       return;
     }
-
-    /*
-     * =====================================================
-     * PELANGGARAN #2
-     * =====================================================
-     */
 
     if (v.count === 2) {
-      startPenalty(
-        SECOND_PENALTY_MS
-      );
-
+      startPenalty(SECOND_PENALTY_MS);
       return;
     }
 
-    /*
-     * Fallback jika suatu saat
-     * konfigurasi berubah.
-     */
-    violationModal.classList.remove(
-      "hidden"
-    );
-
+    violationModal.classList.remove("hidden");
     updatePenaltyMessage(0);
   }
 
-  /*
-   * =========================================================
-   * CLOSE VIOLATION
-   * =========================================================
-   */
+  closeViolation?.addEventListener("click", () => {
+    if (penaltyActive) return;
+    violationModal.classList.add("hidden");
+  });
 
-  closeViolation?.addEventListener(
-    "click",
-    () => {
-      /*
-       * Selama penalty aktif,
-       * modal tidak boleh ditutup.
-       */
-      if (penaltyActive) {
-        return;
-      }
-
-      violationModal.classList.add(
-        "hidden"
-      );
+  fullscreenBtn?.addEventListener("click", () => {
+    if (!finishedOnce && !penaltyActive) {
+      NexoraSecurity.enterFullscreen();
     }
-  );
-
-  /*
-   * =========================================================
-   * FULLSCREEN BUTTON
-   * =========================================================
-   */
-
-  fullscreenBtn?.addEventListener(
-    "click",
-    () => {
-      if (
-        !finishedOnce &&
-        !penaltyActive
-      ) {
-        NexoraSecurity.enterFullscreen();
-      }
-    }
-  );
+  });
 
   /*
    * =========================================================
@@ -1033,227 +489,77 @@
    * =========================================================
    */
 
-  async function startExam(
-    isResume = false
-  ) {
-    if (
-      examStarted ||
-      finishedOnce
-    ) {
-      return;
-    }
+  async function startExam(isResume = false) {
+    if (examStarted || finishedOnce) return;
 
-    /*
-     * =====================================================
-     * RESUME SESI YANG SUDAH BERJALAN
-     * =====================================================
-     */
-
-    if (
-      isResume &&
-      session.status === "ONGOING" &&
-      session.startedAt &&
-      session.durationMs
-    ) {
+    if (isResume && session.status === "ONGOING" && session.startedAt && session.durationMs) {
       examStarted = true;
+      endAt = Number(session.startedAt) + Number(session.durationMs);
+      startOverlay.classList.add("hidden");
 
-      endAt =
-        Number(session.startedAt) +
-        Number(session.durationMs);
-
-      startOverlay.classList.add(
-        "hidden"
-      );
-
-      /*
-       * Browser bisa menolak fullscreen
-       * setelah refresh karena tidak ada
-       * user gesture. Kita tetap melanjutkan
-       * sesi agar timer tidak reset.
-       */
       await NexoraSecurity.enterFullscreen();
-
       NexoraSecurity.arm();
-
       startHeartbeat();
-
       startTimer();
-
       restorePenalty();
-
       tick();
-
       return;
     }
-
-    /*
-     * =====================================================
-     * START BARU
-     * =====================================================
-     */
 
     examStarted = true;
-
-    session.startedAt =
-      Date.now();
-
-    session.durationMs =
-      NEXORA_CONFIG.durationMinutes *
-      60 *
-      1000;
-
-    endAt =
-      session.startedAt +
-      session.durationMs;
-
-    session.status =
-      "ONGOING";
-
-    session.violations =
-      NexoraSecurity.getCount();
+    session.startedAt = Date.now();
+    session.durationMs = NEXORA_CONFIG.durationMinutes * 60 * 1000;
+    endAt = session.startedAt + session.durationMs;
+    session.status = "ONGOING";
+    session.violations = NexoraSecurity.getCount();
 
     delete session.penaltyUntil;
-
     delete session.thirdReloginUntil;
-
     delete session.reloginRequired;
-
     delete session.reloginAt;
-
     delete session.currentViolationInfo;
 
-    sessionStorage.setItem(
-      "nexoraSession",
-      JSON.stringify(session)
-    );
+    sessionStorage.setItem("nexoraSession", JSON.stringify(session));
+    startOverlay.classList.add("hidden");
 
-    startOverlay.classList.add(
-      "hidden"
-    );
-
-    /*
-     * Inisialisasi audio dari user gesture.
-     * Browser tidak mengizinkan website mengatur
-     * volume perangkat secara paksa.
-     */
     NexoraSecurity.initializeAudio?.();
-
     await NexoraSecurity.enterFullscreen();
-
     NexoraSecurity.arm();
 
-    NexoraSecurity.sendMonitoring(
-      "start",
-      {
-        formUrl:
-          session.formUrl,
-
-        startedAt:
-          session.startedAt,
-
-        durationMs:
-          session.durationMs
-      }
-    );
+    // Data "start" tidak lagi dikirim berkat Gatekeeper di security.js
+    NexoraSecurity.sendMonitoring("start", {
+      formUrl: session.formUrl,
+      startedAt: session.startedAt,
+      durationMs: session.durationMs
+    });
 
     startHeartbeat();
-
     startTimer();
-
     tick();
   }
-
-  /*
-   * =========================================================
-   * START TIMER
-   * =========================================================
-   */
 
   function startTimer() {
-    if (timerInterval) {
-      clearInterval(
-        timerInterval
-      );
-    }
-
-    timerInterval =
-      setInterval(
-        tick,
-        500
-      );
-
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(tick, 500);
     tick();
   }
 
   /*
    * =========================================================
-   * HEARTBEAT
+   * MATIKAN HEARTBEAT
    * =========================================================
    */
-
   function startHeartbeat() {
-    if (heartbeat) {
-      clearInterval(
-        heartbeat
-      );
-    }
-
-    heartbeat =
-      setInterval(
-        () => {
-          if (
-            finishedOnce
-          ) {
-            return;
-          }
-
-          NexoraSecurity.sendMonitoring(
-            "heartbeat",
-            {
-              remainingMs:
-                Math.max(
-                  0,
-                  endAt -
-                    Date.now()
-                ),
-
-              penaltyRemainingMs:
-                getPenaltyRemaining(),
-
-              violations:
-                NexoraSecurity.getCount(),
-
-              penaltyActive:
-                penaltyActive
-            }
-          );
-        },
-        20000
-      );
+    // Fungsi ini dikosongkan. 
+    // Sistem tidak akan lagi melempar request setiap 20/90 detik ke Google Apps Script.
+    // Ini menghemat kuota server dan mencegah lag.
   }
 
-  /*
-   * =========================================================
-   * BUTTON MULAI
-   * =========================================================
-   */
+  beginExamBtn?.addEventListener("click", async () => {
+    await startExam(false);
+  });
 
-  beginExamBtn?.addEventListener(
-    "click",
-    async () => {
-      await startExam(false);
-    }
-  );
-
-  /*
-   * =========================================================
-   * SECURITY CALLBACK
-   * =========================================================
-   */
-
-  NexoraSecurity.setCallback(
-    showViolation
-  );
+  NexoraSecurity.setCallback(showViolation);
 
   /*
    * =========================================================
@@ -1262,167 +568,53 @@
    */
 
   function finish(reason) {
-    if (finishedOnce) {
-      return;
-    }
-
+    if (finishedOnce) return;
     finishedOnce = true;
 
-    /*
-     * 1. Hentikan timer.
-     */
-    if (timerInterval) {
-      clearInterval(
-        timerInterval
-      );
+    if (timerInterval) clearInterval(timerInterval);
+    if (penaltyInterval) clearInterval(penaltyInterval);
+    if (thirdViolationInterval) clearInterval(thirdViolationInterval);
+    
+    // Heartbeat variabel ada tetapi sengaja dihiraukan.
 
-      timerInterval = null;
-    }
-
-    /*
-     * 2. Hentikan heartbeat.
-     */
-    if (heartbeat) {
-      clearInterval(
-        heartbeat
-      );
-
-      heartbeat = null;
-    }
-
-    /*
-     * 3. Hentikan penalty timer.
-     */
-    if (penaltyInterval) {
-      clearInterval(
-        penaltyInterval
-      );
-
-      penaltyInterval = null;
-    }
-
-    /*
-     * 3b. Hentikan timer pelanggaran ke-3.
-     */
-    if (thirdViolationInterval) {
-      clearInterval(
-        thirdViolationInterval
-      );
-
-      thirdViolationInterval = null;
-    }
-
-    /*
-     * 4. Matikan security.
-     */
     NexoraSecurity.disarm();
 
-    /*
-     * 5. Hapus penalty.
-     */
     delete session.penaltyUntil;
-
     delete session.thirdReloginUntil;
-
     delete session.reloginRequired;
-
     delete session.reloginAt;
-
-    session.currentViolationInfo =
-      null;
-
-    /*
-     * 6. Tandai sesi selesai.
-     */
-    session.endedAt =
-      Date.now();
-
-    session.status =
-      "FINISHED";
-
-    session.endReason =
-      reason;
+    session.currentViolationInfo = null;
+    
+    session.endedAt = Date.now();
+    session.status = "FINISHED";
+    session.endReason = reason;
 
     save();
 
-    /*
-     * 7. Kirim finish ke server.
-     */
-    NexoraSecurity.sendMonitoring(
-      "finish",
-      {
-        reason,
+    // Data "finish" tidak lagi dikirim berkat Gatekeeper di security.js
+    NexoraSecurity.sendMonitoring("finish", {
+      reason,
+      violations: NexoraSecurity.getCount()
+    });
 
-        violations:
-          NexoraSecurity.getCount()
-      }
-    );
+    frame.src = "about:blank";
+    frame.classList.add("hidden");
+    frame.style.pointerEvents = "none";
 
-    /*
-     * 8. Putus akses ke Google Form.
-     */
-    frame.src =
-      "about:blank";
-
-    frame.classList.add(
-      "hidden"
-    );
-
-    frame.style.pointerEvents =
-      "none";
-
-    /*
-     * 9. Tutup fullscreen.
-     */
     try {
-      const exitPromise =
-        document.exitFullscreen?.();
-
-      exitPromise?.catch?.(
-        () => {}
-      );
+      const exitPromise = document.exitFullscreen?.();
+      exitPromise?.catch?.(() => {});
     } catch {}
 
-    /*
-     * 10. Tutup modal.
-     */
-    violationModal?.classList.add(
-      "hidden"
-    );
-
-    /*
-     * 11. Tampilkan layar selesai.
-     */
-    finished.classList.remove(
-      "hidden"
-    );
-
-    finishReason.textContent =
-      reason;
+    violationModal?.classList.add("hidden");
+    finished.classList.remove("hidden");
+    finishReason.textContent = reason;
   }
 
-  /*
-   * =========================================================
-   * INITIALIZATION
-   * =========================================================
-   *
-   * Jika halaman baru:
-   *   tampilkan tombol mulai.
-   *
-   * Jika refresh saat ONGOING:
-   *   lanjutkan sesi lama.
-   */
-
-  if (
-    session.status === "ONGOING" &&
-    session.startedAt &&
-    session.durationMs
-  ) {
+  if (session.status === "ONGOING" && session.startedAt && session.durationMs) {
     startExam(true);
   } else {
-    startOverlay.classList.remove(
-      "hidden"
-    );
+    startOverlay.classList.remove("hidden");
   }
 
 })();
