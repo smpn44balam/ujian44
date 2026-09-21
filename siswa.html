@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <title>Pemeriksaan Ujian — NEXORA EXAM</title>
+
+  <!-- MASTER CSS NEXORA EXAM -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="student-confirmation">
+
+  <main class="shell narrow">
+
+    <!-- =====================================================
+         BRAND / HEADER
+         ===================================================== -->
+    <section class="brand-card compact">
+
+      <div class="brand-mark">
+        44
+      </div>
+
+      <div class="brand-content">
+
+        <div class="eyebrow">
+          KONFIRMASI PESERTA
+        </div>
+
+        <h1>
+          NEXORA EXAM
+        </h1>
+
+        <p class="school-name">
+          SMP NEGERI 44 BANDAR LAMPUNG
+        </p>
+
+        <p class="brand-tagline">
+          NEXT GENERATION ONLINE ASSESSMENT
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         MAIN CARD
+         ===================================================== -->
+    <section class="card">
+
+      <!-- ===================================================
+           STEP 2
+           =================================================== -->
+      <div class="section-title">
+
+        <span class="section-number">
+          2
+        </span>
+
+        <div class="section-heading">
+
+          <h2>
+            Pemeriksaan Data dan Sistem
+          </h2>
+
+          <p>
+            Periksa data peserta dan kesiapan sistem sebelum ujian.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- ===================================================
+           DATA PESERTA
+           =================================================== -->
+      <div class="confirmation-section">
+
+        <div class="subsection-title">
+
+          <span class="subsection-line"></span>
+
+          <div>
+            <strong>
+              DATA PESERTA
+            </strong>
+
+            <small>
+              Pastikan informasi berikut sudah benar.
+            </small>
+          </div>
+
+        </div>
+
+
+        <div class="identity-grid">
+
+          <div class="identity-item">
+
+            <small>
+              Nama
+            </small>
+
+            <strong id="name">
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="identity-item">
+
+            <small>
+              Kelas
+            </small>
+
+            <strong id="className">
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="identity-item">
+
+            <small>
+              Tingkat
+            </small>
+
+            <strong id="level">
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="identity-item">
+
+            <small>
+              Mata Pelajaran
+            </small>
+
+            <strong id="subject">
+              -
+            </strong>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ===================================================
+           PEMERIKSAAN SISTEM
+           =================================================== -->
+      <div class="confirmation-section system-check-section">
+
+        <div class="subsection-title">
+
+          <span class="subsection-line"></span>
+
+          <div>
+            <strong>
+              PEMERIKSAAN SISTEM
+            </strong>
+
+            <small>
+              Fitur yang akan digunakan selama ujian.
+            </small>
+          </div>
+
+        </div>
+
+
+        <div class="system-check-grid">
+
+
+          <!-- CHECK 1 -->
+          <div class="system-check-item">
+
+            <span class="check-icon">
+              ✓
+            </span>
+
+            <div>
+
+              <strong>
+                Mode layar penuh
+              </strong>
+
+              <small>
+                Layar ujian akan menggunakan mode penuh.
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <!-- CHECK 2 -->
+          <div class="system-check-item">
+
+            <span class="check-icon">
+              ✓
+            </span>
+
+            <div>
+
+              <strong>
+                Timer ujian
+              </strong>
+
+              <small>
+                Waktu pengerjaan akan dihitung selama ujian.
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <!-- CHECK 3 -->
+          <div class="system-check-item">
+
+            <span class="check-icon">
+              ✓
+            </span>
+
+            <div>
+
+              <strong>
+                Pencatatan indikator keamanan
+              </strong>
+
+              <small>
+                Aktivitas browser yang relevan akan dicatat.
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <!-- CHECK 4 -->
+          <div class="system-check-item">
+
+            <span class="check-icon">
+              ✓
+            </span>
+
+            <div>
+
+              <strong>
+                Google Form
+              </strong>
+
+              <small>
+                Digunakan sebagai lembar jawaban ujian.
+              </small>
+
+            </div>
+
+          </div>
+
+
+        </div>
+
+      </div>
+
+
+      <!-- ===================================================
+           PERINGATAN SEBELUM MULAI
+           =================================================== -->
+      <div class="notice warning">
+
+        <div class="notice-heading">
+
+          <span class="notice-icon">
+            !
+          </span>
+
+          <strong>
+            Sebelum mulai
+          </strong>
+
+        </div>
+
+        <p>
+          Pastikan koneksi internet stabil dan data peserta sudah benar.
+          Setelah tombol mulai ditekan, timer berjalan dan NEXORA akan
+          meminta mode layar penuh.
+        </p>
+
+      </div>
+
+
+      <!-- ===================================================
+           ACTION BUTTON
+           =================================================== -->
+      <div class="actions">
+
+        <button
+          class="secondary"
+          id="backBtn"
+          type="button"
+        >
+          ← Kembali
+        </button>
+
+
+        <button
+          class="primary"
+          id="startBtn"
+          type="button"
+        >
+          Mulai Ujian →
+        </button>
+
+      </div>
+
+
+      <!-- ===================================================
+           ERROR MESSAGE
+           =================================================== -->
+      <p
+        id="confirmError"
+        class="error hidden"
+      ></p>
+
+    </section>
+
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+    <p class="page-caption">
+      NEXORA EXAM · SMP NEGERI 44 BANDAR LAMPUNG · 2026
+    </p>
+
+  </main>
+
+
+  <!-- =======================================================
+       JAVASCRIPT
+       Jangan mengubah urutan dan fungsi file yang sudah ada.
+       ======================================================= -->
+
+  <script src="config.js"></script>
+  <script src="exam-config.js"></script>
+
+</body>
+</html>

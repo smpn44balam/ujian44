@@ -1,0 +1,171 @@
+(() => {
+  const classSelect = document.getElementById("classSelect");
+  const subjectSelect = document.getElementById("subjectSelect");
+  const form = document.getElementById("loginForm");
+  const error = document.getElementById("loginError");
+  const info = document.getElementById("formInfo");
+  const nameInput = document.getElementById("studentName"); 
+
+  // Load opsi kelas dari config
+  Object.entries(NEXORA_CONFIG.classes).forEach(([level, classes]) => {
+    const group = document.createElement("optgroup");
+    group.label = `Kelas ${level}`;
+    classes.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      group.appendChild(opt);
+    });
+    classSelect.appendChild(group);
+  });
+
+  // Load opsi mata pelajaran dari config
+  NEXORA_CONFIG.subjects.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    subjectSelect.appendChild(opt);
+  });
+
+  // Update info ketersediaan form
+  function updateInfo() {
+    const level = getLevelFromClass(classSelect.value);
+    const sid = subjectSelect.value;
+    const url = getFormUrl(level, sid);
+    if (level && sid) {
+      info.classList.remove("hidden");
+      info.innerHTML = url
+        ? `<strong>Form tersedia.</strong><br>Kelas ${level} akan menggunakan paket soal ${NEXORA_CONFIG.subjects.find(x=>x.id===sid).name} tingkat ${level}.`
+        : `<strong>Form belum dikonfigurasi.</strong><br>Administrator perlu mengisi link Google Form untuk kelas ${level}.`;
+    } else {
+      info.classList.add("hidden");
+    }
+  }
+  classSelect.addEventListener("change", updateInfo);
+  subjectSelect.addEventListener("change", updateInfo);
+
+
+  // =======================================================
+  // SISTEM RELOGIN LOCK & PENALTI
+  // -------------------------------------------------------
+  // CATATAN PERBAIKAN: versi lama membaca key "NEXORA_EXAM_STATE" yang
+  // TIDAK PERNAH ditulis oleh file manapun (app.js/exam.js/security.js
+  // hanya menulis ke "nexora_session"), jadi blok ini sebelumnya adalah
+  // dead code dan relogin-lock tidak pernah aktif. Sekarang dibaca dari
+  // "nexora_session" — satu-satunya key sesi yang dipakai di seluruh app.
+  // =======================================================
+  let originalCreatedAt = null;
+  const existingSessionStr = localStorage.getItem("nexora_session") || sessionStorage.getItem("nexora_session");
+
+  if (existingSessionStr) {
+    try {
+      const candidate = JSON.parse(existingSessionStr);
+
+      if (candidate.createdAt) {
+        originalCreatedAt = candidate.createdAt;
+      }
+
+      const isFrozen = candidate.status === "RELOGIN_REQUIRED";
+      const hasViolations = (candidate.violations || 0) > 0;
+
+      if (hasViolations || isFrozen) {
+        nameInput.value = candidate.name || candidate.nama || "";
+        nameInput.readOnly = true;
+        classSelect.value = candidate.className || candidate.kelas || "";
+        subjectSelect.value = candidate.subjectId || "";
+
+        classSelect.style.pointerEvents = "none";
+        subjectSelect.style.pointerEvents = "none";
+        classSelect.style.backgroundColor = "#eef4fb";
+        subjectSelect.style.backgroundColor = "#eef4fb";
+
+        updateInfo();
+
+        if (isFrozen) {
+          showError("Sesi Anda ditangguhkan karena pelanggaran. Silakan klik Lanjutkan untuk login ulang.");
+        } else {
+          showError(`Melanjutkan sesi ujian... (Anda tercatat memiliki ${candidate.violations} pelanggaran).`);
+        }
+      }
+    } catch (e) {
+      console.error("Gagal memuat status sesi sebelumnya:", e);
+    }
+  }
+  // =======================================================
+
+
+  // =======================================================
+  // PROSES SUBMIT LOGIN (YANG SUDAH DIPERBAIKI)
+  // =======================================================
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    error.classList.add("hidden");
+
+    const name = nameInput.value.trim().replace(/\s+/g, " ");
+    const className = classSelect.value;
+    const subjectId = subjectSelect.value;
+    const level = getLevelFromClass(className);
+    const subject = NEXORA_CONFIG.subjects.find(s => s.id === subjectId);
+    const formUrl = getFormUrl(level, subjectId);
+
+    if (name.length < 3) return showError("Nama lengkap harus diisi.");
+    if (!className || !level) return showError("Pilih kelas.");
+    if (!subject) return showError("Pilih mata pelajaran.");
+    if (!formUrl) return showError(`Google Form untuk ${level} — ${subject.name} belum diatur oleh administrator.`);
+
+    // Jika ini relogin (sesi lama masih ada & identitas cocok), pertahankan
+    // riwayat pelanggaran, sessionId, dan waktu mulai — supaya siswa tidak
+    // bisa "reset" hukuman hanya dengan login ulang. Kalau ini login baru
+    // (bukan lanjutan), mulai sesi bersih.
+    let previous = null;
+    try {
+      const prevStr = localStorage.getItem("nexora_session") || sessionStorage.getItem("nexora_session");
+      if (prevStr) previous = JSON.parse(prevStr);
+    } catch (e) { previous = null; }
+
+    const isResume = previous && (previous.name === name) && (previous.className === className) &&
+      ((previous.violations || 0) > 0 || previous.status === "RELOGIN_REQUIRED");
+
+    const candidateData = {
+      name: name,
+      className: className,
+      level: level,
+      subjectId: subjectId,
+      subjectName: subject.name,
+      formUrl: formUrl,
+      createdAt: originalCreatedAt ? originalCreatedAt : Date.now(),
+
+      // Format kompatibilitas untuk dibaca oleh exam.js / security.js
+      nama: name,
+      kelas: className,
+      mapel: subject.name,
+
+      sessionId: (isResume && previous.sessionId) ? previous.sessionId
+        : ("NX-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8).toUpperCase()),
+      status: "ONGOING",
+      reloginRequired: false,
+      violations: isResume ? (previous.violations || 0) : 0,
+      startedAt: isResume ? (previous.startedAt || null) : null,
+      isStarted: isResume ? !!previous.isStarted : false,
+      penaltyUntil: null,
+      thirdReloginUntil: null
+    };
+
+    const jsonString = JSON.stringify(candidateData);
+
+    // Satu key konsisten di kedua storage: "nexora_session".
+    // (Key lama "nexoraCandidate" / "nexoraSession" / "NEXORA_SESSION" /
+    // "NEXORA_EXAM_STATE" dihapus dari alur karena saling tidak sinkron
+    // dan menyebabkan bug #9 di laporan.)
+    sessionStorage.setItem("nexora_session", jsonString);
+    localStorage.setItem("nexora_session", jsonString);
+
+    // Lanjut ke halaman berikutnya
+    location.href = "siswa.html";
+  });
+
+  function showError(msg) {
+    error.textContent = msg;
+    error.classList.remove("hidden");
+  }
+})();
