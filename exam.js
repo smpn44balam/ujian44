@@ -65,7 +65,6 @@
   setInterval(updateRealtimeClock, 1000);
 
   let endAt = 0;
-  let heartbeat = null;
   let timerInterval = null;
   let penaltyInterval = null;
   let finishedOnce = false;
@@ -512,7 +511,7 @@
   if (session.status === "ONGOING" && session.startedAt && session.durationMs) {
     startExam(true);
   } else {
-    startOverlay.classList.add("hidden");
+    startOverlay.classList.remove("hidden");
   }
 
 })();
