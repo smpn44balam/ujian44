@@ -1,6 +1,5 @@
 /* =========================================================
    NEXORA EXAM SMPN 44 — KONFIGURASI
-   Anda cukup mengisi 36 link Google Form di bagian GOOGLE_FORMS.
    ========================================================= */
 
 const NEXORA_CONFIG = {
@@ -10,8 +9,9 @@ const NEXORA_CONFIG = {
   maxViolations: 3,
   warningCooldownMs: 2500,
 
-  // URL Web App Google Apps Script Anda yang terbaru
-  monitoringUrl: "https://script.google.com/macros/s/AKfycbx9JYuBxjMj_iieOsTtiw1DEto8tyWg0EcdGH6SyCW99lxpRVA8rpVchJnkyYdjyZC8QQ/exec",
+  // URL Web App Google Apps Script terbaru
+  scriptUrl: "https://script.google.com/macros/s/AKfycbxpdluGTuUwM2Ylv98kP3n3m3V2jm80dyE3reudMrjzWwUthkx04Kq37yxlLkj6EL8l7Q/exec",
+  monitoringUrl: "https://script.google.com/macros/s/AKfycbxpdluGTuUwM2Ylv98kP3n3m3V2jm80dyE3reudMrjzWwUthkx04Kq37yxlLkj6EL8l7Q/exec",
 
   classes: {
     VII: ["VII-A","VII-B","VII-C","VII-D","VII-E","VII-F"],
@@ -86,12 +86,18 @@ const GOOGLE_FORMS = {
 };
 
 function getLevelFromClass(className) {
-  if (className.startsWith("VII-")) return "VII";
-  if (className.startsWith("VIII-")) return "VIII";
-  if (className.startsWith("IX-")) return "IX";
+  if (className.startsWith("VII-") || className.startsWith("VII")) return "VII";
+  if (className.startsWith("VIII-") || className.startsWith("VIII")) return "VIII";
+  if (className.startsWith("IX-") || className.startsWith("IX")) return "IX";
   return "";
 }
 
 function getFormUrl(level, subjectId) {
   return (GOOGLE_FORMS[level] && GOOGLE_FORMS[level][subjectId]) || "";
 }
+
+// Menghubungkan variabel & fungsi ke window object agar terakses secara global
+window.NEXORA_CONFIG = NEXORA_CONFIG;
+window.GOOGLE_FORMS = GOOGLE_FORMS;
+window.getLevelFromClass = getLevelFromClass;
+window.getFormUrl = getFormUrl;
