@@ -4,8 +4,9 @@
   const form = document.getElementById("loginForm");
   const error = document.getElementById("loginError");
   const info = document.getElementById("formInfo");
-  const nameInput = document.getElementById("studentName"); // Tambahan referensi input nama
+  const nameInput = document.getElementById("studentName"); 
 
+  // Load opsi kelas dari config
   Object.entries(NEXORA_CONFIG.classes).forEach(([level, classes]) => {
     const group = document.createElement("optgroup");
     group.label = `Kelas ${level}`;
@@ -18,6 +19,7 @@
     classSelect.appendChild(group);
   });
 
+  // Load opsi mata pelajaran dari config
   NEXORA_CONFIG.subjects.forEach(s => {
     const opt = document.createElement("option");
     opt.value = s.id;
@@ -25,6 +27,7 @@
     subjectSelect.appendChild(opt);
   });
 
+  // Update info ketersediaan form
   function updateInfo() {
     const level = getLevelFromClass(classSelect.value);
     const sid = subjectSelect.value;
@@ -43,7 +46,7 @@
 
 
   // =======================================================
-  // [TAMBAHAN] SISTEM RELOGIN LOCK & PENALTI
+  // SISTEM RELOGIN LOCK & PENALTI
   // =======================================================
   let originalCreatedAt = null;
   const existingStateStr = sessionStorage.getItem("NEXORA_EXAM_STATE");
@@ -54,22 +57,16 @@
       const state = JSON.parse(existingStateStr);
       const candidate = JSON.parse(existingCandidateStr);
 
-      // Simpan waktu mulai asli agar timer TIDAK kereset jadi 90 menit lagi!
       if (candidate.createdAt) {
         originalCreatedAt = candidate.createdAt;
       }
 
-      // Jika siswa sudah punya pelanggaran / sedang dibekukan
       if (state.violations > 0 || state.isFrozen) {
-        // Auto-fill dan Kunci Nama
         nameInput.value = candidate.name;
         nameInput.readOnly = true; 
-
-        // Auto-fill Kelas dan Mapel
         classSelect.value = candidate.className;
         subjectSelect.value = candidate.subjectId;
         
-        // Kunci Dropdown agar tidak bisa ganti identitas
         classSelect.style.pointerEvents = "none";
         subjectSelect.style.pointerEvents = "none";
         classSelect.style.backgroundColor = "#eef4fb";
@@ -90,11 +87,13 @@
   // =======================================================
 
 
+  // =======================================================
+  // PROSES SUBMIT LOGIN (YANG SUDAH DIPERBAIKI)
+  // =======================================================
   form.addEventListener("submit", e => {
     e.preventDefault();
     error.classList.add("hidden");
 
-    // Ambil value dari nameInput yang sudah kita definisikan di atas
     const name = nameInput.value.trim().replace(/\s+/g, " ");
     const className = classSelect.value;
     const subjectId = subjectSelect.value;
@@ -107,18 +106,35 @@
     if (!subject) return showError("Pilih mata pelajaran.");
     if (!formUrl) return showError(`Google Form untuk ${level} — ${subject.name} belum diatur oleh administrator.`);
 
-    const candidate = {
-      name, 
-      className, 
-      level, 
-      subjectId, 
+    // Menggabungkan format data agar bisa dibaca oleh app.js maupun exam.js
+    const candidateData = {
+      // Format bawaan app.js
+      name: name, 
+      className: className, 
+      level: level, 
+      subjectId: subjectId, 
       subjectName: subject.name,
-      formUrl, 
-      // Logika Penting: Gunakan waktu lama jika ada, agar sisa waktu tetap akurat
-      createdAt: originalCreatedAt ? originalCreatedAt : Date.now()
+      formUrl: formUrl, 
+      createdAt: originalCreatedAt ? originalCreatedAt : Date.now(),
+      
+      // Format kompatibilitas untuk dibaca oleh exam.js / security.js
+      nama: name,
+      kelas: className,
+      mapel: subject.name,
+      status: "ONGOING",
+      violations: 0
     };
     
-    sessionStorage.setItem("nexoraCandidate", JSON.stringify(candidate));
+    const jsonString = JSON.stringify(candidateData);
+
+    // Simpan ke semua Storage dan dengan semua nama Key 
+    // agar exam.js tidak gagal membacanya!
+    sessionStorage.setItem("nexoraCandidate", jsonString);
+    sessionStorage.setItem("nexora_session", jsonString);
+    localStorage.setItem("nexoraCandidate", jsonString);
+    localStorage.setItem("nexora_session", jsonString);
+
+    // Lanjut ke halaman berikutnya
     location.href = "siswa.html";
   });
 
