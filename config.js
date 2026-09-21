@@ -11,7 +11,7 @@ const NEXORA_CONFIG = {
   warningCooldownMs: 2500,
 
   // URL Web App Google Apps Script Anda yang terbaru
-  monitoringUrl: "https://script.google.com/macros/s/AKfycbz1IFL6-D0DKl42pUV-dJU_mDLMWGk2SNHZczYTorw-uCfTxeH_EAAgnR78rPxPHl6Hxg/exec",
+  monitoringUrl: "https://script.google.com/macros/s/AKfycbx9JYuBxjMj_iieOsTtiw1DEto8tyWg0EcdGH6SyCW99lxpRVA8rpVchJnkyYdjyZC8QQ/exec",
 
   classes: {
     VII: ["VII-A","VII-B","VII-C","VII-D","VII-E","VII-F"],
