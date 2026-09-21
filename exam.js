@@ -1,17 +1,33 @@
 /**
  * NEXORA EXAM - Next Generation Examination & Assessment System
- * File: exam.js (FULL VERSION + PERBAIKAN)
+ * File: exam.js (FULL FIXED VERSION)
  * SMP Negeri 44 Bandar Lampung
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
-    // 1. VALIDASI SESI UJIAN
+    // 1. VALIDASI SESI UJIAN (PEMBERSIHAN & SAFETY CHECK)
     // ==========================================
-    let session = JSON.parse(localStorage.getItem('nexora_session') || 'null');
-    
-    // Jika tidak ada sesi, atau status mewajibkan login ulang (Pelanggaran #3)
-    if (!session || !session.formUrl || session.status === "RELOGIN_REQUIRED") {
+    // Cek di localStorage dan sessionStorage agar kompatibel
+    let rawSession = localStorage.getItem('nexora_session') || sessionStorage.getItem('nexora_session') || localStorage.getItem('NEXORA_SESSION') || sessionStorage.getItem('NEXORA_SESSION');
+    let session = null;
+
+    try {
+        session = JSON.parse(rawSession || 'null');
+    } catch (e) {
+        console.error("Format session tidak valid:", e);
+    }
+
+    // Jika tidak ada sesi sama sekali, kembalikan ke login
+    if (!session || !session.formUrl) {
+        console.warn("Session atau Form URL tidak ditemukan. Redirecting to index.html...");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // Jika status RELOGIN_REQUIRED (setelah pelanggaran #3 selesai countdown)
+    if (session.status === "RELOGIN_REQUIRED" && session.reloginRequired === true) {
+        console.warn("Status sesi membutuhkan Login Ulang.");
         window.location.href = 'index.html';
         return;
     }
@@ -26,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formFrame: document.getElementById('formFrame'),
         timer: document.getElementById('timer'),
         realtimeClock: document.getElementById('realtimeClock'),
+        realtimeDate: document.getElementById('realtimeDate'),
         violationBadge: document.getElementById('violationBadge'),
         violationModal: document.getElementById('violationModal'),
         violationText: document.getElementById('violationText'),
@@ -36,9 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
         examIdentity: document.getElementById('examIdentity')
     };
 
+    // Helper untuk menyimpan session kembali dengan aman
+    function saveSession() {
+        localStorage.setItem('nexora_session', JSON.stringify(session));
+        sessionStorage.setItem('nexora_session', JSON.stringify(session));
+    }
+
     // Tampilkan identitas peserta jika elemen tersedia
     if (DOM.examIdentity && session.nama) {
-        DOM.examIdentity.textContent = `${session.nama} (${session.kelas})`;
+        DOM.examIdentity.textContent = `${session.nama} (${session.kelas || 'Siswa'})`;
     }
 
     // Tampilkan badge pelanggaran terakhir
@@ -46,27 +69,33 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.violationBadge.textContent = `⚠ ${session.violations || 0} / 3`;
     }
 
-    // Set jumlah pelanggaran ke modul security
-    if (typeof NEXORA_SECURITY.setViolationCount === 'function') {
+    // Set jumlah pelanggaran ke modul security jika ada
+    if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setViolationCount === 'function') {
         NEXORA_SECURITY.setViolationCount(session.violations || 0);
     }
 
     // ==========================================
-    // 3. FITUR JAM REAL-TIME (BARU)
+    // 3. FITUR JAM REAL-TIME (TAHAP 1 - PRIORITAS Utama)
     // ==========================================
     function updateRealtimeClock() {
         const now = new Date();
         if (DOM.realtimeClock) {
-            DOM.realtimeClock.textContent = now.toLocaleTimeString('id-ID', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-            });
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+            DOM.realtimeClock.textContent = `${hrs}:${mins}:${secs}`;
+        }
+
+        if (DOM.realtimeDate) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            DOM.realtimeDate.textContent = now.toLocaleDateString('id-ID', options);
         }
     }
     setInterval(updateRealtimeClock, 1000);
     updateRealtimeClock(); 
 
     // ==========================================
-    // 4. TIMER SISA WAKTU (Diperbaiki)
+    // 4. TIMER SISA WAKTU
     // ==========================================
     let durationMs = (window.NEXORA_CONFIG?.durationMinutes || 90) * 60 * 1000;
     let examTimerInterval = null;
@@ -76,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!session.startedAt) {
             session.startedAt = Date.now();
             session.durationMs = durationMs;
-            localStorage.setItem('nexora_session', JSON.stringify(session));
+            saveSession();
         }
 
         if (examTimerInterval) clearInterval(examTimerInterval);
@@ -102,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 5. SISTEM PENALTY & RELOGIN
+    // 5. SISTEM PENALTY & RELOGIN (#1, #2, #3)
     // ==========================================
     let penaltyInterval = null;
     let penaltyRemainingMs = 0;
@@ -115,13 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (DOM.closeViolationBtn) DOM.closeViolationBtn.style.display = 'none'; 
         
-        // Simpan waktu penalti ke session (Anti-Refresh Cheat)
         if (isRelogin) {
             session.thirdReloginUntil = Date.now() + penaltyRemainingMs;
         } else {
             session.penaltyUntil = Date.now() + penaltyRemainingMs;
         }
-        localStorage.setItem('nexora_session', JSON.stringify(session));
+        saveSession();
 
         if (penaltyInterval) clearInterval(penaltyInterval);
         
@@ -143,13 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     session.thirdReloginUntil = null;
                     session.status = "RELOGIN_REQUIRED";
                     session.reloginRequired = true;
-                    localStorage.setItem('nexora_session', JSON.stringify(session));
+                    saveSession();
                     
                     alert("Sesi dibekukan karena pelanggaran ke-3. Anda wajib Login Ulang!");
                     window.location.href = 'index.html';
                 } else {
                     session.penaltyUntil = null;
-                    localStorage.setItem('nexora_session', JSON.stringify(session));
+                    saveSession();
                     
                     const penaltyElem = document.getElementById('countdownPenalty');
                     if(penaltyElem) penaltyElem.remove();
@@ -163,11 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    // Fungsi Restore Penalty jika siswa melakukan Refresh saat Form Terkunci
     function restorePenalty() {
         if (session.penaltyUntil && session.penaltyUntil > Date.now()) {
             const remainingSecs = Math.floor((session.penaltyUntil - Date.now()) / 1000);
-            triggerPenaltyUI(session.violations, `Anda merefresh halaman saat penalti berjalan.`);
+            triggerPenaltyUI(session.violations || 1, `Anda merefresh halaman saat penalti berjalan.`);
             applyPenalty(remainingSecs, false);
             return true;
         }
@@ -177,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function restoreThirdReloginLock() {
         if (session.thirdReloginUntil && session.thirdReloginUntil > Date.now()) {
             const remainingSecs = Math.floor((session.thirdReloginUntil - Date.now()) / 1000);
-            triggerPenaltyUI(session.violations, `Menunggu sesi dibekukan...`);
+            triggerPenaltyUI(session.violations || 3, `Menunggu sesi dibekukan...`);
             applyPenalty(remainingSecs, true);
             return true;
         }
@@ -186,7 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function triggerPenaltyUI(count, details) {
         if (DOM.startOverlay) DOM.startOverlay.style.display = 'none'; 
-        NEXORA_SECURITY.arm(); // Pastikan security tetap menyala
+        if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.arm === 'function') {
+            NEXORA_SECURITY.arm();
+        }
         
         if (DOM.violationModal && DOM.violationText) {
             DOM.violationText.innerHTML = `
@@ -201,25 +230,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 6. CALLBACK SECURITY (Diperbaiki)
+    // 6. CALLBACK SECURITY (DENGAN PENANGANAN SAFE-CALL)
     // ==========================================
-    NEXORA_SECURITY.setCallback((count, type, details) => {
-        session.violations = count;
-        localStorage.setItem('nexora_session', JSON.stringify(session));
+    if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setCallback === 'function') {
+        NEXORA_SECURITY.setCallback((count, type, details) => {
+            session.violations = count;
+            saveSession();
 
-        if (DOM.violationBadge) DOM.violationBadge.textContent = `⚠ ${count} / 3`;
-        
-        triggerPenaltyUI(count, details);
+            if (DOM.violationBadge) DOM.violationBadge.textContent = `⚠ ${count} / 3`;
+            
+            triggerPenaltyUI(count, details);
 
-        // Aturan Penalti sesuai Ringkasan Proyek
-        if (count === 1) {
-            applyPenalty(90, false); // Penalti 1: 90 detik
-        } else if (count === 2) {
-            applyPenalty(300, false); // Penalti 2: 5 menit
-        } else if (count >= 3) {
-            applyPenalty(60, true); // Penalti 3: 60 detik -> LOGOUT
-        }
-    });
+            if (count === 1) {
+                applyPenalty(90, false);
+            } else if (count === 2) {
+                applyPenalty(300, false);
+            } else if (count >= 3) {
+                applyPenalty(60, true);
+            }
+        });
+    }
 
     if (DOM.closeViolationBtn) {
         DOM.closeViolationBtn.addEventListener('click', () => {
@@ -227,13 +257,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 DOM.violationModal.style.display = 'none';
                 DOM.violationModal.classList.remove('active');
             }
-            // PAKSA FULLSCREEN LAGI
-            NEXORA_SECURITY.enterFullscreen();
+            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.enterFullscreen === 'function') {
+                NEXORA_SECURITY.enterFullscreen();
+            }
         });
     }
 
     // ==========================================
-    // 7. SISTEM HEARTBEAT (Hemat Kuota - 20 Detik)
+    // 7. SISTEM HEARTBEAT (Interval 20 Detik)
     // ==========================================
     function startHeartbeat() {
         setInterval(() => {
@@ -257,14 +288,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).catch(e => console.log("Heartbeat tersendat (Abaikan, sistem berjalan lokal)"));
-        }, 20000); // 20.000 ms = 20 Detik
+        }, 20000);
     }
 
     // ==========================================
     // 8. LOGIKA SELESAI UJIAN
     // ==========================================
     function finishExam(reasonStr) {
-        NEXORA_SECURITY.disarm();
+        if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.disarm === 'function') {
+            NEXORA_SECURITY.disarm();
+        }
         if (DOM.formFrame) DOM.formFrame.style.display = 'none';
         if (DOM.timer) DOM.timer.textContent = "00:00:00";
         
@@ -273,8 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM.finished.style.display = 'flex';
         }
 
-        // Hapus sesi agar siswa tidak bisa masuk lagi tanpa login ulang
         localStorage.removeItem('nexora_session');
+        sessionStorage.removeItem('nexora_session');
     }
 
     // ==========================================
@@ -282,58 +315,71 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     if (DOM.beginExamBtn) {
         DOM.beginExamBtn.addEventListener('click', () => {
-            // 1. Inisiasi Audio Beep
-            NEXORA_SECURITY.initAudio();
-            
-            // 2. Minta Fullscreen (Wajib karena ini dari klik pengguna)
-            NEXORA_SECURITY.enterFullscreen();
-            
-            // 3. Aktifkan Keamanan
-            NEXORA_SECURITY.arm();
+            // Safe call inisialisasi Audio
+            if (typeof NEXORA_SECURITY !== 'undefined') {
+                if (typeof NEXORA_SECURITY.initializeAudio === 'function') {
+                    NEXORA_SECURITY.initializeAudio();
+                } else if (typeof NEXORA_SECURITY.initAudio === 'function') {
+                    NEXORA_SECURITY.initAudio();
+                }
+                if (typeof NEXORA_SECURITY.enterFullscreen === 'function') {
+                    NEXORA_SECURITY.enterFullscreen();
+                }
+                if (typeof NEXORA_SECURITY.arm === 'function') {
+                    NEXORA_SECURITY.arm();
+                }
+            }
 
-            // 4. Muat Form
-            if (session.formUrl && DOM.formFrame && DOM.formFrame.src !== session.formUrl) {
-                if(DOM.loading) DOM.loading.style.display = 'flex';
+            // Muat Form Google Form
+            if (session.formUrl && DOM.formFrame) {
+                if (DOM.loading) DOM.loading.style.display = 'flex';
                 DOM.formFrame.src = session.formUrl;
                 
                 DOM.formFrame.onload = () => {
-                    if(DOM.loading) DOM.loading.style.display = 'none';
+                    if (DOM.loading) DOM.loading.style.display = 'none';
                 };
             }
 
-            // 5. Sembunyikan Overlay
+            // Sembunyikan Overlay Mulai
             if (DOM.startOverlay) DOM.startOverlay.style.display = 'none';
             
-            // 6. Jalankan Timer & Heartbeat
+            // Tandai status bahwa ujian telah dimulai
+            session.isStarted = true;
+            saveSession();
+
+            // Jalankan Timer & Heartbeat
             startTimer();
             startHeartbeat();
         });
     }
 
-    // Tombol manual Fullscreen (ikon ⛶ di header)
     if (DOM.fullscreenBtn) {
         DOM.fullscreenBtn.addEventListener('click', () => {
-            NEXORA_SECURITY.enterFullscreen();
+            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.enterFullscreen === 'function') {
+                NEXORA_SECURITY.enterFullscreen();
+            }
         });
     }
 
     // ==========================================
-    // 10. PEMERIKSAAN AWAL SAAT HALAMAN DIMUAT
+    // 10. PEMERIKSAAN AWAL SAAT HALAMAN DIMUAT (RESUME STATE)
     // ==========================================
-    // Cek apakah ada penalti yang harus dilanjutkan
     const isPenalty3Locked = restoreThirdReloginLock();
     if (!isPenalty3Locked) {
         restorePenalty();
     }
 
-    // Jika timer sudah pernah berjalan (kasus refresh halaman)
-    if (session.startedAt && !isPenalty3Locked && !(session.penaltyUntil > Date.now())) {
+    // Jika siswa merefresh saat ujian sedang berjalan
+    if ((session.startedAt || session.isStarted) && !isPenalty3Locked && !(session.penaltyUntil > Date.now())) {
         if (DOM.startOverlay) DOM.startOverlay.style.display = 'none';
         
-        // Muat Form langsung
-        if (DOM.formFrame) DOM.formFrame.src = session.formUrl;
+        if (DOM.formFrame && session.formUrl) {
+            DOM.formFrame.src = session.formUrl;
+        }
         
-        NEXORA_SECURITY.arm();
+        if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.arm === 'function') {
+            NEXORA_SECURITY.arm();
+        }
         startTimer();
         startHeartbeat();
     }
