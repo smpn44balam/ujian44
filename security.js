@@ -160,17 +160,19 @@ window.NexoraSecurity = (() => {
 
   /*
    * =========================================================
-   * SEND MONITORING (GATEKEEPER - PENGHEMATAN QUOTA)
+   * SEND MONITORING
    * =========================================================
    */
 
   function sendMonitoring(type, payload = {}) {
     /*
-     * GERBANG PENJAGA: 
-     * Memblokir status "start", "finish", "heartbeat", dan "unload".
-     * Hanya mengizinkan "violation" dan "relogin_required".
+     * =====================================================
+     * GERBANG PENJAGA KETAT
+     * =====================================================
+     * BLOKIR "heartbeat" (sumber spam) dan "unload".
+     * IZINKAN "start", "finish", "violation", "relogin_required".
      */
-    if (type !== "violation" && type !== "relogin_required") {
+    if (type === "heartbeat" || type === "unload") {
       return; 
     }
 
@@ -207,17 +209,21 @@ window.NexoraSecurity = (() => {
       };
 
       /*
-       * KEMBALI MENGGUNAKAN FETCH ASLI
-       * (Apps Script sangat ketat soal CORS. Menggunakan fetch
-       * dengan keepalive adalah cara paling stabil untuk Apps Script).
+       * Fungsi fetch ini dikembalikan sama persis seperti kode
+       * asli milik Anda yang terbukti aman dari blokir CORS.
        */
-      fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        keepalive: true
-      }).catch(() => {});
-      
+      fetch(
+        endpoint,
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body),
+          keepalive: true
+        }
+      ).catch(() => {});
     } catch {}
   }
 
