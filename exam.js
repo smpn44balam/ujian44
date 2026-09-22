@@ -113,6 +113,34 @@ document.addEventListener('DOMContentLoaded', () => {
         return url;
     }
 
+    // ==========================================
+    // MEMUAT GOOGLE FORM KE <iframe> (dipakai di beberapa tempat)
+    // ==========================================
+    // BUG (fase 8): sebelumnya "muat form ke iframe" ditulis terpisah di
+    // dua tempat: sekali lengkap (tampilkan #loading + pasang onload) saat
+    // tombol "Mulai Ujian" diklik, dan sekali lagi TIDAK LENGKAP (cuma
+    // set formFrame.src, tanpa menyentuh #loading sama sekali) di bagian
+    // "siswa merefresh saat ujian berjalan". #loading TIDAK disembunyikan
+    // secara default oleh CSS -- ia hanya disembunyikan lewat onload
+    // iframe yang tadi tidak pernah dipasang ulang di jalur kedua itu.
+    // Akibatnya: begitu halaman ini reload di tengah ujian (paling sering
+    // terjadi kalau tab di HP dibekukan/dimuat ulang otomatis oleh Android
+    // saat menunggu lama, misalnya penalti 300 detik di pelanggaran ke-2),
+    // tulisan "Memuat lembar ujian..." macet tampil selamanya walau form
+    // sebenarnya sudah selesai dimuat. Sekarang disatukan jadi satu fungsi
+    // supaya kedua jalur selalu konsisten.
+    function loadExamForm() {
+        if (!session.formUrl || !DOM.formFrame) return;
+        if (DOM.loading) DOM.loading.style.display = 'flex';
+        // Pasang onload SEBELUM men-set src (bukan sesudah), supaya tidak
+        // ada celah waktu di mana form sempat selesai dimuat sebelum
+        // handler penyembunyi #loading terpasang.
+        DOM.formFrame.onload = () => {
+            if (DOM.loading) DOM.loading.style.display = 'none';
+        };
+        DOM.formFrame.src = normalizeFormUrl(session.formUrl);
+    }
+
     // Tampilkan identitas peserta jika elemen tersedia
     if (DOM.examIdentity && session.nama) {
         DOM.examIdentity.textContent = `${session.nama} (${session.kelas || 'Siswa'})`;
@@ -260,7 +288,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isResetCycle) {
                     // Reset penghitung pelanggaran ke 0 dan lanjutkan ujian
-                    // di halaman yang sama, tanpa relogin.
+                    // di halaman yang sama, tanpa relogin. Ini aman
+                    // dilakukan otomatis (tanpa gesture) karena cuma
+                    // mengubah angka/badge -- BUKAN meminta browser masuk
+                    // fullscreen (lihat catatan di bawah kenapa itu beda).
                     session.violations = 0;
                     saveSession();
 
@@ -268,27 +299,47 @@ document.addEventListener('DOMContentLoaded', () => {
                         NEXORA_SECURITY.resetViolationCount();
                     }
                     updateViolationBadge();
-
-                    hideEl(DOM.violationModal);
-
-                    if (typeof NEXORA_SECURITY !== 'undefined') {
-                        if (typeof NEXORA_SECURITY.resumeViolations === 'function') NEXORA_SECURITY.resumeViolations();
-                        if (typeof NEXORA_SECURITY.enterFullscreen === 'function') NEXORA_SECURITY.enterFullscreen();
-                    }
                 } else {
                     saveSession();
-
-                    const penaltyElem = document.getElementById('countdownPenalty');
-                    if (penaltyElem) penaltyElem.remove();
-
-                    if (DOM.closeViolationBtn) {
-                        DOM.closeViolationBtn.style.display = 'inline-block';
-                        DOM.closeViolationBtn.textContent = 'Saya Mengerti, Lanjutkan Ujian';
-                    }
-                    // Untuk pelanggaran 1 & 2, deteksi baru dilanjutkan saat
-                    // siswa menekan tombol "Saya Mengerti" (lihat listener
-                    // closeViolationBtn di bawah), bukan otomatis di sini.
                 }
+
+                // BUG (fase 9) -- "pelanggaran berjalan sendiri" setelah
+                // siklus ke-3 selesai: sebelumnya, begitu 100 detik habis,
+                // kode di sini LANGSUNG memanggil resumeViolations() DAN
+                // enterFullscreen() secara otomatis dari timer, tanpa
+                // menunggu klik siswa. Masalahnya, requestFullscreen()
+                // mengharuskan ada gesture pengguna ASLI (tap/klik) --
+                // sebuah timer bukan gesture, jadi permintaan fullscreen
+                // otomatis ini GAGAL DIAM-DIAM kalau pas 100 detiknya habis
+                // siswa sedang tidak menyentuh/melihat halaman ujian (mis.
+                // sedang baca pesan lain). Karena deteksi sudah kepalang
+                // di-resume duluan, begitu siswa balik ke tab, sistem
+                // langsung mencatat "keluar fullscreen" LAGI -- padahal
+                // siswa tidak melakukan apa pun yang baru sejak pelanggaran
+                // ke-3 tadi, cuma masih dalam kondisi yang sama. Sekarang
+                // siklus reset diperlakukan SAMA seperti pelanggaran 1 & 2:
+                // modal tetap tampil dengan tombol "Saya Mengerti, Lanjutkan
+                // Ujian", dan resumeViolations() + enterFullscreen() baru
+                // dipanggil setelah siswa benar-benar menekan tombol itu
+                // (lihat listener closeViolationBtn di bawah) -- gesture
+                // asli, jadi permintaan fullscreen dijamin tidak gagal diam
+                // -diam, dan deteksi tidak dilanjutkan sebelum siswa benar-
+                // benar kembali & sadar sedang melihat halaman ujian.
+                const penaltyElem = document.getElementById('countdownPenalty');
+                if (penaltyElem) penaltyElem.remove();
+
+                if (DOM.violationText && isResetCycle) {
+                    DOM.violationText.innerHTML = `${baseWarningHtml}<br><strong style="color:#22c55e; font-size:1.05rem; display:block; margin-top:10px;">Peringatan pelanggaran sudah direset ke 0/3. Klik tombol di bawah untuk melanjutkan ujian.</strong>`;
+                }
+
+                if (DOM.closeViolationBtn) {
+                    DOM.closeViolationBtn.style.display = 'inline-block';
+                    DOM.closeViolationBtn.textContent = 'Saya Mengerti, Lanjutkan Ujian';
+                }
+                // Untuk pelanggaran 1, 2, MAUPUN siklus reset di pelanggaran
+                // ke-3: deteksi baru dilanjutkan saat siswa menekan tombol
+                // "Saya Mengerti" (lihat listener closeViolationBtn di
+                // bawah), bukan otomatis di sini.
             }
         }
 
@@ -369,9 +420,12 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.closeViolationBtn.addEventListener('click', () => {
             hideEl(DOM.violationModal);
             if (typeof NEXORA_SECURITY !== 'undefined') {
-                // Baru sekarang deteksi pelanggaran dilanjutkan (khusus
-                // pelanggaran 1 & 2) — siswa sudah membaca peringatannya
-                // dan sengaja menekan tombol ini.
+                // Baru sekarang deteksi pelanggaran dilanjutkan (pelanggaran
+                // 1, 2, MAUPUN siklus reset di pelanggaran ke-3) — siswa
+                // sudah membaca peringatannya dan sengaja menekan tombol
+                // ini, jadi enterFullscreen() di sini dijamin dipanggil
+                // dari gesture pengguna asli (tidak akan gagal diam-diam
+                // seperti kalau dipanggil otomatis dari timer).
                 if (typeof NEXORA_SECURITY.resumeViolations === 'function') NEXORA_SECURITY.resumeViolations();
                 if (typeof NEXORA_SECURITY.enterFullscreen === 'function') NEXORA_SECURITY.enterFullscreen();
             }
@@ -498,14 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Muat Form Google Form
-            if (session.formUrl && DOM.formFrame) {
-                if (DOM.loading) DOM.loading.style.display = 'flex';
-                DOM.formFrame.src = normalizeFormUrl(session.formUrl);
-                
-                DOM.formFrame.onload = () => {
-                    if (DOM.loading) DOM.loading.style.display = 'none';
-                };
-            }
+            loadExamForm();
 
             // Sembunyikan Overlay Mulai
             hideEl(DOM.startOverlay);
@@ -551,14 +598,27 @@ document.addEventListener('DOMContentLoaded', () => {
         armBackButtonGuard();
     }
 
+    // Muat ulang Google Form ke <iframe> setiap kali halaman INI dimuat
+    // ulang sementara ujian sudah dimulai -- BAIK sedang dalam masa
+    // penalti MAUPUN tidak. <iframe> baru selalu kosong (atribut src tidak
+    // ikut tersimpan lintas reload), jadi tanpa baris ini:
+    //  - kalau reload terjadi DI LUAR masa penalti: dulu formFrame.src
+    //    memang di-set ulang, tapi #loading ("Memuat lembar ujian...")
+    //    tidak pernah disembunyikan lagi (lihat catatan di loadExamForm())
+    //    -- inilah yang bikin tulisan itu macet tampil selamanya.
+    //  - kalau reload terjadi PAS SEDANG dalam masa penalti (mis. HP
+    //    membekukan/reload tab otomatis selagi menunggu penalti 300 detik
+    //    di pelanggaran ke-2): dulu formFrame.src TIDAK PERNAH di-set ulang
+    //    sama sekali untuk kasus ini -- begitu modal penalti ditutup,
+    //    form-nya kosong permanen.
+    if (session.startedAt || session.isStarted) {
+        loadExamForm();
+    }
+
     // Jika siswa merefresh saat ujian sedang berjalan (di luar masa penalti)
     if ((session.startedAt || session.isStarted) && !inPenaltyNow) {
         hideEl(DOM.startOverlay);
-        
-        if (DOM.formFrame && session.formUrl) {
-            DOM.formFrame.src = normalizeFormUrl(session.formUrl);
-        }
-        
+
         if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.arm === 'function') {
             NEXORA_SECURITY.arm();
         }
