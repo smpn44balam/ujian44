@@ -57,6 +57,38 @@ const NEXORA_SECURITY = (function () {
     let audioUnlocked = false;
 
     // ---------------------------------------------------------
+    // 0b. Status konfirmasi Fullscreen (BUG: iPhone + Chrome/Firefox iOS)
+    // ---------------------------------------------------------
+    // Apple HANYA mengizinkan Fullscreen API (Element.requestFullscreen /
+    // webkitRequestFullscreen) berjalan penuh di mesin WebKit milik Safari
+    // sendiri. Browser lain di iPhone (Chrome, Firefox, Edge, dll) SEMUANYA
+    // wajib memakai WKWebView versi terbatas Apple -- walau tampilannya mirip
+    // Safari, WKWebView TIDAK diberi akses Fullscreen API oleh Apple. Jadi
+    // requestFullscreen() di sana gagal diam-diam (kadang tanpa error yang
+    // bisa ditangkap try/catch atau .catch()), document.fullscreenElement
+    // TIDAK PERNAH terisi, dan isCurrentlyFullscreen() akan SELALU false.
+    //
+    // BUG SEBELUMNYA: kode ini menganggap "tidak sedang fullscreen sekarang"
+    // itu otomatis berarti "siswa BARU SAJA keluar dari fullscreen" --
+    // padahal keduanya beda. Di iPhone+Chrome, siswa memang TIDAK PERNAH
+    // berhasil masuk fullscreen sejak awal (tombol Mulai ditekan), tapi
+    // polling 2 detik & listener fullscreenchange tetap mendeteksi "false"
+    // terus-menerus dan mencatatnya sebagai pelanggaran FULLSCREEN_EXIT
+    // berulang kali -- padahal siswa tidak melakukan apa pun yang salah.
+    //
+    // PERBAIKAN: pelanggaran FULLSCREEN_EXIT hanya boleh dicatat kalau kita
+    // punya BUKTI bahwa perangkat ini memang pernah berhasil masuk
+    // fullscreen (hasConfirmedFullscreenOnce = true) pada sesi ini. Kalau
+    // belum pernah sama sekali berhasil (typis kasus iPhone+browser
+    // non-Safari), maka bukan pelanggaran -- itu keterbatasan browser, bukan
+    // tindakan siswa. Lapisan deteksi lain (pindah tab / window blur /
+    // devtools) TETAP aktif penuh, jadi keamanan ujian tidak sepenuhnya
+    // hilang untuk siswa di perangkat ini.
+    let hasConfirmedFullscreenOnce = false;
+    let fullscreenUnsupportedNotified = false;
+    let onFullscreenUnsupportedCallback = null;
+
+    // ---------------------------------------------------------
     // 0. Deteksi keyboard virtual mobile (via visualViewport)
     // ---------------------------------------------------------
     let baselineViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -152,15 +184,58 @@ const NEXORA_SECURITY = (function () {
         const docEl = document.documentElement;
         try {
             if (docEl.requestFullscreen) {
-                docEl.requestFullscreen().catch(err => console.warn("[NEXORA SECURITY] Fullscreen diblokir browser:", err));
+                const req = docEl.requestFullscreen();
+                if (req && typeof req.catch === 'function') {
+                    req.catch(err => console.warn("[NEXORA SECURITY] Fullscreen diblokir/tidak didukung browser:", err));
+                }
             } else if (docEl.webkitRequestFullscreen) {
+                // API lama (WebKit prefixed) tidak mengembalikan Promise,
+                // jadi kita tidak bisa tahu langsung apakah berhasil atau
+                // tidak dari sini -- lihat scheduleFullscreenConfirmationCheck().
                 docEl.webkitRequestFullscreen();
             } else if (docEl.msRequestFullscreen) {
                 docEl.msRequestFullscreen();
+            } else {
+                console.warn("[NEXORA SECURITY] Fullscreen API tidak tersedia sama sekali di browser ini.");
             }
         } catch (e) {
             console.warn("[NEXORA SECURITY] Gagal meminta Fullscreen:", e);
         }
+        // Verifikasi hasil beberapa saat kemudian (transisi fullscreen tidak
+        // instan di semua perangkat, dan API prefixed tidak memberi Promise).
+        scheduleFullscreenConfirmationCheck();
+    }
+
+    // Mengecek ulang beberapa kali (bukan cuma sekali) apakah permintaan
+    // fullscreen di atas benar-benar berhasil, lalu menandai
+    // hasConfirmedFullscreenOnce. Kalau setelah semua percobaan tetap gagal,
+    // kita anggap browser/perangkat ini memang tidak mendukung Fullscreen API
+    // penuh (mis. iPhone + Chrome/Firefox for iOS) dan memberi tahu exam.js
+    // sekali saja lewat onFullscreenUnsupportedCallback supaya siswa bisa
+    // diberi peringatan non-blocking (disarankan pakai Safari), TANPA
+    // membuat sesi tercatat sebagai pelanggaran.
+    function scheduleFullscreenConfirmationCheck(attemptsLeft = 6) {
+        setTimeout(() => {
+            if (isCurrentlyFullscreen()) {
+                hasConfirmedFullscreenOnce = true;
+                return;
+            }
+            if (attemptsLeft > 0) {
+                scheduleFullscreenConfirmationCheck(attemptsLeft - 1);
+                return;
+            }
+            if (!hasConfirmedFullscreenOnce && !fullscreenUnsupportedNotified) {
+                fullscreenUnsupportedNotified = true;
+                console.warn("[NEXORA SECURITY] Fullscreen API tampaknya tidak didukung di browser ini (umum terjadi di iPhone dengan browser selain Safari). Deteksi keluar-fullscreen dinonaktifkan untuk sesi ini.");
+                // Log informasional (BUKAN pelanggaran -- tidak memakai
+                // recordViolation, jadi violationCount tidak bertambah, tidak
+                // ada beep, dan tidak memicu modal peringatan).
+                sendMonitoring('FULLSCREEN_UNSUPPORTED', 'Perangkat/browser tidak mendukung mode Fullscreen sepenuhnya (kemungkinan iPhone dengan browser selain Safari). Deteksi keluar-fullscreen dinonaktifkan untuk sesi ini; deteksi pindah tab & devtools tetap aktif.');
+                if (typeof onFullscreenUnsupportedCallback === 'function') {
+                    onFullscreenUnsupportedCallback();
+                }
+            }
+        }, 350);
     }
 
     function isCurrentlyFullscreen() {
@@ -304,12 +379,30 @@ const NEXORA_SECURITY = (function () {
         // ditulis sekali dan konsisten dari sumber mana pun pemicunya.
         function handlePossibleFullscreenExit() {
             if (isCurrentlyFullscreen() || !isArmed) {
+                if (isCurrentlyFullscreen()) {
+                    // Konfirmasi positif: perangkat ini TERBUKTI bisa masuk
+                    // fullscreen. Simpan status ini supaya kalau nanti benar-
+                    // benar keluar, itu bisa dicatat sebagai pelanggaran asli
+                    // (bukan false-positive perangkat yang tidak mendukung).
+                    hasConfirmedFullscreenOnce = true;
+                }
                 if (fullscreenExitTimer) {
                     clearTimeout(fullscreenExitTimer);
                     fullscreenExitTimer = null;
                 }
                 return;
             }
+
+            // BUG FIX (iPhone + Chrome/Firefox for iOS, dsb): kalau perangkat
+            // ini belum PERNAH terbukti berhasil masuk fullscreen sama sekali
+            // pada sesi ini, maka "tidak sedang fullscreen sekarang" BUKAN
+            // berarti "baru saja keluar dari fullscreen" -- itu cuma berarti
+            // browser ini memang tidak mendukung Fullscreen API (lihat catatan
+            // panjang di scheduleFullscreenConfirmationCheck()). Jangan catat
+            // sebagai pelanggaran dalam kondisi ini. Deteksi pindah tab
+            // (visibilitychange), window blur, dan devtools TETAP aktif penuh
+            // sebagai lapis pengaman lain untuk perangkat semacam ini.
+            if (!hasConfirmedFullscreenOnce) return;
 
             if (fullscreenExitTimer) return; // sudah dalam proses debounce
 
@@ -461,6 +554,16 @@ const NEXORA_SECURITY = (function () {
         initializeAudio: initAudio,
         setCallback: function (fn) {
             onViolationCallback = fn;
+        },
+        // Dipanggil (paling banyak sekali per sesi) kalau perangkat ini
+        // terbukti gagal masuk fullscreen sama sekali setelah beberapa kali
+        // percobaan -- exam.js bisa memakainya untuk menampilkan peringatan
+        // non-blocking ke siswa (mis. "disarankan pakai Safari").
+        setFullscreenUnsupportedCallback: function (fn) {
+            onFullscreenUnsupportedCallback = fn;
+        },
+        isFullscreenConfirmed: function () {
+            return hasConfirmedFullscreenOnce;
         },
         getViolationCount: function () {
             return violationCount;

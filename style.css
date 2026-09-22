@@ -989,6 +989,36 @@ body.exam-page {
   cursor: pointer;
 }
 
+/* Tombol "Selesai / Kumpulkan Ujian" -- solusi bug: sebelumnya TIDAK ADA
+   cara bagi siswa untuk mengakhiri sesi secara manual setelah mereka
+   menekan Submit pada Google Form. Akibatnya timer & mode aman tetap
+   berjalan, dan begitu siswa keluar (tutup tab / keluar fullscreen),
+   sistem mencatatnya sebagai pelanggaran walau ujian sebenarnya sudah
+   selesai dikerjakan. Tombol ini memanggil finishExam() secara eksplisit
+   (lihat exam.js), men-disarm keamanan & menghentikan timer SEBELUM
+   siswa meninggalkan halaman. */
+.finish-btn {
+  min-height: 40px;
+
+  padding: 0 12px;
+
+  border: 1px solid rgba(134, 239, 172, 0.35);
+  border-radius: 9px;
+
+  background: rgba(22, 163, 74, 0.85);
+
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.finish-btn:hover {
+  background: rgba(21, 128, 61, 0.95);
+}
+
 
 /* =========================================================
    EXAM INFO
@@ -1959,7 +1989,8 @@ body.dashboard {
   .exam-clock,
   .exam-timer,
   .exam-security,
-  .fullscreen-btn {
+  .fullscreen-btn,
+  .finish-btn {
     width: 100%;
     min-height: 36px;
     padding: 4px 8px;
@@ -1984,7 +2015,8 @@ body.dashboard {
     margin-top: 0;
   }
 
-  .fullscreen-btn {
+  .fullscreen-btn,
+  .finish-btn {
     grid-column: 1 / -1;
   }
 

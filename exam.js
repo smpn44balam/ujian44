@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const DOM = {
         beginExamBtn: document.getElementById('beginExamBtn'),
         fullscreenBtn: document.getElementById('fullscreenBtn'),
+        finishExamBtn: document.getElementById('finishExamBtn'),
         startOverlay: document.getElementById('startOverlay'),
         formFrame: document.getElementById('formFrame'),
         timer: document.getElementById('timer'),
@@ -167,6 +168,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof NEXORA_SECURITY.setTotalViolationCount === 'function') {
             NEXORA_SECURITY.setTotalViolationCount(session.totalViolations || 0);
         }
+    }
+
+    // ==========================================
+    // BUG FIX (masalah #2 dilaporkan guru): iPhone + Chrome tidak bisa masuk
+    // fullscreen & malah tercatat sebagai pelanggaran "keluar fullscreen".
+    // Root cause ada di security.js (lihat catatan panjang di sana): Apple
+    // tidak mengizinkan Fullscreen API berjalan penuh di browser non-Safari
+    // pada iPhone. security.js sekarang tidak lagi mencatat pelanggaran
+    // untuk kasus ini, dan memanggil callback berikut SEKALI kalau memang
+    // terdeteksi tidak didukung -- kita tampilkan pesan non-blocking supaya
+    // siswa tahu dan bisa pindah ke Safari kalau mau, tapi ujian tetap bisa
+    // dilanjutkan (deteksi pindah tab & devtools tetap aktif).
+    if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setFullscreenUnsupportedCallback === 'function') {
+        NEXORA_SECURITY.setFullscreenUnsupportedCallback(() => {
+            showViolationModal(
+                'MODE LAYAR PENUH TIDAK DIDUKUNG',
+                'Browser ini (biasanya Chrome/Firefox di iPhone) tidak mengizinkan mode layar penuh. Ini BUKAN pelanggaran dan tidak dicatat. Untuk hasil terbaik, gunakan aplikasi <strong>Safari</strong> di iPhone Anda. Ujian tetap bisa dilanjutkan seperti biasa.'
+            );
+        });
     }
 
     // ==========================================
@@ -583,6 +603,46 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.enterFullscreen === 'function') {
                 NEXORA_SECURITY.enterFullscreen();
             }
+        });
+    }
+
+    // ==========================================
+    // BUG FIX (masalah #1 dilaporkan guru): "siswa menyelesaikan form,
+    // tidak langsung finish" -- sebelumnya finishExam() HANYA dipanggil
+    // saat timer habis (lihat startTimer()). Tidak ada jalur lain untuk
+    // mengakhiri sesi. Google Form yang di-embed lewat <iframe> bersifat
+    // cross-origin (docs.google.com), sehingga halaman ujian.html TIDAK
+    // BISA mendeteksi secara otomatis kapan siswa menekan tombol "Kirim"
+    // di dalam form itu (tidak ada API/postMessage resmi dari Google Form
+    // untuk ini). Akibatnya: siswa sudah selesai & submit form, tapi
+    // timer & mode aman (fullscreen/tab-lock) TETAP AKTIF. Begitu siswa
+    // menutup tab / keluar dari HP, event itu tertangkap sebagai
+    // FULLSCREEN_EXIT / VISIBILITY_HIDDEN -> tercatat sebagai kecurangan.
+    //
+    // SOLUSI: tombol "✓ Selesai" manual yang memanggil finishExam()
+    // secara eksplisit. Ini men-disarm keamanan & menghentikan timer
+    // SEBELUM siswa meninggalkan halaman, sehingga keluar setelahnya
+    // tidak lagi terdeteksi sebagai pelanggaran. Siswa diingatkan lewat
+    // dialog konfirmasi supaya tidak menekannya sebelum benar-benar
+    // menekan Kirim/Submit di Google Form.
+    // ==========================================
+    if (DOM.finishExamBtn) {
+        DOM.finishExamBtn.addEventListener('click', () => {
+            // Tombol ini hanya relevan kalau ujian memang sudah dimulai.
+            if (!examActiveForNavGuard && !(session.startedAt || session.isStarted)) {
+                return;
+            }
+            const confirmed = window.confirm(
+                'Pastikan jawaban Anda sudah benar-benar TERKIRIM ' +
+                '(sudah menekan tombol Kirim/Submit di Google Form).\n\n' +
+                'Setelah menekan OK, sesi ujian akan diakhiri dan Anda ' +
+                'tidak bisa kembali mengisi form. Lanjutkan?'
+            );
+            if (!confirmed) return;
+
+            session.status = 'FINISHED';
+            saveSession();
+            finishExam('Ujian diselesaikan oleh siswa (tombol Selesai).');
         });
     }
 
