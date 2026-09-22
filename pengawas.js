@@ -34,7 +34,12 @@
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      // Fase 12: dinaikkan dari 8 detik -> 20 detik. Apps Script (Execute
+      // as: Me) sering butuh beberapa detik untuk "bangun" kalau sedang
+      // idle, dan makin banyak baris di sheet Sessions/ViolationLog makin
+      // lama juga waktu doGet membaca semuanya. 8 detik terlalu ketat dan
+      // bisa memicu abort padahal server sebenarnya cuma lambat, bukan mati.
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
       // Cache-busting param + cache:'no-store' -- cegah browser menampilkan
       // data polling yang sudah basi (lihat catatan di security.js sendMonitoring
       // untuk penjelasan lengkap kenapa request ke URL /exec Apps Script ini
@@ -47,8 +52,12 @@
       if (!data || data.ok === false) return { sessions: [], error: data && data.error || 'unknown' };
       return { sessions: Array.isArray(data.sessions) ? data.sessions : [], error: null };
     } catch (err) {
-      // Kemungkinan besar CORS diblokir, offline, atau scriptUrl salah.
-      return { sessions: [], error: String(err && err.message || err) };
+      // Kemungkinan besar CORS diblokir, offline, scriptUrl salah, atau
+      // Apps Script tidak merespons dalam batas waktu (lihat komentar di
+      // atas soal timeout 20 detik).
+      const isAbort = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+      const readable = isAbort ? 'server tidak merespons dalam 20 detik (timeout)' : String(err && err.message || err);
+      return { sessions: [], error: readable };
     }
   }
 

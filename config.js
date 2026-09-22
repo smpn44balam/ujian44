@@ -15,6 +15,13 @@ const NEXORA_CONFIG = {
   // window.NEXORA_CONFIG.scriptUrl. Sebelumnya key ini bernama "monitoringUrl"
   // sehingga tidak pernah terbaca dan semua log pelanggaran/heartbeat GAGAL TERKIRIM
   // secara diam-diam (silent fail). Jangan ganti nama key ini lagi.
+  //
+  // Fase 12: diganti ke deployment project "Nexora V2" (project Apps Script
+  // baru, dengan Code.gs yang sudah berisi saklar DEBUG_ENABLED). URL LAMA
+  // (AKfycbw8s20m...) SENGAJA tidak dipakai lagi -- kalau Anda deploy ulang
+  // Code.gs di masa depan, pastikan pakai "Manage deployments > New version"
+  // di project "Nexora V2" ini, supaya URL di bawah ini TETAP BERLAKU dan
+  // tidak perlu diganti lagi di sini.
   scriptUrl: "https://script.google.com/macros/s/AKfycbwoVPF21EB2jBmtoWW-WBQ4bPcxXcyoMN4AROdDCvgr6tlRzldDvTMD_2bzdOZdVR4jAg/exec",
   // Alias lama, dipertahankan agar kode lama yang mungkin masih memanggil
   // monitoringUrl tidak langsung pecah.
