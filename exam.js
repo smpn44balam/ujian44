@@ -156,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
             session.startedAt = Date.now();
             session.durationMs = durationMs;
             saveSession();
+        } else if (typeof session.durationMs !== 'number' || !isFinite(session.durationMs) || session.durationMs <= 0) {
+            // Jaring pengaman: sesi lama (dibuat sebelum perbaikan durationMs
+            // di app.js, atau data korup) bisa punya startedAt tapi tanpa
+            // durationMs -> tanpa ini, timer akan macet di "NaN:NaN:NaN"
+            // selamanya. Pulihkan ke durasi default dari config.
+            session.durationMs = durationMs;
+            saveSession();
         }
 
         if (examTimerInterval) clearInterval(examTimerInterval);

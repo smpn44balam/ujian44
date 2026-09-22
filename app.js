@@ -146,6 +146,13 @@
       reloginRequired: false,
       violations: isResume ? (previous.violations || 0) : 0,
       startedAt: isResume ? (previous.startedAt || null) : null,
+      // BUG SEBELUMNYA: "durationMs" tidak ikut dibawa saat relogin, padahal
+      // "startedAt" dibawa. Akibatnya exam.js (yang hanya mengisi ulang
+      // durationMs saat startedAt masih kosong) membiarkan durationMs
+      // undefined pada sesi hasil relogin -> semua perhitungan sisa waktu
+      // jadi NaN (timer tampil "NaN:NaN:NaN"). Sekarang durationMs juga
+      // dibawa bersama startedAt.
+      durationMs: isResume ? (previous.durationMs || null) : null,
       isStarted: isResume ? !!previous.isStarted : false,
       penaltyUntil: null,
       thirdReloginUntil: null

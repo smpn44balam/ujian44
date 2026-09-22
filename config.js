@@ -102,3 +102,21 @@ function getLevelFromClass(className) {
 function getFormUrl(level, subjectId) {
   return (GOOGLE_FORMS[level] && GOOGLE_FORMS[level][subjectId]) || "";
 }
+
+// =========================================================
+// PENTING — JANGAN DIHAPUS
+// "const NEXORA_CONFIG = {...}" di atas hanya membuat variabel ini bisa
+// diakses langsung sebagai identifier (mis. "NEXORA_CONFIG.subjects") oleh
+// script lain di halaman yang sama (app.js memakainya begini, dan itu
+// aman). TAPI beberapa file lain (exam.js, security.js, pengawas.js)
+// membacanya sebagai "window.NEXORA_CONFIG.xxx" — dan browser TIDAK PERNAH
+// menaruh variabel "const"/"let" tingkat atas ke objek window (beda dengan
+// "var"). Akibatnya window.NEXORA_CONFIG selalu undefined, sehingga:
+//  - scriptUrl tidak pernah kebaca -> heartbeat & log pelanggaran cuma
+//    tersimpan lokal, ViolationLog di Spreadsheet tetap kosong walau
+//    siswa sudah banyak melakukan pelanggaran.
+//  - dashboard pengawas.html (lintas-device) tidak bisa membaca scriptUrl.
+// Baris di bawah ini menaruh salinannya secara eksplisit ke window supaya
+// semua file bisa membacanya dengan cara apa pun.
+window.NEXORA_CONFIG = NEXORA_CONFIG;
+window.GOOGLE_FORMS = GOOGLE_FORMS;
