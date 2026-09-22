@@ -35,7 +35,12 @@
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(scriptUrl, { method: 'GET', signal: controller.signal });
+      // Cache-busting param + cache:'no-store' -- cegah browser menampilkan
+      // data polling yang sudah basi (lihat catatan di security.js sendMonitoring
+      // untuk penjelasan lengkap kenapa request ke URL /exec Apps Script ini
+      // rawan ke-cache oleh browser).
+      const bustedUrl = scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+      const res = await fetch(bustedUrl, { method: 'GET', cache: 'no-store', signal: controller.signal });
       clearTimeout(timeoutId);
       if (!res.ok) return { sessions: [], error: 'http-' + res.status };
       const data = await res.json();

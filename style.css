@@ -1076,6 +1076,8 @@ body.exam-page {
 }
 
 #loading {
+  display: none;
+
   padding: 50px 20px;
 
   text-align: center;

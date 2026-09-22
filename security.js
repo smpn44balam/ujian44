@@ -237,9 +237,25 @@ const NEXORA_SECURITY = (function () {
         // Header sengaja TIDAK diset di sini (lihat catatan di atas file).
         // Body tetap JSON string dan tetap bisa diparse oleh Code.gs lewat
         // e.postData.contents, apa pun Content-Type yang tercatat di server.
-        fetch(scriptUrl, {
+        //
+        // BUG (fase 9 lanjutan) -- "pelanggaran siswa cuma tercatat sekali
+        // di Spreadsheet, setelah itu hilang": URL /exec Apps Script
+        // sebenarnya me-redirect (302) ke URL eksekusi asli di
+        // script.googleusercontent.com. Browser bisa MENG-CACHE redirect
+        // itu setelah request pertama, lalu memakai ulang target/token
+        // hasil redirect yang sudah basi untuk request-request berikutnya
+        // ke URL yang SAMA PERSIS -- request kedua dst gagal di level
+        // jaringan. Karena mode 'no-cors' membuat fetch() hampir tidak
+        // pernah reject, kegagalan ini SELALU diam-diam (console tetap
+        // menampilkan "berhasil dikirim" walau sebenarnya tidak nyampe).
+        // Perbaikan: tambahkan parameter unik di URL tiap kali kirim +
+        // cache:'no-store', supaya browser tidak pernah memakai ulang
+        // redirect/response yang di-cache dari request sebelumnya.
+        const bustedUrl = scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+        fetch(bustedUrl, {
             method: 'POST',
             mode: 'no-cors',
+            cache: 'no-store',
             body: JSON.stringify(payload)
         }).then(() => {
             console.log("[NEXORA SECURITY] Log pelanggaran berhasil dikirim ke Spreadsheet.");

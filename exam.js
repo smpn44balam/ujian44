@@ -472,9 +472,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!scriptUrl) return;
 
             // Header Content-Type sengaja tidak diset — lihat catatan di security.js.
-            fetch(scriptUrl, {
+            // Cache-busting param + cache:'no-store' -- lihat catatan panjang
+            // di sendMonitoring() (security.js) kenapa ini perlu: tanpa ini,
+            // browser bisa memakai ulang redirect /exec yang sudah basi dari
+            // heartbeat sebelumnya, sehingga heartbeat ke-2 dst diam-diam
+            // tidak pernah sampai ke Spreadsheet walau tidak ada error di console.
+            const bustedUrl = scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+            fetch(bustedUrl, {
                 method: 'POST',
                 mode: 'no-cors',
+                cache: 'no-store',
                 body: JSON.stringify(payload)
             }).catch(e => console.log("Heartbeat tersendat (Abaikan, sistem berjalan lokal)"));
         }, 30000);
