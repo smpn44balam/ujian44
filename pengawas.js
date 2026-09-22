@@ -61,33 +61,6 @@
     }
   }
 
-  function mergeSessions(localList, remoteList) {
-    const merged = {};
-    // PERBAIKAN: kolom "violations" adalah SIKLUS (0-3) yang memang HARUS
-    // bisa turun ke 0 saat direset otomatis di pelanggaran ke-3. Versi
-    // sebelumnya memakai Math.max saat menggabungkan data lokal & Sheets,
-    // sehingga begitu siklus pernah mencapai angka tinggi, angka itu tidak
-    // pernah terlihat turun lagi di dashboard ini -- walau di sisi siswa
-    // sudah benar-benar direset. Sekarang "violations" (siklus) diambil
-    // dari catatan yang PALING BARU (berdasarkan `at`) saja, apa adanya.
-    // "totalViolations" (akumulatif riwayat) tetap pakai Math.max karena
-    // itu memang tidak boleh pernah turun.
-    [...localList, ...remoteList].forEach(x => {
-      const id = x.sessionId;
-      if (!id) return;
-      const prev = merged[id];
-      const totalViolations = Math.max(prev?.totalViolations || 0, x.totalViolations || 0);
-      if (!prev || (x.at || 0) >= (prev.at || 0)) {
-        // x adalah data paling baru -> pakai violations (siklus) miliknya apa adanya.
-        merged[id] = { ...prev, ...x, totalViolations };
-      } else {
-        // prev masih lebih baru dari x -> pertahankan violations (siklus) milik prev.
-        merged[id] = { ...x, ...prev, totalViolations };
-      }
-    });
-    return Object.values(merged);
-  }
-
   const lastUpdatedEl = document.getElementById("lastUpdated");
 
   function renderStatus(remoteResult) {
@@ -101,16 +74,29 @@
       sourceStatus.textContent = "Sumber: data lokal saja — gagal mengambil data pusat (" + remoteResult.error + "). Cek scriptUrl / koneksi.";
       return;
     }
-    sourceStatus.textContent = "Sumber: Google Sheets (pusat, lintas-device) + data lokal browser ini.";
+    sourceStatus.textContent = "Sumber: Google Sheets (pusat, lintas-device) — data langsung dari Spreadsheet.";
   }
 
   async function load() {
-    const localList = readLocalSessions();
     const remoteResult = await readRemoteSessions();
     lastRemoteError = remoteResult.error;
     renderStatus(remoteResult);
 
-    const arr = mergeSessions(localList, remoteResult.sessions)
+    // Fase 13 -- PERBAIKAN PENTING: sebelumnya data lokal browser ini SELALU
+    // digabung (mergeSessions) dengan data Google Sheets, apa pun hasilnya.
+    // Ini menyebabkan dashboard "tidak sinkron dengan Spreadsheet" kalau
+    // browser yang sama pernah dipakai untuk testing sebelumnya -- entri
+    // localStorage yang basi (dari sesi lama, kadang dari sebelum ganti ke
+    // deployment Apps Script yang baru) ikut tercampur dan menimpa angka
+    // yang sebenarnya sudah benar di Spreadsheet, karena mergeSessions
+    // memilih berdasarkan `at` paling baru -- bukan berdasarkan mana yang
+    // BENAR. Sekarang: kalau Google Sheets berhasil diambil (tidak error),
+    // dashboard HANYA memakai data itu, apa adanya -- supaya yang tampil di
+    // sini dijamin identik dengan isi sheet "Sessions" di Spreadsheet. Data
+    // lokal browser baru dipakai sebagai cadangan darurat kalau Sheets-nya
+    // benar-benar gagal diakses (offline / scriptUrl salah / config belum
+    // diisi) -- lihat cabang else di bawah.
+    const arr = (remoteResult.error ? readLocalSessions() : remoteResult.sessions.slice())
       .sort((a, b) => (b.at || 0) - (a.at || 0));
 
     document.getElementById("total").textContent = arr.length;
