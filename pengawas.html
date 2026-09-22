@@ -3,43 +3,92 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pengawas — NEXORA EXAM</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Panel Pengawas — NEXORA EXAM</title>
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
-<body>
-  <main class="shell wide">
-    <section class="brand-card compact">
-      <div class="brand-mark">44</div>
-      <div><div class="eyebrow">DASHBOARD LOKAL</div><h1>NEXORA EXAM</h1><p>Panel Pengawas SMP NEGERI 44</p></div>
-    </section>
-
-    <section class="card">
-      <div class="dashboard-head">
-        <div><div class="section-title no-margin"><span>✓</span><div><h2>Monitoring Perangkat</h2><p id="sourceStatus">Memuat sumber data...</p></div></div></div>
-        <div class="dashboard-actions">
-          <button class="secondary" id="refreshBtn">↻ Segarkan</button>
-          <button class="danger" id="clearBtn">Hapus Data Lokal</button>
+<body class="dashboard">
+  <header class="pg-header">
+    <div class="pg-header-inner">
+      <div class="pg-brand">
+        <div class="pg-brand-mark">44</div>
+        <div>
+          <div class="pg-eyebrow">NEXORA EXAM &middot; PANEL PENGAWAS</div>
+          <h1>SMP Negeri 44 Bandar Lampung</h1>
         </div>
       </div>
-      <div class="stats">
-        <div><small>Sesi</small><strong id="total">0</strong></div>
-        <div><small>Indikasi ≥ 1</small><strong id="flagged">0</strong></div>
-        <div><small>≥ Batas</small><strong id="stopped">0</strong></div>
+      <div class="pg-live" id="liveIndicator">
+        <span class="pg-live-dot"></span>
+        <span id="lastUpdated">Memuat...</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Waktu</th><th>Nama</th><th>Kelas</th><th>Mapel</th><th>Pelanggaran</th><th>Status</th></tr></thead>
+    </div>
+  </header>
+
+  <main class="pg-container">
+
+    <section class="pg-stats">
+      <div class="pg-stat">
+        <span class="pg-stat-icon pg-stat-icon-blue">&#128100;</span>
+        <div>
+          <small>Total Sesi</small>
+          <strong id="total">0</strong>
+        </div>
+      </div>
+      <div class="pg-stat">
+        <span class="pg-stat-icon pg-stat-icon-amber">&#9888;</span>
+        <div>
+          <small>Indikasi &ge; 1 Pelanggaran</small>
+          <strong id="flagged">0</strong>
+        </div>
+      </div>
+      <div class="pg-stat">
+        <span class="pg-stat-icon pg-stat-icon-red">&#9940;</span>
+        <div>
+          <small>Dihentikan (&ge; Batas)</small>
+          <strong id="stopped">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-card">
+      <div class="pg-card-head">
+        <div>
+          <h2>Monitoring Peserta Ujian</h2>
+          <p id="sourceStatus" class="pg-source-status">Memuat sumber data...</p>
+        </div>
+        <div class="pg-actions">
+          <button class="pg-btn pg-btn-secondary" id="refreshBtn">&#8635; Segarkan</button>
+          <button class="pg-btn pg-btn-danger" id="clearBtn">Hapus Data Lokal</button>
+        </div>
+      </div>
+      <div class="pg-table-wrap">
+        <table class="pg-table">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Nama</th>
+              <th>Kelas</th>
+              <th>Mapel</th>
+              <th>Pelanggaran</th>
+              <th>Status</th>
+            </tr>
+          </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
     </section>
 
-    <section class="notice">
-      <strong>Catatan</strong>
-      <p>Dashboard lokal hanya membaca penyimpanan browser ini. Untuk monitoring terpusat antarpeserta, hubungkan NEXORA ke backend/Google Apps Script. Indikator browser tidak membuktikan kecurangan secara pasti.</p>
+    <section class="pg-notice">
+      <strong>Catatan untuk Pengawas</strong>
+      <ul>
+        <li>Kolom <b>Pelanggaran</b> menampilkan siklus 0/3 (bisa otomatis kembali ke 0 setelah penalti dijatuhkan) dan angka <b>Total</b> di sebelahnya yang bersifat akumulatif dan tidak pernah turun.</li>
+        <li>Status <b>DIHENTIKAN</b> berarti siswa sudah mencapai batas pelanggaran maksimum untuk sesi ini.</li>
+        <li>Halaman ini membaca data terpusat dari Google Sheets (bisa dibuka dari HP/laptop pengawas mana pun) digabung dengan data lokal browser ini. Indikator ini adalah alat bantu, bukan bukti kecurangan yang mutlak — tetap gunakan penilaian langsung di lapangan.</li>
+        <li>Halaman menyegarkan diri otomatis tiap 15 detik, atau tekan "Segarkan" kapan saja.</li>
+      </ul>
     </section>
   </main>
-  <script src="config.js?v=10"></script>
-  <script src="pengawas.js?v=10"></script>
+
+  <script src="config.js?v=11"></script>
+  <script src="pengawas.js?v=11"></script>
 </body>
 </html>

@@ -79,6 +79,8 @@
     return Object.values(merged);
   }
 
+  const lastUpdatedEl = document.getElementById("lastUpdated");
+
   function renderStatus(remoteResult) {
     if (!sourceStatus) return;
     const scriptUrl = window.NEXORA_CONFIG && (NEXORA_CONFIG.scriptUrl || NEXORA_CONFIG.monitoringUrl);
@@ -105,13 +107,24 @@
     document.getElementById("total").textContent = arr.length;
     document.getElementById("flagged").textContent = arr.filter(x => (x.violations || 0) > 0).length;
     document.getElementById("stopped").textContent = arr.filter(x => (x.violations || 0) >= NEXORA_CONFIG.maxViolations).length;
-    rows.innerHTML = arr.length ? arr.map(x => `
+
+    rows.innerHTML = arr.length ? arr.map(x => {
+      const stopped = (x.violations || 0) >= NEXORA_CONFIG.maxViolations;
+      const flagged = (x.violations || 0) > 0;
+      const statusClass = stopped ? "pg-status-stopped" : flagged ? "pg-status-review" : "pg-status-normal";
+      const statusText = stopped ? "DIHENTIKAN" : flagged ? "PERLU DIPERIKSA" : "NORMAL";
+      return `
       <tr>
         <td>${x.at ? new Date(x.at).toLocaleString("id-ID") : "-"}</td>
         <td>${esc(x.name)}</td><td>${esc(x.className)}</td><td>${esc(x.subjectName)}</td>
-        <td><span class="pill ${x.violations ? "warn":""}">${x.violations||0}/3</span> &middot; Total: ${x.totalViolations || 0}</td>
-        <td>${x.violations >= NEXORA_CONFIG.maxViolations ? "DIHENTIKAN" : x.violations ? "PERLU DIPERIKSA" : "NORMAL"}</td>
-      </tr>`).join("") : `<tr><td colspan="6" class="empty">Belum ada data.</td></tr>`;
+        <td><span class="pg-pill ${flagged ? "pg-pill-warn" : ""}">${x.violations || 0}/${NEXORA_CONFIG.maxViolations}</span> &middot; Total: ${x.totalViolations || 0}</td>
+        <td><span class="pg-status ${statusClass}">${statusText}</span></td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="6" class="pg-empty">Belum ada data peserta ujian.</td></tr>`;
+
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = "Diperbarui " + new Date().toLocaleTimeString("id-ID");
+    }
   }
 
   function esc(s=""){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
