@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Panel Pengawas — NEXORA EXAM</title>
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body class="dashboard">
   <header class="pg-header">
@@ -29,21 +29,21 @@
       <div class="pg-stat">
         <span class="pg-stat-icon pg-stat-icon-blue">&#128100;</span>
         <div>
-          <small>Total Sesi</small>
+          <small>Pelanggaran Tercatat</small>
           <strong id="total">0</strong>
         </div>
       </div>
       <div class="pg-stat">
         <span class="pg-stat-icon pg-stat-icon-amber">&#9888;</span>
         <div>
-          <small>Indikasi &ge; 1 Pelanggaran</small>
+          <small>Siswa Terindikasi</small>
           <strong id="flagged">0</strong>
         </div>
       </div>
       <div class="pg-stat">
         <span class="pg-stat-icon pg-stat-icon-red">&#9940;</span>
         <div>
-          <small>Dihentikan (&ge; Batas)</small>
+          <small>Kena Batas Maksimum</small>
           <strong id="stopped">0</strong>
         </div>
       </div>
@@ -52,12 +52,11 @@
     <section class="pg-card">
       <div class="pg-card-head">
         <div>
-          <h2>Monitoring Peserta Ujian</h2>
-          <p id="sourceStatus" class="pg-source-status">Memuat sumber data...</p>
+          <h2>Daftar Pelanggaran Ujian</h2>
+          <p id="sourceStatus" class="pg-source-status">Memuat data dari Spreadsheet...</p>
         </div>
         <div class="pg-actions">
           <button class="pg-btn pg-btn-secondary" id="refreshBtn">&#8635; Segarkan</button>
-          <button class="pg-btn pg-btn-danger" id="clearBtn">Hapus Data Lokal</button>
         </div>
       </div>
       <div class="pg-table-wrap">
@@ -67,9 +66,8 @@
               <th>Waktu</th>
               <th>Nama</th>
               <th>Kelas</th>
-              <th>Mapel</th>
-              <th>Pelanggaran</th>
-              <th>Status</th>
+              <th>Detail Pelanggaran</th>
+              <th>Jumlah</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -80,15 +78,15 @@
     <section class="pg-notice">
       <strong>Catatan untuk Pengawas</strong>
       <ul>
-        <li>Kolom <b>Pelanggaran</b> menampilkan siklus 0/3 (bisa otomatis kembali ke 0 setelah penalti dijatuhkan) dan angka <b>Total</b> di sebelahnya yang bersifat akumulatif dan tidak pernah turun.</li>
-        <li>Status <b>DIHENTIKAN</b> berarti siswa sudah mencapai batas pelanggaran maksimum untuk sesi ini.</li>
-        <li>Halaman ini membaca data terpusat dari Google Sheets (bisa dibuka dari HP/laptop pengawas mana pun) digabung dengan data lokal browser ini. Indikator ini adalah alat bantu, bukan bukti kecurangan yang mutlak — tetap gunakan penilaian langsung di lapangan.</li>
+        <li>Kolom <b>Jumlah</b> menampilkan siklus 0/3 (bisa otomatis kembali ke 0 setelah penalti dijatuhkan) diikuti angka <b>Total</b> yang akumulatif dan tidak pernah turun.</li>
+        <li>Warna merah pada angka siklus berarti siswa tersebut sempat mencapai batas maksimum pelanggaran pada kejadian itu.</li>
+        <li>Halaman ini membaca langsung dari Google Sheets, jadi bisa dibuka dari HP/laptop pengawas mana pun dan selalu sama dengan isi Spreadsheet. Ini alat bantu, bukan bukti kecurangan yang mutlak — tetap gunakan penilaian langsung di lapangan.</li>
         <li>Halaman menyegarkan diri otomatis tiap 15 detik, atau tekan "Segarkan" kapan saja.</li>
       </ul>
     </section>
   </main>
 
   <script src="config.js?v=13"></script>
-  <script src="pengawas.js?v=14"></script>
+  <script src="pengawas.js?v=15"></script>
 </body>
 </html>

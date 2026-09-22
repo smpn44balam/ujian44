@@ -1673,6 +1673,11 @@ body.dashboard {
   color: #92400e;
 }
 
+.pg-pill.pg-pill-stop {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 /* status text badges for the "Status" column */
 
 .pg-status {
