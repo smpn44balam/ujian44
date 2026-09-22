@@ -49,16 +49,26 @@
 
   function mergeSessions(localList, remoteList) {
     const merged = {};
-    // Lokal dulu supaya urutan penggabungan (Object.assign) benar: data
-    // dengan `at` lebih besar yang menang untuk sessionId yang sama.
+    // PERBAIKAN: kolom "violations" adalah SIKLUS (0-3) yang memang HARUS
+    // bisa turun ke 0 saat direset otomatis di pelanggaran ke-3. Versi
+    // sebelumnya memakai Math.max saat menggabungkan data lokal & Sheets,
+    // sehingga begitu siklus pernah mencapai angka tinggi, angka itu tidak
+    // pernah terlihat turun lagi di dashboard ini -- walau di sisi siswa
+    // sudah benar-benar direset. Sekarang "violations" (siklus) diambil
+    // dari catatan yang PALING BARU (berdasarkan `at`) saja, apa adanya.
+    // "totalViolations" (akumulatif riwayat) tetap pakai Math.max karena
+    // itu memang tidak boleh pernah turun.
     [...localList, ...remoteList].forEach(x => {
       const id = x.sessionId;
       if (!id) return;
       const prev = merged[id];
+      const totalViolations = Math.max(prev?.totalViolations || 0, x.totalViolations || 0);
       if (!prev || (x.at || 0) >= (prev.at || 0)) {
-        merged[id] = { ...prev, ...x, violations: Math.max(prev?.violations || 0, x.violations || 0) };
+        // x adalah data paling baru -> pakai violations (siklus) miliknya apa adanya.
+        merged[id] = { ...prev, ...x, totalViolations };
       } else {
-        merged[id] = { ...x, ...prev, violations: Math.max(prev?.violations || 0, x.violations || 0) };
+        // prev masih lebih baru dari x -> pertahankan violations (siklus) milik prev.
+        merged[id] = { ...x, ...prev, totalViolations };
       }
     });
     return Object.values(merged);
@@ -94,7 +104,7 @@
       <tr>
         <td>${x.at ? new Date(x.at).toLocaleString("id-ID") : "-"}</td>
         <td>${esc(x.name)}</td><td>${esc(x.className)}</td><td>${esc(x.subjectName)}</td>
-        <td><span class="pill ${x.violations ? "warn":""}">${x.violations||0}</span></td>
+        <td><span class="pill ${x.violations ? "warn":""}">${x.violations||0}/3</span> &middot; Total: ${x.totalViolations || 0}</td>
         <td>${x.violations >= NEXORA_CONFIG.maxViolations ? "DIHENTIKAN" : x.violations ? "PERLU DIPERIKSA" : "NORMAL"}</td>
       </tr>`).join("") : `<tr><td colspan="6" class="empty">Belum ada data.</td></tr>`;
   }

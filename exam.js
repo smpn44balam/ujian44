@@ -118,14 +118,27 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.examIdentity.textContent = `${session.nama} (${session.kelas || 'Siswa'})`;
     }
 
-    // Tampilkan badge pelanggaran terakhir
-    if (DOM.violationBadge) {
-        DOM.violationBadge.textContent = `⚠ ${session.violations || 0} / 3`;
+    // Badge pelanggaran: dua angka terpisah --
+    //  - Siklus (0-3): dipakai sistem untuk menentukan hukuman, dan DIRESET
+    //    ke 0 tiap kali mencapai 3 dan masa penalti selesai.
+    //  - Total (akumulatif): TIDAK PERNAH direset, terus bertambah meski
+    //    siswa melanggar 5x, 10x, dst -- untuk catatan/riwayat permanen.
+    function updateViolationBadge() {
+        if (!DOM.violationBadge) return;
+        const cycle = session.violations || 0;
+        const total = session.totalViolations || 0;
+        DOM.violationBadge.textContent = `⚠ Siklus ${cycle}/3 · Total ${total}`;
     }
+    updateViolationBadge();
 
     // Set jumlah pelanggaran ke modul security jika ada
-    if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setViolationCount === 'function') {
-        NEXORA_SECURITY.setViolationCount(session.violations || 0);
+    if (typeof NEXORA_SECURITY !== 'undefined') {
+        if (typeof NEXORA_SECURITY.setViolationCount === 'function') {
+            NEXORA_SECURITY.setViolationCount(session.violations || 0);
+        }
+        if (typeof NEXORA_SECURITY.setTotalViolationCount === 'function') {
+            NEXORA_SECURITY.setTotalViolationCount(session.totalViolations || 0);
+        }
     }
 
     // ==========================================
@@ -204,11 +217,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyPenalty(penaltySeconds, isResetCycle = false) {
         penaltyActive = true;
-        let remainingSecs = penaltySeconds;
         penaltyRemainingMs = penaltySeconds * 1000;
 
         if (DOM.closeViolationBtn) DOM.closeViolationBtn.style.display = 'none';
 
+        // penaltyUntil adalah waktu ABSOLUT (timestamp), bukan sekadar
+        // hitungan detik. Ini sumber kebenaran utama -- BUKAN counter
+        // remainingSecs yang di-decrement per tick. Alasannya: banyak
+        // browser mobile menahan/menghentikan (throttle) setInterval saat
+        // tab di-background (layar dikunci / aplikasi diminimalkan) --
+        // dulu, karena reset ke-0 di pelanggaran ke-3 murni mengandalkan
+        // remainingSecs mencapai 0 lewat tick yang berjalan normal, kalau
+        // HP terkunci selama proses menunggu, tick-nya macet/telat dan
+        // reset otomatis nyaris tidak pernah benar-benar selesai -- itulah
+        // sebabnya jumlah pelanggaran terus naik melebihi 3 dan tidak
+        // pernah kembali ke 0. Sekarang penyelesaian penalti SELALU dicek
+        // dengan membandingkan Date.now() terhadap session.penaltyUntil,
+        // jadi begitu HP aktif lagi (walau telat), penalti langsung
+        // dinyatakan selesai kalau waktunya memang sudah lewat.
         session.penaltyUntil = Date.now() + penaltyRemainingMs;
         session.penaltyIsReset = isResetCycle;
         saveSession();
@@ -217,15 +243,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const baseWarningHtml = DOM.violationText ? DOM.violationText.innerHTML.split('<br><strong id="countdownPenalty"')[0] : '';
 
-        penaltyInterval = setInterval(() => {
-            remainingSecs--;
-            penaltyRemainingMs = remainingSecs * 1000;
+        function tickPenalty() {
+            const remainingMsReal = session.penaltyUntil - Date.now();
+            const remainingSecs = Math.max(0, Math.ceil(remainingMsReal / 1000));
+            penaltyRemainingMs = Math.max(0, remainingMsReal);
 
             if (DOM.violationText) {
                 DOM.violationText.innerHTML = `${baseWarningHtml}<br><strong id="countdownPenalty" style="color:#ef4444; font-size:1.2rem; display:block; margin-top:10px;">${isResetCycle ? 'Direset dalam' : 'Form Terkunci'}: ${remainingSecs} detik</strong>`;
             }
 
-            if (remainingSecs <= 0) {
+            if (remainingMsReal <= 0) {
                 clearInterval(penaltyInterval);
                 penaltyActive = false;
                 session.penaltyUntil = null;
@@ -240,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.resetViolationCount === 'function') {
                         NEXORA_SECURITY.resetViolationCount();
                     }
-                    if (DOM.violationBadge) DOM.violationBadge.textContent = `⚠ 0 / 3`;
+                    updateViolationBadge();
 
                     hideEl(DOM.violationModal);
 
@@ -263,7 +290,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     // closeViolationBtn di bawah), bukan otomatis di sini.
                 }
             }
-        }, 1000);
+        }
+
+        penaltyInterval = setInterval(tickPenalty, 1000);
+        tickPenalty(); // jalankan sekali segera, jangan menunggu tick 1 detik pertama
+
+        // Jaring pengaman tambahan: kalau HP dikunci/di-minimize SELAMA masa
+        // penalti berjalan, setInterval di atas bisa ditahan (throttle) oleh
+        // browser sehingga tick-nya telat. Begitu halaman aktif/terlihat lagi,
+        // langsung evaluasi ulang berdasarkan waktu ASLI (session.penaltyUntil)
+        // supaya penalti tidak "menggantung" lebih lama dari seharusnya, dan
+        // supaya reset ke-0 di pelanggaran ke-3 benar-benar terjadi begitu
+        // waktunya sudah lewat -- bukan menunggu tick berikutnya yang mungkin
+        // tertunda lama.
+        function recheckOnVisible() {
+            if (!document.hidden && penaltyActive) tickPenalty();
+        }
+        document.addEventListener('visibilitychange', recheckOnVisible);
     }
 
     function restorePenalty() {
@@ -300,11 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. CALLBACK SECURITY (DENGAN PENANGANAN SAFE-CALL)
     // ==========================================
     if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setCallback === 'function') {
-        NEXORA_SECURITY.setCallback((count, type, details) => {
+        NEXORA_SECURITY.setCallback((count, type, details, totalCount) => {
             session.violations = count;
+            session.totalViolations = typeof totalCount === 'number' ? totalCount : (session.totalViolations || 0) + 1;
             saveSession();
 
-            if (DOM.violationBadge) DOM.violationBadge.textContent = `⚠ ${count} / 3`;
+            updateViolationBadge();
 
             if (count >= 3) {
                 // Pelanggaran ke-3: kunci 100 detik, lalu OTOMATIS direset
@@ -359,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 penaltyRemainingMs: penaltyRemainingMs,
                 violations: session.violations || 0,
                 violationsCount: session.violations || 0,
+                totalViolations: session.totalViolations || 0,
                 penaltyActive: penaltyActive,
                 timestamp: new Date().toISOString(),
                 at: Date.now()

@@ -48,7 +48,8 @@ const NEXORA_SECURITY = (function () {
     const SESSION_KEY = 'nexora_session';
     const MONITORING_KEY = 'nexoraMonitoring';
 
-    let violationCount = 0;
+    let violationCount = 0;       // Siklus 0-3, DIRESET ke 0 tiap siklus selesai
+    let totalViolationCount = 0;  // Akumulatif, TIDAK PERNAH direset, untuk riwayat
     let violationsPaused = false;
     let onViolationCallback = null;
     let isArmed = false;
@@ -217,6 +218,7 @@ const NEXORA_SECURITY = (function () {
             details: details || '',
             violations: violationCount,
             violationsCount: violationCount,
+            totalViolations: totalViolationCount,
             timestamp: new Date().toLocaleString('id-ID'),
             at: Date.now()
         };
@@ -260,11 +262,12 @@ const NEXORA_SECURITY = (function () {
         violationsPaused = true;
 
         violationCount++;
+        totalViolationCount++; // akumulatif, tidak ikut direset saat siklus reset
         playViolationBeep(2000);
         sendMonitoring(type, details);
 
         if (typeof onViolationCallback === 'function') {
-            onViolationCallback(violationCount, type, details);
+            onViolationCallback(violationCount, type, details, totalViolationCount);
         }
     }
 
@@ -294,14 +297,20 @@ const NEXORA_SECURITY = (function () {
 
             if (fullscreenExitTimer) return; // sudah dalam proses debounce
 
+            // PENTING (bug lama): pada titik ini isCurrentlyFullscreen() SUDAH
+            // mengonfirmasi lewat Fullscreen API bahwa siswa TIDAK lagi dalam
+            // mode fullscreen. Satu-satunya penyebab realistis viewport
+            // menyusut setelah ini adalah address bar / navigation bar HP
+            // muncul kembali karena memang keluar fullscreen SUNGGUHAN --
+            // membuka keyboard virtual tidak mengubah document.fullscreenElement
+            // di Android/iOS. Kode versi sebelumnya keliru menganggap ini
+            // "cuma keyboard" dan diam-diam memanggil enterFullscreen() lagi
+            // TANPA mencatat pelanggaran -- itulah sebabnya keluar fullscreen
+            // sungguhan tidak pernah tercatat. Sekarang exit yang sudah
+            // dikonfirmasi Fullscreen API SELALU dicatat sebagai pelanggaran.
             fullscreenExitTimer = setTimeout(() => {
                 fullscreenExitTimer = null;
                 if (isCurrentlyFullscreen()) return; // sudah balik sendiri, aman.
-
-                if (keyboardLikelyOpen) {
-                    enterFullscreen();
-                    return;
-                }
 
                 recordViolation('FULLSCREEN_EXIT', 'Siswa keluar dari mode Layar Penuh (Fullscreen)');
             }, 600);
@@ -330,6 +339,13 @@ const NEXORA_SECURITY = (function () {
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && isArmed) {
                 recordViolation('VISIBILITY_HIDDEN', 'Siswa beralih tab atau meminimalkan browser');
+            } else if (!document.hidden && isArmed) {
+                // Saat halaman kembali terlihat (mis. layar HP baru dibuka
+                // lagi setelah terkunci), langsung cek ulang status fullscreen
+                // tanpa menunggu polling 2 detik berikutnya -- di banyak HP,
+                // keluar dari fullscreen justru baru "ketahuan" tepat saat
+                // halaman kembali aktif.
+                handlePossibleFullscreenExit();
             }
         });
 
@@ -388,6 +404,9 @@ const NEXORA_SECURITY = (function () {
             if ((session.violations || 0) > violationCount) {
                 violationCount = session.violations;
             }
+            if ((session.totalViolations || 0) > totalViolationCount) {
+                totalViolationCount = session.totalViolations;
+            }
             armAudioAutoUnlock();
             setupEventListeners();
         },
@@ -415,7 +434,16 @@ const NEXORA_SECURITY = (function () {
             // Beda dengan setViolationCount: ini SENGAJA menurunkan nilai
             // ke 0. Dipakai exam.js saat siklus 3-pelanggaran selesai dan
             // penghitung perlu benar-benar direset (bukan cuma disinkronkan).
+            // CATATAN: totalViolationCount TIDAK ikut direset di sini --
+            // itu memang akumulatif seumur sesi ujian (lihat getTotalViolationCount).
             violationCount = 0;
+        },
+        getTotalViolationCount: function () {
+            return totalViolationCount;
+        },
+        setTotalViolationCount: function (val) {
+            // Selalu naik saja (akumulatif), sinkron dari session tersimpan.
+            totalViolationCount = Math.max(totalViolationCount, val || 0);
         },
         pauseViolations: function () {
             violationsPaused = true;
