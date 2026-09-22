@@ -351,6 +351,21 @@ const NEXORA_SECURITY = (function () {
 
         // C. Deteksi Blur Window (Abaikan jika siswa klik Google Form iframe
         //    atau sedang mengetik dengan keyboard virtual terbuka)
+        //
+        // BUG (fase 7): handler ini SEBELUMNYA hanya berisi kondisi-kondisi
+        // "aman" (early return) untuk iframe Google Form, halaman
+        // tersembunyi, dan keyboard virtual -- tapi TIDAK PERNAH benar-benar
+        // memanggil recordViolation() untuk kasus blur yang sebenarnya
+        // mencurigakan. Akibatnya, di sebagian HP/WebView di mana
+        // 'visibilitychange' tidak konsisten terpicu saat siswa pindah tab
+        // atau keluar ke aplikasi lain, TIDAK ADA jalur mana pun yang
+        // mencatat pelanggaran itu -- window kehilangan fokus begitu saja
+        // tanpa terekam. Sekarang ditambahkan pencatatan pelanggaran untuk
+        // kasus blur yang tidak termasuk salah satu pengecualian aman di
+        // atas. Ini murni jaring pengaman tambahan: pada HP yang
+        // 'visibilitychange'-nya sudah bekerja normal, recordViolation()
+        // di sana akan lebih dulu men-set violationsPaused=true sehingga
+        // blur yang menyusul tidak dihitung dobel.
         window.addEventListener('blur', () => {
             if (!isArmed) return;
             setTimeout(() => {
@@ -367,6 +382,14 @@ const NEXORA_SECURITY = (function () {
                     // Aman, kemungkinan cuma keyboard virtual yang mengubah fokus.
                     return;
                 }
+                // Bukan salah satu kasus aman di atas -> window benar-benar
+                // kehilangan fokus (siswa pindah tab / buka aplikasi lain /
+                // switch app) tanpa terdeteksi lewat visibilitychange.
+                // Catat sebagai pelanggaran (recordViolation sudah punya
+                // guard isArmed & violationsPaused sendiri, jadi aman
+                // dipanggil di sini walau visibilitychange mungkin juga
+                // sudah mencatatnya lebih dulu).
+                recordViolation('WINDOW_BLUR', 'Siswa berpindah ke aplikasi/jendela lain (window kehilangan fokus)');
             }, 150);
         });
 
