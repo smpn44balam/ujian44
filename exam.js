@@ -26,7 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Jika status RELOGIN_REQUIRED (setelah pelanggaran #3 selesai countdown)
+    // Jika status RELOGIN_REQUIRED (peninggalan sesi LAMA dari sebelum
+    // sistem reset-otomatis pelanggaran ke-3 ini ada). Alur baru tidak
+    // pernah menyetel status ini lagi, tapi kode ini dipertahankan supaya
+    // siswa yang HP-nya masih menyimpan sesi lama tetap diarahkan balik
+    // ke halaman login dengan aman, bukan macet di halaman ujian.
     if (session.status === "RELOGIN_REQUIRED" && session.reloginRequired === true) {
         console.warn("Status sesi membutuhkan Login Ulang.");
         window.location.href = 'index.html';
@@ -188,61 +192,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 5. SISTEM PENALTY & RELOGIN (#1, #2, #3)
+    // 5. SISTEM PENALTY (SIKLUS RESET OTOMATIS DI PELANGGARAN KE-3)
     // ==========================================
+    // Aturan: pelanggaran 1 -> kunci 90 detik. Pelanggaran 2 -> kunci 300
+    // detik (5 menit). Pelanggaran 3 -> kunci 100 detik, lalu penghitung
+    // OTOMATIS direset ke 0 dan ujian dilanjutkan (TIDAK ada relogin/keluar
+    // ke halaman login lagi). Siklus lalu mulai lagi dari pelanggaran 1.
     let penaltyInterval = null;
     let penaltyRemainingMs = 0;
     let penaltyActive = false;
 
-    function applyPenalty(penaltySeconds, isRelogin = false) {
+    function applyPenalty(penaltySeconds, isResetCycle = false) {
         penaltyActive = true;
         let remainingSecs = penaltySeconds;
         penaltyRemainingMs = penaltySeconds * 1000;
-        
-        if (DOM.closeViolationBtn) DOM.closeViolationBtn.style.display = 'none'; 
-        
-        if (isRelogin) {
-            session.thirdReloginUntil = Date.now() + penaltyRemainingMs;
-        } else {
-            session.penaltyUntil = Date.now() + penaltyRemainingMs;
-        }
+
+        if (DOM.closeViolationBtn) DOM.closeViolationBtn.style.display = 'none';
+
+        session.penaltyUntil = Date.now() + penaltyRemainingMs;
+        session.penaltyIsReset = isResetCycle;
         saveSession();
 
         if (penaltyInterval) clearInterval(penaltyInterval);
-        
+
         const baseWarningHtml = DOM.violationText ? DOM.violationText.innerHTML.split('<br><strong id="countdownPenalty"')[0] : '';
 
         penaltyInterval = setInterval(() => {
             remainingSecs--;
             penaltyRemainingMs = remainingSecs * 1000;
-            
+
             if (DOM.violationText) {
-                DOM.violationText.innerHTML = `${baseWarningHtml}<br><strong id="countdownPenalty" style="color:#ef4444; font-size:1.2rem; display:block; margin-top:10px;">Form Terkunci: ${remainingSecs} detik</strong>`;
+                DOM.violationText.innerHTML = `${baseWarningHtml}<br><strong id="countdownPenalty" style="color:#ef4444; font-size:1.2rem; display:block; margin-top:10px;">${isResetCycle ? 'Direset dalam' : 'Form Terkunci'}: ${remainingSecs} detik</strong>`;
             }
 
             if (remainingSecs <= 0) {
                 clearInterval(penaltyInterval);
                 penaltyActive = false;
-                
-                if (isRelogin) {
-                    session.thirdReloginUntil = null;
-                    session.status = "RELOGIN_REQUIRED";
-                    session.reloginRequired = true;
+                session.penaltyUntil = null;
+                session.penaltyIsReset = false;
+
+                if (isResetCycle) {
+                    // Reset penghitung pelanggaran ke 0 dan lanjutkan ujian
+                    // di halaman yang sama, tanpa relogin.
+                    session.violations = 0;
                     saveSession();
-                    
-                    alert("Sesi dibekukan karena pelanggaran ke-3. Anda wajib Login Ulang!");
-                    window.location.href = 'index.html';
+
+                    if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.resetViolationCount === 'function') {
+                        NEXORA_SECURITY.resetViolationCount();
+                    }
+                    if (DOM.violationBadge) DOM.violationBadge.textContent = `⚠ 0 / 3`;
+
+                    hideEl(DOM.violationModal);
+
+                    if (typeof NEXORA_SECURITY !== 'undefined') {
+                        if (typeof NEXORA_SECURITY.resumeViolations === 'function') NEXORA_SECURITY.resumeViolations();
+                        if (typeof NEXORA_SECURITY.enterFullscreen === 'function') NEXORA_SECURITY.enterFullscreen();
+                    }
                 } else {
-                    session.penaltyUntil = null;
                     saveSession();
-                    
+
                     const penaltyElem = document.getElementById('countdownPenalty');
-                    if(penaltyElem) penaltyElem.remove();
-                    
+                    if (penaltyElem) penaltyElem.remove();
+
                     if (DOM.closeViolationBtn) {
                         DOM.closeViolationBtn.style.display = 'inline-block';
                         DOM.closeViolationBtn.textContent = 'Saya Mengerti, Lanjutkan Ujian';
                     }
+                    // Untuk pelanggaran 1 & 2, deteksi baru dilanjutkan saat
+                    // siswa menekan tombol "Saya Mengerti" (lihat listener
+                    // closeViolationBtn di bawah), bukan otomatis di sini.
                 }
             }
         }, 1000);
@@ -251,18 +269,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function restorePenalty() {
         if (session.penaltyUntil && session.penaltyUntil > Date.now()) {
             const remainingSecs = Math.floor((session.penaltyUntil - Date.now()) / 1000);
-            triggerPenaltyUI(session.violations || 1, `Anda merefresh halaman saat penalti berjalan.`);
-            applyPenalty(remainingSecs, false);
-            return true;
-        }
-        return false;
-    }
+            const isReset = !!session.penaltyIsReset;
+            const count = session.violations || 1;
 
-    function restoreThirdReloginLock() {
-        if (session.thirdReloginUntil && session.thirdReloginUntil > Date.now()) {
-            const remainingSecs = Math.floor((session.thirdReloginUntil - Date.now()) / 1000);
-            triggerPenaltyUI(session.violations || 3, `Menunggu sesi dibekukan...`);
-            applyPenalty(remainingSecs, true);
+            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.pauseViolations === 'function') {
+                NEXORA_SECURITY.pauseViolations();
+            }
+
+            if (isReset) {
+                triggerPenaltyUI(count, 'Anda sudah melakukan pelanggaran sebanyak 3 kali. Peringatan kecurangan akan direset ke 0. Silakan tunggu.');
+            } else {
+                triggerPenaltyUI(count, 'Anda merefresh halaman saat penalti berjalan.');
+            }
+            applyPenalty(remainingSecs, isReset);
             return true;
         }
         return false;
@@ -286,15 +305,18 @@ document.addEventListener('DOMContentLoaded', () => {
             saveSession();
 
             if (DOM.violationBadge) DOM.violationBadge.textContent = `⚠ ${count} / 3`;
-            
-            triggerPenaltyUI(count, details);
 
-            if (count === 1) {
-                applyPenalty(90, false);
+            if (count >= 3) {
+                // Pelanggaran ke-3: kunci 100 detik, lalu OTOMATIS direset
+                // ke 0 (bukan relogin). Siklus mulai lagi dari awal.
+                triggerPenaltyUI(count, 'Anda sudah melakukan pelanggaran sebanyak 3 kali. Peringatan kecurangan akan direset ke 0. Silakan tunggu selama 100 detik.');
+                applyPenalty(100, true);
             } else if (count === 2) {
+                triggerPenaltyUI(count, details);
                 applyPenalty(300, false);
-            } else if (count >= 3) {
-                applyPenalty(60, true);
+            } else {
+                triggerPenaltyUI(count, details);
+                applyPenalty(90, false);
             }
         });
     }
@@ -302,15 +324,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (DOM.closeViolationBtn) {
         DOM.closeViolationBtn.addEventListener('click', () => {
             hideEl(DOM.violationModal);
-            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.enterFullscreen === 'function') {
-                NEXORA_SECURITY.enterFullscreen();
+            if (typeof NEXORA_SECURITY !== 'undefined') {
+                // Baru sekarang deteksi pelanggaran dilanjutkan (khusus
+                // pelanggaran 1 & 2) — siswa sudah membaca peringatannya
+                // dan sengaja menekan tombol ini.
+                if (typeof NEXORA_SECURITY.resumeViolations === 'function') NEXORA_SECURITY.resumeViolations();
+                if (typeof NEXORA_SECURITY.enterFullscreen === 'function') NEXORA_SECURITY.enterFullscreen();
             }
         });
     }
 
     // ==========================================
-    // 7. SISTEM HEARTBEAT (Interval 20 Detik)
+    // 7. SISTEM HEARTBEAT (Interval 30 Detik)
     // ==========================================
+    // Sebelumnya 20 detik. Dengan potensi ~600 siswa aktif bersamaan,
+    // interval diperlebar ke 30 detik untuk mengurangi beban permintaan
+    // ke Google Apps Script (kuota eksekusi & penulisan Spreadsheet
+    // terbatas), tanpa mengurangi kegunaan pemantauan pengawas secara
+    // berarti.
     function startHeartbeat() {
         setInterval(() => {
             const scriptUrl = window.NEXORA_CONFIG?.scriptUrl || window.NEXORA_CONFIG?.monitoringUrl;
@@ -347,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             }).catch(e => console.log("Heartbeat tersendat (Abaikan, sistem berjalan lokal)"));
-        }, 20000);
+        }, 30000);
     }
 
     // ==========================================
@@ -459,24 +490,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 10. PEMERIKSAAN AWAL SAAT HALAMAN DIMUAT (RESUME STATE)
     // ==========================================
-    const isPenalty3Locked = restoreThirdReloginLock();
-    let inPenaltyNow = false;
-    if (!isPenalty3Locked) {
-        inPenaltyNow = restorePenalty();
-    }
+    // CATATAN: fungsi restoreThirdReloginLock() & alur relogin pelanggaran
+    // ke-3 sudah dihapus — sekarang pelanggaran ke-3 direset otomatis ke 0
+    // (lihat restorePenalty() & applyPenalty() di atas), tidak ada lagi
+    // sesi yang "dibekukan" menunggu login ulang.
+    const inPenaltyNow = restorePenalty();
 
     // Proteksi keluar halaman (beforeunload + tombol Back) HARUS tetap aktif
-    // selama sesi belum selesai — termasuk saat sedang dalam masa penalti /
-    // terkunci menunggu relogin, bukan cuma saat form sedang aktif diisi.
-    // Sebelumnya celah ini bisa dipakai siswa kabur dari penalti dengan
-    // menutup tab / menekan Back saat modal penalti tampil.
-    if (session.startedAt || session.isStarted || isPenalty3Locked || inPenaltyNow) {
+    // selama sesi belum selesai — termasuk saat sedang dalam masa penalti,
+    // bukan cuma saat form sedang aktif diisi. Sebelumnya celah ini bisa
+    // dipakai siswa kabur dari penalti dengan menutup tab / menekan Back
+    // saat modal penalti tampil.
+    if (session.startedAt || session.isStarted || inPenaltyNow) {
         examActiveForNavGuard = true;
         armBackButtonGuard();
     }
 
     // Jika siswa merefresh saat ujian sedang berjalan (di luar masa penalti)
-    if ((session.startedAt || session.isStarted) && !isPenalty3Locked && !inPenaltyNow) {
+    if ((session.startedAt || session.isStarted) && !inPenaltyNow) {
         hideEl(DOM.startOverlay);
         
         if (DOM.formFrame && session.formUrl) {

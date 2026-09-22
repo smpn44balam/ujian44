@@ -1,4 +1,5 @@
 (() => {
+  const levelSelect = document.getElementById("levelSelect");
   const classSelect = document.getElementById("classSelect");
   const subjectSelect = document.getElementById("subjectSelect");
   const form = document.getElementById("loginForm");
@@ -6,17 +7,51 @@
   const info = document.getElementById("formInfo");
   const nameInput = document.getElementById("studentName"); 
 
-  // Load opsi kelas dari config
-  Object.entries(NEXORA_CONFIG.classes).forEach(([level, classes]) => {
-    const group = document.createElement("optgroup");
-    group.label = `Kelas ${level}`;
-    classes.forEach(c => {
+  // ---------------------------------------------------------
+  // Kelas dipilih bertingkat: Tingkat (VII/VIII/IX) dulu, baru
+  // Kelas (A/B/C/...). Sebelumnya satu dropdown berisi 26 kelas
+  // sekaligus (dikelompokkan pakai <optgroup>) yang membuat daftar
+  // panjang dan harus di-scroll. "className" yang disimpan ke sesi
+  // TETAP memakai format gabungan "VII-A" seperti sebelumnya, supaya
+  // seluruh bagian lain sistem (getFormUrl, exam.js, pengawas.js,
+  // Code.gs) tidak perlu diubah sama sekali.
+  // ---------------------------------------------------------
+  const LEVEL_LABELS = { VII: "Kelas 7 (VII)", VIII: "Kelas 8 (VIII)", IX: "Kelas 9 (IX)" };
+
+  Object.keys(NEXORA_CONFIG.classes).forEach(level => {
+    const opt = document.createElement("option");
+    opt.value = level;
+    opt.textContent = LEVEL_LABELS[level] || level;
+    levelSelect.appendChild(opt);
+  });
+
+  function populateClassOptions(level, selectedValue) {
+    classSelect.innerHTML = "";
+    const list = NEXORA_CONFIG.classes[level] || [];
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = list.length ? "Pilih kelas..." : "Pilih tingkat kelas dahulu...";
+    classSelect.appendChild(placeholder);
+
+    list.forEach(fullName => {
+      // fullName berformat "VII-A" -> tampilkan hanya huruf kelasnya ("A")
+      const letter = fullName.includes("-") ? fullName.split("-").slice(1).join("-") : fullName;
       const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      group.appendChild(opt);
+      opt.value = fullName;
+      opt.textContent = letter;
+      classSelect.appendChild(opt);
     });
-    classSelect.appendChild(group);
+
+    classSelect.disabled = list.length === 0;
+    if (selectedValue) classSelect.value = selectedValue;
+  }
+
+  populateClassOptions(""); // state awal: kosong & terkunci
+
+  levelSelect.addEventListener("change", () => {
+    populateClassOptions(levelSelect.value);
+    updateInfo();
   });
 
   // Load opsi mata pelajaran dari config
@@ -69,13 +104,19 @@
       const hasViolations = (candidate.violations || 0) > 0;
 
       if (hasViolations || isFrozen) {
+        const resumeClassName = candidate.className || candidate.kelas || "";
+        const resumeLevel = getLevelFromClass(resumeClassName);
+
         nameInput.value = candidate.name || candidate.nama || "";
         nameInput.readOnly = true;
-        classSelect.value = candidate.className || candidate.kelas || "";
+        levelSelect.value = resumeLevel;
+        populateClassOptions(resumeLevel, resumeClassName);
         subjectSelect.value = candidate.subjectId || "";
 
+        levelSelect.style.pointerEvents = "none";
         classSelect.style.pointerEvents = "none";
         subjectSelect.style.pointerEvents = "none";
+        levelSelect.style.backgroundColor = "#eef4fb";
         classSelect.style.backgroundColor = "#eef4fb";
         subjectSelect.style.backgroundColor = "#eef4fb";
 
@@ -155,7 +196,7 @@
       durationMs: isResume ? (previous.durationMs || null) : null,
       isStarted: isResume ? !!previous.isStarted : false,
       penaltyUntil: null,
-      thirdReloginUntil: null
+      penaltyIsReset: false
     };
 
     const jsonString = JSON.stringify(candidateData);

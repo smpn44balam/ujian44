@@ -25,6 +25,23 @@
  *    menulis ke key ini) bisa menampilkan data — minimal untuk device
  *    yang sama. Ini bukan pengganti Google Sheets (lihat catatan di
  *    ringkasan akhir), hanya jaring pengaman lokal.
+ * 6. BUG "keluar fullscreen tidak terdeteksi": sebelumnya modul ini HANYA
+ *    mendengarkan event standar 'fullscreenchange'. Banyak browser mobile
+ *    berbasis WebKit (termasuk sebagian besar HP Android bawaan/WebView
+ *    dan Safari versi lama) hanya memicu event ber-prefix
+ *    'webkitfullscreenchange', bukan event standarnya — jadi keluarnya
+ *    siswa dari fullscreen di HP tersebut sama sekali tidak tertangkap.
+ *    Sekarang kedua event didengarkan. Sebagai jaring pengaman tambahan
+ *    (untuk HP yang bahkan event ber-prefix itu pun tidak konsisten),
+ *    ditambahkan juga pemeriksaan berkala (polling) yang sangat ringan
+ *    setiap 2 detik — hanya membaca satu properti boolean, tidak memberi
+ *    beban jaringan/CPU berarti walau diakses ratusan siswa sekaligus.
+ * 7. Deteksi pelanggaran kini otomatis DIJEDA (pause) begitu satu
+ *    pelanggaran tercatat, dan baru dilanjutkan lagi setelah modal
+ *    peringatan ditutup / masa penalti selesai. Sebelumnya, selama modal
+ *    penalti tampil, event lain (pindah tab, keluar fullscreen lagi, dsb)
+ *    tetap dihitung sebagai pelanggaran baru — itulah sebabnya jumlah
+ *    pelanggaran bisa meledak ke 6, 12, dst dalam satu sesi.
  */
 
 const NEXORA_SECURITY = (function () {
@@ -32,6 +49,7 @@ const NEXORA_SECURITY = (function () {
     const MONITORING_KEY = 'nexoraMonitoring';
 
     let violationCount = 0;
+    let violationsPaused = false;
     let onViolationCallback = null;
     let isArmed = false;
     let audioCtx = null;
@@ -232,7 +250,14 @@ const NEXORA_SECURITY = (function () {
     // 7. Mencatat Pelanggaran
     // ---------------------------------------------------------
     function recordViolation(type, details) {
-        if (!isArmed) return;
+        if (!isArmed || violationsPaused) return;
+
+        // Jeda deteksi SEGERA (sebelum callback/UI diproses) supaya
+        // pelanggaran lain yang terjadi selagi modal peringatan/penalti
+        // masih tampil TIDAK ikut terhitung. exam.js yang memutuskan kapan
+        // resumeViolations() dipanggil lagi (setelah modal ditutup / masa
+        // penalti selesai).
+        violationsPaused = true;
 
         violationCount++;
         playViolationBeep(2000);
@@ -255,10 +280,11 @@ const NEXORA_SECURITY = (function () {
 
         setupViewportWatcher();
 
-        // A. Deteksi Keluar Fullscreen (dengan grace period untuk keyboard mobile)
-        document.addEventListener('fullscreenchange', () => {
+        // Fungsi bersama, dipakai oleh event listener MAUPUN polling di
+        // bawah — supaya logikanya (grace period, deteksi keyboard) hanya
+        // ditulis sekali dan konsisten dari sumber mana pun pemicunya.
+        function handlePossibleFullscreenExit() {
             if (isCurrentlyFullscreen() || !isArmed) {
-                // Kembali fullscreen (mis. keyboard ditutup) -> batalkan timer tunda.
                 if (fullscreenExitTimer) {
                     clearTimeout(fullscreenExitTimer);
                     fullscreenExitTimer = null;
@@ -266,29 +292,39 @@ const NEXORA_SECURITY = (function () {
                 return;
             }
 
-            // Jangan langsung mencatat pelanggaran. Tunggu sebentar (600ms):
-            // - Jika ini disebabkan keyboard virtual muncul, viewport akan
-            //   menyusut (keyboardLikelyOpen = true) dan browser SERINGKALI
-            //   tidak benar-benar keluar fullscreen di background; begitu
-            //   keyboard ditutup, fullscreen kembali normal.
-            // - Jika benar-benar keluar (siswa menekan Home/Back/Recent
-            //   apps, atau menutup fullscreen manual), setelah 600ms
-            //   status document.fullscreenElement TETAP kosong.
-            if (fullscreenExitTimer) clearTimeout(fullscreenExitTimer);
+            if (fullscreenExitTimer) return; // sudah dalam proses debounce
+
             fullscreenExitTimer = setTimeout(() => {
                 fullscreenExitTimer = null;
                 if (isCurrentlyFullscreen()) return; // sudah balik sendiri, aman.
 
                 if (keyboardLikelyOpen) {
-                    // Kemungkinan besar cuma keyboard. Coba diam-diam minta
-                    // fullscreen lagi tanpa mencatat pelanggaran.
                     enterFullscreen();
                     return;
                 }
 
                 recordViolation('FULLSCREEN_EXIT', 'Siswa keluar dari mode Layar Penuh (Fullscreen)');
             }, 600);
-        });
+        }
+
+        // A. Deteksi Keluar Fullscreen (dengan grace period untuk keyboard mobile)
+        // PENTING: banyak browser mobile (WebView Android, Safari versi
+        // lama/iOS) hanya memicu event ber-prefix 'webkitfullscreenchange',
+        // BUKAN 'fullscreenchange' standar. Sebelumnya hanya event standar
+        // yang didengarkan, sehingga di banyak HP keluar dari fullscreen
+        // sama sekali tidak terdeteksi. Sekarang keduanya didengarkan.
+        document.addEventListener('fullscreenchange', handlePossibleFullscreenExit);
+        document.addEventListener('webkitfullscreenchange', handlePossibleFullscreenExit);
+        document.addEventListener('msfullscreenchange', handlePossibleFullscreenExit);
+
+        // Jaring pengaman tambahan untuk HP yang bahkan event ber-prefix
+        // pun tidak konsisten memicu: polling sangat ringan (hanya membaca
+        // satu properti boolean, tanpa jaringan) setiap 2 detik selagi
+        // ujian sedang aktif (armed). Untuk 600 siswa sekaligus, beban ini
+        // dapat diabaikan karena berjalan lokal di masing-masing HP.
+        setInterval(() => {
+            if (isArmed) handlePossibleFullscreenExit();
+        }, 2000);
 
         // B. Deteksi Pindah Tab / Minimalize Browser
         document.addEventListener('visibilitychange', () => {
@@ -374,6 +410,18 @@ const NEXORA_SECURITY = (function () {
         setViolationCount: function (val) {
             // Jangan pernah menurunkan nilai yang sudah lebih tinggi di memori.
             violationCount = Math.max(violationCount, val || 0);
+        },
+        resetViolationCount: function () {
+            // Beda dengan setViolationCount: ini SENGAJA menurunkan nilai
+            // ke 0. Dipakai exam.js saat siklus 3-pelanggaran selesai dan
+            // penghitung perlu benar-benar direset (bukan cuma disinkronkan).
+            violationCount = 0;
+        },
+        pauseViolations: function () {
+            violationsPaused = true;
+        },
+        resumeViolations: function () {
+            violationsPaused = false;
         },
         recordManual: recordViolation,
         sendMonitoring: sendMonitoring,
