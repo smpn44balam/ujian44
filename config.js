@@ -54,9 +54,24 @@ const NEXORA_CONFIG = {
 // Tempel LINK RESPONDER/VIEW FORM dari Google Forms.
 // Jika ingin embed, gunakan URL /viewform.
 // =========================================================
+// Catatan: 12 link ini HANYA untuk kelas IX (kelas 9). Kelas VII dan VIII
+// belum diisi (Administrator perlu mengisi link tersebut nanti jika ada).
+const BAHASA_INDONESIA = "https://docs.google.com/forms/d/e/1FAIpQLSeOVk2hgw3Ms_jAseDF3du5VSBFXqGIT30-hQtJ-qIEuvtEJQ/viewform";
+const PAI = "https://docs.google.com/forms/d/e/1FAIpQLSeknhVvzAv5rTz97X8QXsBER0xs4SpYOI02zv9m27lcrx8umw/viewform";
+const MATEMATIKA = "https://docs.google.com/forms/d/e/1FAIpQLScr99KSySPOqijhf3XkQWt1U5U9VXhr1Was85hfmaa_hqAuvA/viewform";
+const PKN = "https://docs.google.com/forms/d/e/1FAIpQLSeJ6Xn8WceupDTGT-1t6yc3kVCO_PJ3EIjj9hiNHqy_3rQgnA/viewform";
+const BAHASA_INGGRIS = "https://docs.google.com/forms/d/e/1FAIpQLSdulMU0AgmvNz2HYvmTHZ_YkwOXJESr8byw-xDxysLlB3JsMg/viewform";
+const PJOK = "https://docs.google.com/forms/d/e/1FAIpQLSdbRmyWWJfS7zslyTV55piUW3Bqvvd42570bFXhWClFIIohNg/viewform";
+const IPA = "https://docs.google.com/forms/d/e/1FAIpQLSdI3xHfg4qFdq0BfzHUDs4LnDNaTlAq60FRjmeYBymNaVCmQw/viewform";
+const BAHASA_LAMPUNG = "https://docs.google.com/forms/d/e/1FAIpQLSe36-P4O6rnw282GchdrmjMjJYvyBMvWZm4ZkmFCYt5R2F9uA/viewform";
+const IPS = "https://docs.google.com/forms/d/e/1FAIpQLSfYGS8n0CqCNDDD233_2NHFLAQb0y87boTFdtywa1N4c73MIA/viewform";
+const INFORMATIKA = "https://docs.google.com/forms/d/e/1FAIpQLSdXmQb2TUtx6F1eslOB8Paji0xWxnLUc8WYeaG130AG8n5D0Q/viewform";
+const SENI_BUDAYA = "https://docs.google.com/forms/d/e/1FAIpQLSehe2B6TLm0sjEnRuAcm67BDGSFwqHQ3xJdH6SgXeUkDXFWiA/viewform";
+const PAK = "https://docs.google.com/forms/d/e/1FAIpQLSejznrprIbLMhTekDf941pOcL7kKPzgFr80sA3ulvAkrX0pQA/viewform";
+
 const GOOGLE_FORMS = {
   VII: {
-    bahasaIndonesia: "https://forms.gle/3TZ8XvKLsS3sKzvo9",
+    bahasaIndonesia: "",
     pai: "",
     matematika: "",
     pkn: "",
@@ -84,18 +99,18 @@ const GOOGLE_FORMS = {
     pak: ""
   },
   IX: {
-    bahasaIndonesia: "",
-    pai: "",
-    matematika: "",
-    pkn: "",
-    bahasaInggris: "",
-    pjok: "",
-    ipa: "",
-    bahasaLampung: "",
-    ips: "",
-    informatika: "",
-    seniBudaya: "",
-    pak: ""
+    bahasaIndonesia: BAHASA_INDONESIA,
+    pai: PAI,
+    matematika: MATEMATIKA,
+    pkn: PKN,
+    bahasaInggris: BAHASA_INGGRIS,
+    pjok: PJOK,
+    ipa: IPA,
+    bahasaLampung: BAHASA_LAMPUNG,
+    ips: IPS,
+    informatika: INFORMATIKA,
+    seniBudaya: SENI_BUDAYA,
+    pak: PAK
   }
 };
 
