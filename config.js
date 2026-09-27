@@ -54,8 +54,9 @@ const NEXORA_CONFIG = {
 // Tempel LINK RESPONDER/VIEW FORM dari Google Forms.
 // Jika ingin embed, gunakan URL /viewform.
 // =========================================================
-// Catatan: 12 link ini HANYA untuk kelas IX (kelas 9). Kelas VII dan VIII
-// belum diisi (Administrator perlu mengisi link tersebut nanti jika ada).
+// Catatan: 12 link di bawah ini untuk kelas IX (kelas 9). Untuk kelas VII dan
+// VIII, mapel Bahasa Indonesia & PAI sudah diisi (lihat konstanta di bawah);
+// mapel lainnya di VII/VIII masih kosong dan bisa diisi Administrator nanti.
 const BAHASA_INDONESIA = "https://docs.google.com/forms/d/e/1FAIpQLSeOVk2hgw3Ms_jAseDF3du5VSBFXqGIT30-hQtJ-qIEuvtEJQ/viewform";
 const PAI = "https://docs.google.com/forms/d/e/1FAIpQLSeknhVvzAv5rTz97X8QXsBER0xs4SpYOI02zv9m27lcrx8umw/viewform";
 const MATEMATIKA = "https://docs.google.com/forms/d/e/1FAIpQLScr99KSySPOqijhf3XkQWt1U5U9VXhr1Was85hfmaa_hqAuvA/viewform";
@@ -69,10 +70,18 @@ const INFORMATIKA = "https://docs.google.com/forms/d/e/1FAIpQLSdXmQb2TUtx6F1eslO
 const SENI_BUDAYA = "https://docs.google.com/forms/d/e/1FAIpQLSehe2B6TLm0sjEnRuAcm67BDGSFwqHQ3xJdH6SgXeUkDXFWiA/viewform";
 const PAK = "https://docs.google.com/forms/d/e/1FAIpQLSejznrprIbLMhTekDf941pOcL7kKPzgFr80sA3ulvAkrX0pQA/viewform";
 
+// Link untuk kelas VII (baru diisi)
+const BAHASA_INDONESIA_VII = "https://docs.google.com/forms/d/e/1FAIpQLSekPfsgeU1toL_ZSu5NHJH29QPze0BxZNIpdiXUr_8ykuS7UQ/viewform";
+const PAI_VII = "https://docs.google.com/forms/d/e/1FAIpQLScz63s9qFcrdtl3ETgNsf2UV5AX_5iUdXmhA_lcShGZyZ35lQ/viewform";
+
+// Link untuk kelas VIII (baru diisi)
+const PAI_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSceA1CLLKT1oQx5_YTgU3ECnIZd_fNrxAdXiQPFJHxuWQ3gQg/viewform";
+const BAHASA_INDONESIA_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSeVZcr0yzdRaKwSzSJ7Rm3SXS4Pp28rwQYWR59JhcF10aLRDA/viewform";
+
 const GOOGLE_FORMS = {
   VII: {
-    bahasaIndonesia: "",
-    pai: "",
+    bahasaIndonesia: BAHASA_INDONESIA_VII,
+    pai: PAI_VII,
     matematika: "",
     pkn: "",
     bahasaInggris: "",
@@ -85,8 +94,8 @@ const GOOGLE_FORMS = {
     pak: ""
   },
   VIII: {
-    bahasaIndonesia: "",
-    pai: "",
+    bahasaIndonesia: BAHASA_INDONESIA_VIII,
+    pai: PAI_VIII,
     matematika: "",
     pkn: "",
     bahasaInggris: "",
