@@ -78,12 +78,18 @@ const PAI_VII = "https://docs.google.com/forms/d/e/1FAIpQLScz63s9qFcrdtl3ETgNsf2
 const PAI_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSceA1CLLKT1oQx5_YTgU3ECnIZd_fNrxAdXiQPFJHxuWQ3gQg/viewform";
 const BAHASA_INDONESIA_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSeVZcr0yzdRaKwSzSJ7Rm3SXS4Pp28rwQYWR59JhcF10aLRDA/viewform";
 
+// Link ujian besok (ditambahkan)
+const MATEMATIKA_VII = "https://docs.google.com/forms/d/e/1FAIpQLSelh_ON7tKUzxL_Z0TO0mqImMcq_hWCg5S-mm6MCb-XTVCEuQ/viewform";
+const PKN_VII = "https://docs.google.com/forms/d/e/1FAIpQLSf4ZVOb1mz8tO1SCZqmXEZku_qr9eHn55fZq4gXor4tXch4Zg/viewform";
+const PKN_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSe1cB0cipokYGZ4rZDYrWUSSXbDxNcwVoLInjY9epzltGBd9g/viewform";
+const MATEMATIKA_VIII = "https://docs.google.com/forms/d/e/1FAIpQLScdPBNHwxCvxX492wR-mHdjjqWbff6HVgCeKyyj-niXtOlbLg/viewform";
+
 const GOOGLE_FORMS = {
   VII: {
     bahasaIndonesia: BAHASA_INDONESIA_VII,
     pai: PAI_VII,
-    matematika: "",
-    pkn: "",
+    matematika: MATEMATIKA_VII,
+    pkn: PKN_VII,
     bahasaInggris: "",
     pjok: "",
     ipa: "",
@@ -96,8 +102,8 @@ const GOOGLE_FORMS = {
   VIII: {
     bahasaIndonesia: BAHASA_INDONESIA_VIII,
     pai: PAI_VIII,
-    matematika: "",
-    pkn: "",
+    matematika: MATEMATIKA_VIII,
+    pkn: PKN_VIII,
     bahasaInggris: "",
     pjok: "",
     ipa: "",
