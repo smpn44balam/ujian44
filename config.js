@@ -1,6 +1,6 @@
 /* =========================================================
    NEXORA EXAM SMPN 44 — KONFIGURASI
-   Anda cukup mengisi 36 link Google Form di bagian GOOGLE_FORMS.
+   Anda cukup mengisi link Google Form di bagian GOOGLE_FORMS.
    ========================================================= */
 
 const NEXORA_CONFIG = {
@@ -64,48 +64,20 @@ const NEXORA_CONFIG = {
 };
 
 // =========================================================
-// 36 LINK GOOGLE FORM — 12 UNTUK VII, 12 VIII, 12 IX
-// Tempel LINK RESPONDER/VIEW FORM dari Google Forms.
-// Jika ingin embed, gunakan URL /viewform.
+// LINK GOOGLE FORM — 12 MAPEL UNTUK SETIAP TINGKAT (VII, VIII, IX)
+// Tempel LINK RESPONDER/VIEW FORM (berakhiran /viewform).
+// Mapel yang masih "" berarti link-nya belum diisi.
 // =========================================================
-// Catatan: 12 link di bawah ini untuk kelas IX (kelas 9). Untuk kelas VII dan
-// VIII, mapel Bahasa Indonesia & PAI sudah diisi (lihat konstanta di bawah);
-// mapel lainnya di VII/VIII masih kosong dan bisa diisi Administrator nanti.
-const BAHASA_INDONESIA = "https://docs.google.com/forms/d/e/1FAIpQLSeOVk2hgw3Ms_jAseDF3du5VSBFXqGIT30-hQtJ-qIEuvtEJQ/viewform";
-const PAI = "https://docs.google.com/forms/d/e/1FAIpQLSeknhVvzAv5rTz97X8QXsBER0xs4SpYOI02zv9m27lcrx8umw/viewform";
-const MATEMATIKA = "https://docs.google.com/forms/d/e/1FAIpQLScr99KSySPOqijhf3XkQWt1U5U9VXhr1Was85hfmaa_hqAuvA/viewform";
-const PKN = "https://docs.google.com/forms/d/e/1FAIpQLSeJ6Xn8WceupDTGT-1t6yc3kVCO_PJ3EIjj9hiNHqy_3rQgnA/viewform";
-const BAHASA_INGGRIS = "https://docs.google.com/forms/d/e/1FAIpQLSdulMU0AgmvNz2HYvmTHZ_YkwOXJESr8byw-xDxysLlB3JsMg/viewform";
-const PJOK = "https://docs.google.com/forms/d/e/1FAIpQLSdbRmyWWJfS7zslyTV55piUW3Bqvvd42570bFXhWClFIIohNg/viewform";
-const IPA = "https://docs.google.com/forms/d/e/1FAIpQLSdI3xHfg4qFdq0BfzHUDs4LnDNaTlAq60FRjmeYBymNaVCmQw/viewform";
-const BAHASA_LAMPUNG = "https://docs.google.com/forms/d/e/1FAIpQLSe36-P4O6rnw282GchdrmjMjJYvyBMvWZm4ZkmFCYt5R2F9uA/viewform";
-const IPS = "https://docs.google.com/forms/d/e/1FAIpQLSfYGS8n0CqCNDDD233_2NHFLAQb0y87boTFdtywa1N4c73MIA/viewform";
-const INFORMATIKA = "https://docs.google.com/forms/d/e/1FAIpQLSdXmQb2TUtx6F1eslOB8Paji0xWxnLUc8WYeaG130AG8n5D0Q/viewform";
-const SENI_BUDAYA = "https://docs.google.com/forms/d/e/1FAIpQLSehe2B6TLm0sjEnRuAcm67BDGSFwqHQ3xJdH6SgXeUkDXFWiA/viewform";
-const PAK = "https://docs.google.com/forms/d/e/1FAIpQLSejznrprIbLMhTekDf941pOcL7kKPzgFr80sA3ulvAkrX0pQA/viewform";
-
-// Link untuk kelas VII (baru diisi)
-const BAHASA_INDONESIA_VII = "https://docs.google.com/forms/d/e/1FAIpQLSekPfsgeU1toL_ZSu5NHJH29QPze0BxZNIpdiXUr_8ykuS7UQ/viewform";
-const PAI_VII = "https://docs.google.com/forms/d/e/1FAIpQLScz63s9qFcrdtl3ETgNsf2UV5AX_5iUdXmhA_lcShGZyZ35lQ/viewform";
-
-// Link untuk kelas VIII (baru diisi)
-const PAI_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSceA1CLLKT1oQx5_YTgU3ECnIZd_fNrxAdXiQPFJHxuWQ3gQg/viewform";
-const BAHASA_INDONESIA_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSeVZcr0yzdRaKwSzSJ7Rm3SXS4Pp28rwQYWR59JhcF10aLRDA/viewform";
-
-// Link ujian besok (ditambahkan)
-const MATEMATIKA_VII = "https://docs.google.com/forms/d/e/1FAIpQLSelh_ON7tKUzxL_Z0TO0mqImMcq_hWCg5S-mm6MCb-XTVCEuQ/viewform";
-const PKN_VII = "https://docs.google.com/forms/d/e/1FAIpQLSf4ZVOb1mz8tO1SCZqmXEZku_qr9eHn55fZq4gXor4tXch4Zg/viewform";
-const PKN_VIII = "https://docs.google.com/forms/d/e/1FAIpQLSe1cB0cipokYGZ4rZDYrWUSSXbDxNcwVoLInjY9epzltGBd9g/viewform";
-const MATEMATIKA_VIII = "https://docs.google.com/forms/d/e/1FAIpQLScdPBNHwxCvxX492wR-mHdjjqWbff6HVgCeKyyj-niXtOlbLg/viewform";
-
 const GOOGLE_FORMS = {
+
+  // ---------------------- KELAS VII ----------------------
   VII: {
-    bahasaIndonesia: BAHASA_INDONESIA_VII,
-    pai: PAI_VII,
-    matematika: MATEMATIKA_VII,
-    pkn: PKN_VII,
-    bahasaInggris: "",
-    pjok: "",
+    bahasaIndonesia: "https://docs.google.com/forms/d/e/1FAIpQLSekPfsgeU1toL_ZSu5NHJH29QPze0BxZNIpdiXUr_8ykuS7UQ/viewform",
+    pai:             "https://docs.google.com/forms/d/e/1FAIpQLScz63s9qFcrdtl3ETgNsf2UV5AX_5iUdXmhA_lcShGZyZ35lQ/viewform",
+    matematika:      "https://docs.google.com/forms/d/e/1FAIpQLSelh_ON7tKUzxL_Z0TO0mqImMcq_hWCg5S-mm6MCb-XTVCEuQ/viewform",
+    pkn:             "https://docs.google.com/forms/d/e/1FAIpQLSf4ZVOb1mz8tO1SCZqmXEZku_qr9eHn55fZq4gXor4tXch4Zg/viewform",
+    bahasaInggris:   "https://docs.google.com/forms/d/e/1FAIpQLSdnkr15KiIr-qexcm8gCJ9HV2LAGOkuutEjie7SQ-7gzPfDqA/viewform",
+    pjok:            "https://docs.google.com/forms/d/e/1FAIpQLSdWnuFi_p7xitusBNPtef4BuTq_aYtoO1UqEP1Vby5Xg4pJxA/viewform",
     ipa: "",
     bahasaLampung: "",
     ips: "",
@@ -113,33 +85,37 @@ const GOOGLE_FORMS = {
     seniBudaya: "",
     pak: ""
   },
+
+  // ---------------------- KELAS VIII ----------------------
   VIII: {
-    bahasaIndonesia: BAHASA_INDONESIA_VIII,
-    pai: PAI_VIII,
-    matematika: MATEMATIKA_VIII,
-    pkn: PKN_VIII,
-    bahasaInggris: "",
-    pjok: "",
-    ipa: "",
-    bahasaLampung: "",
-    ips: "",
-    informatika: "",
-    seniBudaya: "",
-    pak: ""
+    bahasaIndonesia: "https://docs.google.com/forms/d/e/1FAIpQLSeVZcr0yzdRaKwSzSJ7Rm3SXS4Pp28rwQYWR59JhcF10aLRDA/viewform",
+    pai:             "https://docs.google.com/forms/d/e/1FAIpQLSceA1CLLKT1oQx5_YTgU3ECnIZd_fNrxAdXiQPFJHxuWQ3gQg/viewform",
+    matematika:      "https://docs.google.com/forms/d/e/1FAIpQLScdPBNHwxCvxX492wR-mHdjjqWbff6HVgCeKyyj-niXtOlbLg/viewform",
+    pkn:             "https://docs.google.com/forms/d/e/1FAIpQLSe1cB0cipokYGZ4rZDYrWUSSXbDxNcwVoLInjY9epzltGBd9g/viewform",
+    bahasaInggris:   "https://docs.google.com/forms/d/e/1FAIpQLSdyKCDaMUXNWOP5a-cQ-gKUaFjmDghcLdKc1G56f1Ip8b-zZQ/viewform",
+    pjok:            "https://docs.google.com/forms/d/e/1FAIpQLSfaH5w6CXJxgNf78NRR5BgPSPStjD-3Y3zUIjAYeVlGjIoJ7w/viewform",
+    ipa:             "https://docs.google.com/forms/d/e/1FAIpQLSfQcW32FHbt4rqrx1zsYs1QmgXfCrfhQsE5QrKOCfnScOMckw/viewform",
+    bahasaLampung:   "https://docs.google.com/forms/d/e/1FAIpQLSd2BcObnPOFUq03iwAaYplO1muIMwHTNwZ2w9pm567d1vGylQ/viewform",
+    ips:             "https://docs.google.com/forms/d/e/1FAIpQLScEL1G-LQ2sblkcaV7QYJVkvYUS16MTIm_NbzzmDSEwxmhXKQ/viewform",
+    informatika:     "https://docs.google.com/forms/d/e/1FAIpQLSdvn2rAm9A_UFJ4NSPgT7wi-LcVcUIAnaEXY6Bvi9_ko7gy7g/viewform",
+    seniBudaya:      "https://docs.google.com/forms/d/e/1FAIpQLScgxUNEmA4ex4C5lQQl5nfl_RLX6IWO4o6vuBw80F3o7HatsA/viewform",
+    pak:             "https://docs.google.com/forms/d/e/1FAIpQLSeZxTbsRtu4HJ3_ICDsaK-9Q5AzvWw-xD2NPu2eZFZSMl6n5Q/viewform"
   },
+
+  // ---------------------- KELAS IX ----------------------
   IX: {
-    bahasaIndonesia: BAHASA_INDONESIA,
-    pai: PAI,
-    matematika: MATEMATIKA,
-    pkn: PKN,
-    bahasaInggris: BAHASA_INGGRIS,
-    pjok: PJOK,
-    ipa: IPA,
-    bahasaLampung: BAHASA_LAMPUNG,
-    ips: IPS,
-    informatika: INFORMATIKA,
-    seniBudaya: SENI_BUDAYA,
-    pak: PAK
+    bahasaIndonesia: "https://docs.google.com/forms/d/e/1FAIpQLSeOVk2hgw3Ms_jAseDF3du5VSBFXqGIT30-hQtJ-qIEuvtEJQ/viewform",
+    pai:             "https://docs.google.com/forms/d/e/1FAIpQLSeknhVvzAv5rTz97X8QXsBER0xs4SpYOI02zv9m27lcrx8umw/viewform",
+    matematika:      "https://docs.google.com/forms/d/e/1FAIpQLScr99KSySPOqijhf3XkQWt1U5U9VXhr1Was85hfmaa_hqAuvA/viewform",
+    pkn:             "https://docs.google.com/forms/d/e/1FAIpQLSeJ6Xn8WceupDTGT-1t6yc3kVCO_PJ3EIjj9hiNHqy_3rQgnA/viewform",
+    bahasaInggris:   "https://docs.google.com/forms/d/e/1FAIpQLSdulMU0AgmvNz2HYvmTHZ_YkwOXJESr8byw-xDxysLlB3JsMg/viewform",
+    pjok:            "https://docs.google.com/forms/d/e/1FAIpQLSdbRmyWWJfS7zslyTV55piUW3Bqvvd42570bFXhWClFIIohNg/viewform",
+    ipa:             "https://docs.google.com/forms/d/e/1FAIpQLSdI3xHfg4qFdq0BfzHUDs4LnDNaTlAq60FRjmeYBymNaVCmQw/viewform",
+    bahasaLampung:   "https://docs.google.com/forms/d/e/1FAIpQLSe36-P4O6rnw282GchdrmjMjJYvyBMvWZm4ZkmFCYt5R2F9uA/viewform",
+    ips:             "https://docs.google.com/forms/d/e/1FAIpQLSfYGS8n0CqCNDDD233_2NHFLAQb0y87boTFdtywa1N4c73MIA/viewform",
+    informatika:     "https://docs.google.com/forms/d/e/1FAIpQLSdXmQb2TUtx6F1eslOB8Paji0xWxnLUc8WYeaG130AG8n5D0Q/viewform",
+    seniBudaya:      "https://docs.google.com/forms/d/e/1FAIpQLSehe2B6TLm0sjEnRuAcm67BDGSFwqHQ3xJdH6SgXeUkDXFWiA/viewform",
+    pak:             "https://docs.google.com/forms/d/e/1FAIpQLSejznrprIbLMhTekDf941pOcL7kKPzgFr80sA3ulvAkrX0pQA/viewform"
   }
 };
 
