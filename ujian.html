@@ -1,872 +1,242 @@
 <!doctype html>
 <html lang="id">
-
 <head>
-
   <meta charset="utf-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-  >
-
-  <meta
-    name="theme-color"
-    content="#071a38"
-  >
-
+  <!-- Zoom SENGAJA diizinkan (tanpa maximum-scale/user-scalable=no) supaya
+       siswa dengan HP layar kecil bisa memperbesar soal Google Form. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a38">
   <title>Ujian — NEXORA EXAM</title>
 
-  <link
-    rel="stylesheet"
-    href="style.css?v=16"
-  >
-
-
-  <!-- =====================================================
-       STYLE KHUSUS HALAMAN UJIAN
-       ===================================================== -->
-
+  <!-- style.css TIDAK dimuat di halaman ini (35 KB tambahan tidak perlu di
+       jaringan lemot). Semua gaya halaman ujian ada di blok ini. -->
   <style>
-
-    /* ===================================================
-       BODY HALAMAN UJIAN
-       =================================================== */
-
-    body.exam-page {
-      margin: 0;
-      min-height: 100vh;
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
       background: #eef4fb;
       color: #172033;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     }
+    .hidden { display: none !important; }
 
+    /* ---------- BAR ATAS (satu baris, 40px) ---------- */
+    .xbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      height: 40px;
+      padding: 0 8px;
+      padding-top: env(safe-area-inset-top, 0px);
+      box-sizing: content-box;
+      display: flex; align-items: center;
+      background: #071a38; color: #fff;
+    }
+    .xbar > * { margin-left: 8px; }
+    .xbar > *:first-child { margin-left: 0; }
+    .xbar-name {
+      flex: 1 1 auto; min-width: 0;
+      font-size: 12px; color: #9db8d9;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .xbar-timer {
+      flex: 0 0 auto;
+      font-size: 17px; font-weight: 800; letter-spacing: .02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .xbar-timer.warn   { color: #fbbf24; }
+    .xbar-timer.danger { color: #f87171; }
+    .xbar-viol {
+      flex: 0 0 auto;
+      font-size: 12px; font-weight: 700;
+      padding: 3px 7px; border-radius: 999px;
+      background: rgba(255,255,255,.12); color: #fde68a;
+    }
+    .xbar-reload {
+      flex: 0 0 auto;
+      width: 30px; height: 30px; padding: 0;
+      border: 0; border-radius: 50%;
+      background: rgba(255,255,255,.16); color: #fff;
+      font-size: 17px; line-height: 30px; cursor: pointer;
+    }
+    .xbar-finish {
+      flex: 0 0 auto;
+      height: 30px; padding: 0 12px;
+      border: 0; border-radius: 8px;
+      background: #16a34a; color: #fff;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    @media (max-width: 420px) {
+      .xbar-name { display: none; }
+      .xbar { justify-content: space-between; }
+    }
+    .xbar-name { margin-right: auto; }
 
-    /* ===================================================
-       AREA UJIAN
-       =================================================== */
+    /* Banner tipis di bawah bar (peringatan waktu) */
+    .xbanner {
+      position: fixed; left: 0; right: 0; z-index: 490;
+      top: 40px;
+      top: calc(40px + env(safe-area-inset-top, 0px));
+      padding: 6px 10px; text-align: center;
+      font-size: 13px; font-weight: 700;
+      background: #fbbf24; color: #3b2a00;
+    }
+    .xbanner.danger { background: #dc2626; color: #fff; }
 
+    /* ---------- AREA FORM: penuh layar, tanpa margin/bingkai ---------- */
     .exam-stage {
-      position: relative;
-      min-height: calc(100vh - 123px);
+      padding-top: 40px;
+      padding-top: calc(40px + env(safe-area-inset-top, 0px));
+      height: 100vh;
+      height: 100dvh;
     }
-
-
-    /* ===================================================
-       OVERLAY AWAL UJIAN
-       =================================================== */
-
-    #startOverlay {
-      position: fixed !important;
-
-      inset: 0 !important;
-
-      z-index: 1000 !important;
-
-      width: 100vw !important;
-      height: 100vh !important;
-
-      display: flex !important;
-
-      align-items: center !important;
-      justify-content: center !important;
-
-      padding: 24px !important;
-
-      /*
-       * PENTING:
-       * Tidak menggunakan backdrop-filter.
-       * Google Form di belakang ditutup penuh.
-       */
-
-      background:
-        linear-gradient(
-          135deg,
-          #06152f 0%,
-          #082451 50%,
-          #061a3a 100%
-        ) !important;
-
-      color: #ffffff !important;
-
-      overflow-y: auto !important;
+    #formFrame {
+      display: block; width: 100%; height: 100%;
+      border: 0; margin: 0; border-radius: 0; background: #fff;
     }
-
-
-    /*
-     * Saat class "hidden" dipasang oleh exam.js, overlay HARUS hilang.
-     * Selector ber-ID + class (spesifisitas lebih tinggi) supaya menang
-     * atas "display: flex !important" di atas.
-     */
-
-    #startOverlay.hidden {
-      display: none !important;
-    }
-
-
-    /*
-     * Kartu "Siap Memulai?"
-     */
-
-    #startOverlay .modal-card {
-
-      width: min(440px, 100%) !important;
-
-      padding: 34px 32px !important;
-
-      border: 1px solid rgba(96, 165, 250, 0.32) !important;
-
-      border-radius: 18px !important;
-
-      background:
-        linear-gradient(
-          145deg,
-          #0d3568,
-          #082850
-        ) !important;
-
-      color: #ffffff !important;
-
-      box-shadow:
-        0 30px 80px rgba(0, 0, 0, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-
-      text-align: center !important;
-
-      position: relative !important;
-
-      overflow: hidden !important;
-    }
-
-
-    /*
-     * Garis biru di bagian atas kartu
-     */
-
-    #startOverlay .modal-card::before {
-
-      content: "";
-
-      position: absolute;
-
-      top: 0;
-      left: 0;
-      right: 0;
-
-      height: 4px;
-
-      background:
-        linear-gradient(
-          90deg,
-          #2563eb,
-          #38bdf8
-        );
-    }
-
-
-    /*
-     * Icon fullscreen
-     */
-
-    #startOverlay .modal-icon {
-
-      width: 54px;
-      height: 54px;
-
-      margin: 4px auto 18px;
-
-      display: flex;
-
-      align-items: center;
-      justify-content: center;
-
-      border: 1px solid rgba(147, 197, 253, 0.30);
-
-      border-radius: 14px;
-
-      background:
-        rgba(37, 99, 235, 0.20);
-
-      color: #93c5fd;
-
-      font-size: 25px;
-
-      box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.18);
-    }
-
-
-    /*
-     * Judul
-     */
-
-    #startOverlay .modal-card h2 {
-
-      margin: 0 0 12px !important;
-
-      color: #ffffff !important;
-
-      font-size: 26px !important;
-
-      line-height: 1.2 !important;
-
-      font-weight: 800 !important;
-
-      letter-spacing: -0.02em !important;
-    }
-
-
-    /*
-     * Deskripsi
-     */
-
-    #startOverlay .modal-card p {
-
-      max-width: 350px;
-
-      margin: 0 auto 25px !important;
-
-      color: #b9d2ef !important;
-
-      font-size: 13px !important;
-
-      line-height: 1.65 !important;
-    }
-
-
-    /*
-     * Tombol mulai
-     */
-
-    #startOverlay #beginExamBtn {
-
-      width: 100% !important;
-
-      min-height: 50px !important;
-
-      padding: 0 18px !important;
-
-      border: 0 !important;
-
-      border-radius: 10px !important;
-
-      background:
-        linear-gradient(
-          135deg,
-          #2563eb,
-          #0ea5e9
-        ) !important;
-
-      color: #ffffff !important;
-
-      font-size: 14px !important;
-
-      font-weight: 700 !important;
-
-      cursor: pointer !important;
-
-      box-shadow:
-        0 12px 28px rgba(37, 99, 235, 0.30) !important;
-
-      transition:
-        transform 0.15s ease,
-        filter 0.15s ease,
-        box-shadow 0.15s ease !important;
-    }
-
-
-    #startOverlay #beginExamBtn:hover {
-
-      filter: brightness(1.08);
-
-      transform: translateY(-1px);
-
-      box-shadow:
-        0 15px 32px rgba(37, 99, 235, 0.38);
-    }
-
-
-    #startOverlay #beginExamBtn:active {
-
-      transform: translateY(0);
-    }
-
-
-    /* ===================================================
-       LOADING
-       =================================================== */
 
     #loading {
+      position: fixed; left: 0; right: 0; z-index: 10;
+      top: 40px;
+      top: calc(40px + env(safe-area-inset-top, 0px));
+      display: none; padding: 6px 10px; text-align: center;
+      font-size: 12px; color: #52657d; background: #e2ebf6;
+      pointer-events: none;
+    }
+    #loading .spinner, #loading p { display: inline; margin: 0; }
 
-      display: none;
+    /* ---------- OVERLAY / MODAL (dipakai bersama) ---------- */
+    .modal-overlay {
+      position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: flex;
+      align-items: center; justify-content: center;
+      padding: 16px; overflow-y: auto;
+      background: rgba(3, 16, 36, .94); color: #fff;
+    }
+    #startOverlay { z-index: 1000; background: #06152f; }
+    #violationModal { z-index: 2000; }
+    #finishConfirm, #reloadConfirm { z-index: 1500; }
 
-      width: min(1100px, 94%);
-
-      margin: 18px auto;
-
-      padding: 40px 20px;
-
-      text-align: center;
-
-      color: #52657d;
+    .modal-card {
+      width: min(420px, 100%);
+      padding: 24px 20px; border-radius: 16px; text-align: center;
+      background: #0d3568; color: #fff;
+      border: 1px solid rgba(96,165,250,.3);
+    }
+    .modal-card h2 { margin: 0 0 10px; font-size: 21px; line-height: 1.25; }
+    .modal-card p  { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: #cfe0f5; }
+    .modal-card .who {
+      margin: 0 0 14px; padding: 8px 10px; border-radius: 10px;
+      background: rgba(255,255,255,.08); font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .modal-card ol {
+      text-align: left; margin: 0 0 16px; padding-left: 20px;
+      font-size: 14px; line-height: 1.6; color: #e6f0fb;
+    }
+    .btn {
+      display: block; width: 100%; min-height: 46px; margin-top: 8px;
+      border: 0; border-radius: 10px; cursor: pointer;
+      font-size: 15px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    }
+    .btn.secondary { background: rgba(255,255,255,.14); }
+    .btn.danger    { background: #dc2626; }
+    .btn:disabled  { opacity: .5; cursor: default; }
+    .warn-box {
+      margin: 0 0 14px; padding: 10px; border-radius: 10px; text-align: left;
+      background: rgba(220,38,38,.22); border: 1px solid #f87171;
+      font-size: 13.5px; line-height: 1.5; color: #fee2e2;
     }
 
-
-    /* ===================================================
-       GOOGLE FORM
-       =================================================== */
-
-    #formFrame {
-
-      display: block;
-
-      width: min(1100px, 94%);
-
-      min-height: calc(100vh - 150px);
-
-      margin: 18px auto;
-
-      border: 1px solid #dbe5f0;
-
-      border-radius: 14px;
-
-      background: #ffffff;
-
-      box-shadow:
-        0 8px 28px rgba(31, 55, 86, 0.08);
-    }
-
-
-    /* ===================================================
-       FINISHED
-       =================================================== */
-
+    /* ---------- SELESAI ---------- */
     #finished {
-
-      width: min(520px, 92%);
-
-      margin: 50px auto;
-
-      padding: 30px;
-
-      border-radius: 16px;
-
-      background: #ffffff;
-
-      color: #172033;
-
-      text-align: center;
-
-      box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.16);
+      width: min(480px, 92%); margin: 40px auto; padding: 26px;
+      border-radius: 16px; background: #fff; color: #172033; text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,.16);
     }
-
-
-    /* ===================================================
-       VIOLATION MODAL
-       =================================================== */
-
-    #violationModal {
-
-      position: fixed;
-
-      inset: 0;
-
-      z-index: 2000;
-
-      display: flex;
-
-      align-items: center;
-      justify-content: center;
-
-      padding: 20px;
-
-      background:
-        rgba(3, 16, 36, 0.92);
-    }
-
-
-    #violationModal.hidden {
-
-      display: none !important;
-    }
-
-
-    #violationModal .modal-card {
-
-      width: min(440px, 100%);
-
-      padding: 30px;
-
-      border-radius: 16px;
-
-      background:
-        linear-gradient(
-          145deg,
-          #0d3568,
-          #082850
-        );
-
-      color: #ffffff;
-
-      text-align: center;
-
-      border: 1px solid rgba(96, 165, 250, 0.30);
-
-      box-shadow:
-        0 25px 70px rgba(0, 0, 0, 0.45);
-    }
-
-
-    #violationModal .modal-card h2 {
-
-      color: #ffffff;
-
-      margin: 0 0 12px;
-    }
-
-
-    #violationModal .modal-card p {
-
-      color: #b9d2ef;
-
-      line-height: 1.6;
-    }
-
-
-    /* ===================================================
-       MOBILE
-       =================================================== */
-
-    @media (max-width: 600px) {
-
-      .exam-stage {
-        min-height: calc(100vh - 180px);
-      }
-
-
-      #startOverlay {
-
-        padding: 18px !important;
-      }
-
-
-      #startOverlay .modal-card {
-
-        width: 100% !important;
-
-        padding: 30px 22px !important;
-
-        border-radius: 16px !important;
-      }
-
-
-      #startOverlay .modal-icon {
-
-        width: 50px;
-        height: 50px;
-
-        margin-bottom: 16px;
-
-        font-size: 22px;
-      }
-
-
-      #startOverlay .modal-card h2 {
-
-        font-size: 23px !important;
-      }
-
-
-      #startOverlay .modal-card p {
-
-        font-size: 12px !important;
-
-        line-height: 1.6 !important;
-      }
-
-
-      #startOverlay #beginExamBtn {
-
-        min-height: 48px !important;
-
-        font-size: 13px !important;
-      }
-
-
-      #formFrame {
-
-        width: 96%;
-
-        margin: 10px auto;
-
-        border-radius: 10px;
-      }
-
-
-      #finished {
-
-        width: 92%;
-
-        padding: 24px;
-      }
-    }
-
-
-    @media (max-width: 380px) {
-
-      #startOverlay .modal-card {
-
-        padding: 26px 18px !important;
-      }
-
-
-      #startOverlay .modal-card h2 {
-
-        font-size: 21px !important;
-      }
-    }
-
-    /*
-     * CATATAN PERBAIKAN: blok "PERBAIKAN LAYOUT HEADER" yang lama dihapus
-     * dari sini karena memakai !important yang menimpa grid mobile 2-kolom
-     * yang sudah ada di style.css (.exam-status pada @media max-width:600px),
-     * sehingga di layar ponsel kotak status jadi lebih tinggi dari
-     * seharusnya dan header memakan terlalu banyak ruang (bug #4).
-     * Styling untuk .status-label, #realtimeClock, #timer, #violationBadge,
-     * dan #realtimeDate sekarang didefinisikan langsung di style.css supaya
-     * konsisten dengan layout grid mobile, tanpa !important.
-     */
-
+    #finished h2 { margin: 8px 0; }
+    #finished .success-icon { font-size: 34px; color: #16a34a; }
+    #finished .btn { margin-top: 14px; }
   </style>
-
 </head>
 
+<body class="exam-page">
 
-<body class="exam-page exam-body">
-
-
-  <!-- =====================================================
-       HEADER NEXORA EXAM
-       ===================================================== -->
-
-  <header class="exam-topbar">
-
-    <div class="exam-brand">
-
-      <div class="school-logo">
-
-        <img
-          src="logo-sekolah.png"
-          alt="Logo SMP Negeri 44 Bandar Lampung"
-          onerror="
-            this.style.display='none';
-            this.parentElement.classList.add('logo-placeholder');
-          "
-        >
-
-        <span class="logo-fallback">
-          44
-        </span>
-
-      </div>
-
-
-      <div class="brand-text">
-
-        <strong>
-          NEXORA EXAM
-        </strong>
-
-        <small>
-          SMP NEGERI 44 BANDAR LAMPUNG
-        </small>
-
-      </div>
-
-    </div>
-
-
-    <!-- ===================================================
-         STATUS UJIAN
-         =================================================== -->
-
-    <div class="exam-status">
-
-      <div class="exam-clock">
-
-        <span class="status-label">
-          JAM
-        </span>
-
-        <strong id="realtimeClock">
-          --:--:--
-        </strong>
-
-        <div id="realtimeDate">
-          <!-- Akan diisi otomatis oleh exam.js -->
-        </div>
-
-      </div>
-
-
-      <div class="exam-timer">
-
-        <span class="status-label">
-          SISA WAKTU
-        </span>
-
-        <strong
-          class="timer"
-          id="timer"
-        >
-          90:00
-        </strong>
-
-      </div>
-
-
-      <div class="exam-security">
-
-        <span class="status-label">
-          JUMLAH PELANGGARAN
-        </span>
-
-        <strong
-          class="violation-badge"
-          id="violationBadge"
-        >
-          ⚠ 0 / 3
-        </strong>
-
-      </div>
-
-
-      <button
-        id="fullscreenBtn"
-        class="fullscreen-btn icon-btn"
-        type="button"
-        title="Layar penuh"
-        aria-label="Layar penuh"
-      >
-        ⛶
-      </button>
-
-
-      <button
-        id="finishExamBtn"
-        class="finish-btn icon-btn"
-        type="button"
-        title="Selesai / Kumpulkan Ujian"
-        aria-label="Selesai / Kumpulkan Ujian"
-      >
-        ✓ Selesai
-      </button>
-
-    </div>
-
+  <!-- BAR ATAS: hanya yang benar-benar perlu (sisa waktu, peringatan, selesai) -->
+  <header class="xbar">
+    <span class="xbar-name" id="examIdentity"></span>
+    <strong class="xbar-timer" id="timer">--:--</strong>
+    <span class="xbar-viol" id="violationBadge">⚠ 0/3</span>
+    <button id="reloadFormBtn" class="xbar-reload" type="button" title="Muat ulang form" aria-label="Muat ulang form">⟳</button>
+    <button id="finishExamBtn" class="xbar-finish" type="button">Selesai</button>
   </header>
 
-
-  <!-- =====================================================
-       INFORMASI PESERTA
-       ===================================================== -->
-
-  <section class="exam-info-bar">
-
-    <div class="exam-identity-box">
-
-      <div class="identity-icon">
-        👤
-      </div>
-
-
-      <div class="identity-content">
-
-        <span class="identity-label">
-          PESERTA UJIAN
-        </span>
-
-        <strong id="examIdentity">
-          Memuat...
-        </strong>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-  <!-- =====================================================
-       AREA UTAMA UJIAN
-       ===================================================== -->
+  <div id="timeBanner" class="xbanner hidden"></div>
 
   <main class="exam-stage">
 
-
-    <!-- ===================================================
-         OVERLAY MULAI UJIAN
-         =================================================== -->
-
-    <div
-      id="startOverlay"
-      class="modal-overlay"
-    >
-
+    <!-- LAYAR AWAL -->
+    <div id="startOverlay" class="modal-overlay">
       <div class="modal-card">
+        <h2>Siap Memulai?</h2>
+        <div class="who" id="startIdentity"></div>
+        <ol>
+          <li>Kerjakan soal sampai bawah, lalu tekan <strong>KIRIM</strong> di form.</li>
+          <li>Pastikan muncul tulisan <strong>“Jawaban Anda telah direkam”</strong>.</li>
+          <li>Baru tekan tombol hijau <strong>Selesai</strong> di atas.</li>
+        </ol>
+        <p>Layar penuh &amp; timer akan aktif. Jangan pindah aplikasi/tab.</p>
+        <button id="beginExamBtn" class="btn" type="button">Mulai &amp; Masuk Fullscreen</button>
+      </div>
+    </div>
 
-        <div class="modal-icon">
-          ⛶
+    <div id="loading"><span class="spinner"></span><p>Memuat lembar ujian…</p></div>
+
+    <iframe id="formFrame" title="Google Form Ujian" allow="fullscreen"></iframe>
+
+    <!-- KONFIRMASI SELESAI (form tetap ada di belakang, siswa bisa kembali) -->
+    <div id="finishConfirm" class="modal-overlay hidden">
+      <div class="modal-card">
+        <h2>Sudah menekan KIRIM?</h2>
+        <p>Jawaban baru tersimpan setelah muncul tulisan <strong>“Jawaban Anda telah direkam”</strong> di form.</p>
+        <div id="finishWarn" class="warn-box hidden">
+          <strong>Sistem belum mendeteksi form terkirim.</strong>
+          Kalau kamu menutup sekarang, jawabanmu bisa hilang dan nilaimu tidak tercatat.
+          Kembali ke form, geser ke paling bawah, lalu tekan <strong>KIRIM</strong>.
         </div>
-
-
-        <h2>
-          Siap Memulai?
-        </h2>
-
-
-        <p>
-          NEXORA akan meminta mode layar penuh
-          dan memulai timer ujian.
-          Pastikan Anda siap sebelum melanjutkan.
-        </p>
-
-
-        <button
-          id="beginExamBtn"
-          class="primary full"
-          type="button"
-        >
-          Mulai &amp; Masuk Fullscreen
-        </button>
-
+        <button id="finishBack" class="btn" type="button">← Kembali ke form</button>
+        <button id="finishOk" class="btn secondary" type="button" disabled>Ya, sudah terkirim</button>
       </div>
-
     </div>
 
-
-    <!-- ===================================================
-         LOADING
-         =================================================== -->
-
-    <div
-      id="loading"
-      class="loading-card"
-    >
-
-      <div class="spinner"></div>
-
-      <p>
-        Memuat lembar ujian...
-      </p>
-
+    <!-- KONFIRMASI MUAT ULANG FORM (overlay di halaman, BUKAN window.confirm:
+         dialog bawaan browser bisa menutup fullscreen dan tercatat pelanggaran) -->
+    <div id="reloadConfirm" class="modal-overlay hidden">
+      <div class="modal-card">
+        <h2>Muat ulang form?</h2>
+        <p id="reloadConfirmText">Pakai ini kalau soal atau gambar tidak muncul. Waktu ujian tetap berjalan.</p>
+        <button id="reloadOk" class="btn" type="button">Ya, muat ulang</button>
+        <button id="reloadCancel" class="btn secondary" type="button">Batal</button>
+      </div>
     </div>
 
-
-    <!-- ===================================================
-         GOOGLE FORM
-         =================================================== -->
-
-    <iframe
-      id="formFrame"
-      class="form-frame"
-      title="Google Form Ujian"
-      allow="fullscreen"
-    ></iframe>
-
-
-    <!-- ===================================================
-         SELESAI
-         =================================================== -->
-
-    <section
-      id="finished"
-      class="finished-card hidden"
-    >
-
-      <div class="success-icon">
-        ✓
-      </div>
-
-
-      <h2>
-        Sesi Ujian Berakhir
-      </h2>
-
-
-      <p id="finishReason">
-        Waktu ujian telah selesai.
-      </p>
-
-
-      <p>
-        Jika Google Form belum terkirim,
-        selesaikan pengiriman jawaban pada
-        halaman Form sebelum menutup perangkat,
-        jika masih tersedia.
-      </p>
-
-
-      <button
-        class="primary"
-        type="button"
-        onclick="location.href='index.html'"
-      >
-        Kembali ke Beranda
-      </button>
-
+    <section id="finished" class="hidden">
+      <div class="success-icon">✓</div>
+      <h2>Sesi Ujian Berakhir</h2>
+      <p id="finishReason">Waktu ujian telah selesai.</p>
+      <p>Kamu boleh menutup halaman ini.</p>
+      <button class="btn" type="button" onclick="location.href='index.html'">Kembali ke Beranda</button>
     </section>
-
   </main>
 
-
-  <!-- =====================================================
-       MODAL PERINGATAN KEAMANAN
-       ===================================================== -->
-
-  <div
-    id="violationModal"
-    class="modal-overlay hidden"
-  >
-
-    <div class="modal-card danger-card">
-
-      <div class="modal-icon">
-        ⚠
-      </div>
-
-
-      <h2>
-        Peringatan Keamanan
-      </h2>
-
-
-      <p id="violationText">
-        NEXORA mendeteksi perubahan status halaman.
-      </p>
-
-
-      <button
-        id="closeViolation"
-        class="primary full"
-        type="button"
-      >
-        Saya Mengerti
-      </button>
-
+  <!-- MODAL PERINGATAN -->
+  <div id="violationModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2>Peringatan</h2>
+      <p id="violationText">NEXORA mendeteksi perubahan status halaman.</p>
+      <button id="closeViolation" class="btn" type="button">Saya Mengerti</button>
     </div>
-
   </div>
 
-
-  <!-- =====================================================
-       JAVASCRIPT
-       ===================================================== -->
-
-  <script src="config.js?v=13"></script>
-  <script src="security.js?v=12"></script>
-  <script src="exam.js?v=12"></script>
-
+  <script src="config.js?v=14"></script>
+  <script src="security.js?v=13"></script>
+  <script src="exam.js?v=14"></script>
 </body>
-
 </html>

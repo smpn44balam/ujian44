@@ -90,7 +90,19 @@
   // "nexora_session" — satu-satunya key sesi yang dipakai di seluruh app.
   // =======================================================
   let originalCreatedAt = null;
-  const existingSessionStr = localStorage.getItem("nexora_session") || sessionStorage.getItem("nexora_session");
+  let existingSessionStr = localStorage.getItem("nexora_session") || sessionStorage.getItem("nexora_session");
+  // Buang sesi basi (kemarin / lewat durasi ujian) supaya tidak mengunci login hari ini.
+  try {
+    if (existingSessionStr && window.NEXORA_isSessionExpired(JSON.parse(existingSessionStr))) {
+      localStorage.removeItem("nexora_session");
+      sessionStorage.removeItem("nexora_session");
+      existingSessionStr = null;
+    }
+  } catch (e) {
+    localStorage.removeItem("nexora_session");
+    sessionStorage.removeItem("nexora_session");
+    existingSessionStr = null;
+  }
 
   if (existingSessionStr) {
     try {
@@ -164,8 +176,13 @@
       if (prevStr) previous = JSON.parse(prevStr);
     } catch (e) { previous = null; }
 
-    const isResume = previous && (previous.name === name) && (previous.className === className) &&
-      ((previous.violations || 0) > 0 || previous.status === "RELOGIN_REQUIRED");
+    const sameIdentity = previous && (previous.name === name) && (previous.className === className) &&
+      (previous.subjectId === subjectId);
+    const hadTrouble = previous && ((previous.violations || 0) > 0 || previous.status === "RELOGIN_REQUIRED");
+    const hadStarted = previous && !!(previous.isStarted || previous.startedAt);
+    // resumeKeepsTimer: login ulang (mis. HP mati/tab tertutup) melanjutkan sisa waktu,
+    // bukan memberi timer baru 90 menit.
+    const isResume = !!(sameIdentity && (hadTrouble || (NEXORA_CONFIG.resumeKeepsTimer && hadStarted)));
 
     const candidateData = {
       name: name,
@@ -195,8 +212,10 @@
       // dibawa bersama startedAt.
       durationMs: isResume ? (previous.durationMs || null) : null,
       isStarted: isResume ? !!previous.isStarted : false,
-      penaltyUntil: null,
-      penaltyIsReset: false
+      totalViolations: isResume ? (previous.totalViolations || 0) : 0,
+      // Penalti yang sedang berjalan ikut dibawa, supaya login ulang tidak menghapus kunci.
+      penaltyUntil: isResume ? (previous.penaltyUntil || null) : null,
+      penaltyIsReset: isResume ? !!previous.penaltyIsReset : false
     };
 
     const jsonString = JSON.stringify(candidateData);

@@ -10,6 +10,20 @@ const NEXORA_CONFIG = {
   maxViolations: 3,
   warningCooldownMs: 2500,
 
+  // --- Pengaturan tambahan (revisi hari ke-2) ---
+  // Tenggang setelah waktu habis: form TETAP tampil sekian detik supaya siswa
+  // sempat menekan KIRIM. Isi 0 untuk menutup form seketika seperti dulu.
+  graceAfterTimeUpSeconds: 120,
+  // Interval heartbeat ke Apps Script (detik). Dulu 30; 60 lebih ringan untuk
+  // jaringan lemot & kuota Apps Script.
+  heartbeatSeconds: 60,
+  // Sesi tersimpan dianggap basi setelah durasi ujian + menit ini, atau
+  // bila sudah beda hari.
+  sessionExtraMinutes: 30,
+  // true  = siswa login ulang (nama+kelas+mapel sama) MELANJUTKAN sisa waktu.
+  // false = perilaku lama (tanpa pelanggaran -> timer mulai baru).
+  resumeKeepsTimer: true,
+
   // URL Web App Google Apps Script Anda yang terbaru (hasil Deploy > Web app > /exec)
   // PENTING: nama key ini HARUS "scriptUrl" karena security.js & exam.js membaca
   // window.NEXORA_CONFIG.scriptUrl. Sebelumnya key ini bernama "monitoringUrl"
@@ -157,3 +171,19 @@ function getFormUrl(level, subjectId) {
 // semua file bisa membacanya dengan cara apa pun.
 window.NEXORA_CONFIG = NEXORA_CONFIG;
 window.GOOGLE_FORMS = GOOGLE_FORMS;
+
+
+// =========================================================
+// Sesi basi: dipakai index (app.js) dan ujian (exam.js).
+// Sebelumnya sesi di localStorage tidak pernah kedaluwarsa, sehingga sesi
+// kemarin menyangkut di HP siswa (form login terkunci ke mapel kemarin,
+// timer langsung habis).
+// =========================================================
+window.NEXORA_isSessionExpired = function (s) {
+  if (!s) return true;
+  const maxMs = ((NEXORA_CONFIG.durationMinutes || 90) + (NEXORA_CONFIG.sessionExtraMinutes || 30)) * 60000;
+  const base = s.startedAt || s.createdAt;
+  if (!base) return false;
+  if (Date.now() - base > maxMs) return true;
+  return new Date(base).toDateString() !== new Date().toDateString();
+};

@@ -26,6 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Sesi basi (kemarin / lewat durasi ujian): buang, kembali ke login.
+    if (typeof window.NEXORA_isSessionExpired === 'function' && window.NEXORA_isSessionExpired(session)) {
+        localStorage.removeItem('nexora_session');
+        sessionStorage.removeItem('nexora_session');
+        window.location.href = 'index.html';
+        return;
+    }
+
     // Jika status RELOGIN_REQUIRED (peninggalan sesi LAMA dari sebelum
     // sistem reset-otomatis pelanggaran ke-3 ini ada). Alur baru tidak
     // pernah menyetel status ini lagi, tapi kode ini dipertahankan supaya
@@ -56,8 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
         loading: document.getElementById('loading'),
         finished: document.getElementById('finished'),
         finishReason: document.getElementById('finishReason'),
-        examIdentity: document.getElementById('examIdentity')
+        examIdentity: document.getElementById('examIdentity'),
+        startIdentity: document.getElementById('startIdentity'),
+        timeBanner: document.getElementById('timeBanner'),
+        finishConfirm: document.getElementById('finishConfirm'),
+        finishWarn: document.getElementById('finishWarn'),
+        finishBack: document.getElementById('finishBack'),
+        finishOk: document.getElementById('finishOk'),
+        reloadBtn: document.getElementById('reloadFormBtn'),
+        reloadConfirm: document.getElementById('reloadConfirm'),
+        reloadConfirmText: document.getElementById('reloadConfirmText'),
+        reloadOk: document.getElementById('reloadOk'),
+        reloadCancel: document.getElementById('reloadCancel')
     };
+
+    // Ambil nilai config tanpa sintaks "?." (gagal total di Chrome/WebView < 80
+    // yang masih banyak di HP lama).
+    function cfg(key, fallback) {
+        const c = window.NEXORA_CONFIG;
+        return (c && c[key] !== undefined && c[key] !== null) ? c[key] : fallback;
+    }
 
     // Helper untuk menyimpan session kembali dengan aman
     function saveSession() {
@@ -90,10 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tampilkan modal pelanggaran dengan teks berwarna terang (kartu modal
     // berlatar biru tua; warna abu gelap lama membuat teks nyaris tak terbaca).
-    function showViolationModal(title, message) {
+    function showViolationModal(title, message, color) {
         if (!DOM.violationModal || !DOM.violationText) return;
         DOM.violationText.innerHTML = `
-            <div style="text-align:center; color:#fca5a5; font-weight:800; font-size:1.2rem; margin-bottom:10px;">
+            <div style="text-align:center; color:${color || '#fca5a5'}; font-weight:800; font-size:1.2rem; margin-bottom:10px;">
                 ${title}
             </div>
             <p style="margin:0; font-size:1rem; color:#dbeafe;">${message}</p>
@@ -130,21 +156,56 @@ document.addEventListener('DOMContentLoaded', () => {
     // tulisan "Memuat lembar ujian..." macet tampil selamanya walau form
     // sebenarnya sudah selesai dimuat. Sekarang disatukan jadi satu fungsi
     // supaya kedua jalur selalu konsisten.
+    // Banner tipis di bawah bar atas (peringatan waktu). Tidak memakan ruang
+    // saat tidak dipakai.
+    let bannerTimer = null;
+    function setBanner(text, level) {
+        if (!DOM.timeBanner) return;
+        if (!text) { DOM.timeBanner.className = 'xbanner hidden'; return; }
+        DOM.timeBanner.textContent = text;
+        DOM.timeBanner.className = 'xbanner' + (level === 'danger' ? ' danger' : '');
+    }
+    function flashBanner(text, level, ms) {
+        setBanner(text, level);
+        if (bannerTimer) clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => { setBanner(''); bannerTimer = null; }, ms || 8000);
+    }
+
+    // Berapa kali iframe Google Form selesai memuat. Form dimuat = 1. Tiap
+    // "Berikutnya" atau "Kirim" membuat iframe berpindah halaman = +1.
+    // Dipakai sebagai PETUNJUK (bukan bukti) apakah siswa sudah menekan Kirim
+    // -- isi iframe cross-origin tidak bisa dibaca.
+    let formLoadCount = 0;
+    let slowHintTimer = null;
+    const DEBUG_FORM = /[?&]debug/.test(location.search);
+
     function loadExamForm() {
         if (!session.formUrl || !DOM.formFrame) return;
         if (DOM.loading) DOM.loading.style.display = 'flex';
         // Pasang onload SEBELUM men-set src (bukan sesudah), supaya tidak
         // ada celah waktu di mana form sempat selesai dimuat sebelum
         // handler penyembunyi #loading terpasang.
+        formLoadCount = 0;
         DOM.formFrame.onload = () => {
+            formLoadCount++;
             if (DOM.loading) DOM.loading.style.display = 'none';
+            if (DEBUG_FORM) flashBanner('debug: formLoadCount=' + formLoadCount, 'warn', 4000);
         };
+        // Jaringan lemot: kalau form belum muncul setelah 20 detik, beri petunjuk.
+        if (slowHintTimer) clearTimeout(slowHintTimer);
+        slowHintTimer = setTimeout(() => {
+            if (formLoadCount === 0 && !session.finishedFlag) {
+                flashBanner('Form belum muncul. Tekan tombol ⟳ di atas untuk memuat ulang.', 'warn', 12000);
+            }
+        }, 20000);
         DOM.formFrame.src = normalizeFormUrl(session.formUrl);
     }
 
     // Tampilkan identitas peserta jika elemen tersedia
-    if (DOM.examIdentity && session.nama) {
-        DOM.examIdentity.textContent = `${session.nama} (${session.kelas || 'Siswa'})`;
+    if (session.nama) {
+        const idText = `${session.nama} (${session.kelas || 'Siswa'}) · ${session.subjectName || session.mapel || ''}`;
+        if (DOM.examIdentity) DOM.examIdentity.textContent = idText;
+        if (DOM.startIdentity) DOM.startIdentity.textContent = idText;
     }
 
     // Badge pelanggaran: dua angka terpisah --
@@ -156,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!DOM.violationBadge) return;
         const cycle = session.violations || 0;
         const total = session.totalViolations || 0;
-        DOM.violationBadge.textContent = `⚠ Siklus ${cycle}/3 · Total ${total}`;
+        DOM.violationBadge.textContent = `⚠ ${cycle}/3`;
     }
     updateViolationBadge();
 
@@ -183,8 +244,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.setFullscreenUnsupportedCallback === 'function') {
         NEXORA_SECURITY.setFullscreenUnsupportedCallback(() => {
             showViolationModal(
-                'MODE LAYAR PENUH TIDAK DIDUKUNG',
-                'Browser ini (biasanya Chrome/Firefox di iPhone) tidak mengizinkan mode layar penuh. Ini BUKAN pelanggaran dan tidak dicatat. Untuk hasil terbaik, gunakan aplikasi <strong>Safari</strong> di iPhone Anda. Ujian tetap bisa dilanjutkan seperti biasa.'
+                'INFO — LAYAR PENUH TIDAK DIDUKUNG',
+                'Browser ini (biasanya Chrome/Firefox di iPhone) tidak mengizinkan mode layar penuh. Ini BUKAN pelanggaran dan tidak dicatat. Untuk hasil terbaik, gunakan aplikasi <strong>Safari</strong> di iPhone Anda. Ujian tetap bisa dilanjutkan seperti biasa.',
+                '#93c5fd'
             );
         });
     }
@@ -192,29 +254,79 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 3. FITUR JAM REAL-TIME (TAHAP 1 - PRIORITAS Utama)
     // ==========================================
-    function updateRealtimeClock() {
-        const now = new Date();
-        if (DOM.realtimeClock) {
-            const hrs = String(now.getHours()).padStart(2, '0');
-            const mins = String(now.getMinutes()).padStart(2, '0');
-            const secs = String(now.getSeconds()).padStart(2, '0');
-            DOM.realtimeClock.textContent = `${hrs}:${mins}:${secs}`;
-        }
-
-        if (DOM.realtimeDate) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            DOM.realtimeDate.textContent = now.toLocaleDateString('id-ID', options);
-        }
-    }
-    setInterval(updateRealtimeClock, 1000);
-    updateRealtimeClock(); 
+    // (jam & tanggal real-time dihapus dari layar ujian agar bar atas ringkas)
 
     // ==========================================
     // 4. TIMER SISA WAKTU
     // ==========================================
-    let durationMs = (window.NEXORA_CONFIG?.durationMinutes || 90) * 60 * 1000;
+    let durationMs = cfg('durationMinutes', 90) * 60 * 1000;
     let examTimerInterval = null;
     let remainingMs = durationMs;
+
+    let warned5 = false;
+    let warned1 = false;
+    let graceStarted = false;
+
+    function formatTime(ms) {
+        const totalSecs = Math.max(0, Math.floor(ms / 1000));
+        const h = Math.floor(totalSecs / 3600);
+        const m = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+        const sec = String(totalSecs % 60).padStart(2, '0');
+        return h > 0 ? `${h}:${m}:${sec}` : `${m}:${sec}`;
+    }
+
+    function tickExamTimer() {
+        const elapsed = Date.now() - session.startedAt;
+        remainingMs = Math.max(0, session.durationMs - elapsed);
+
+        if (DOM.timer) {
+            DOM.timer.textContent = formatTime(remainingMs);
+            DOM.timer.classList.toggle('warn', remainingMs <= 300000 && remainingMs > 60000);
+            DOM.timer.classList.toggle('danger', remainingMs <= 60000);
+        }
+
+        if (remainingMs > 0) {
+            if (remainingMs <= 300000 && !warned5) {
+                warned5 = true;
+                flashBanner('Sisa waktu 5 menit. Pastikan jawabanmu sudah di-KIRIM.', 'warn', 10000);
+            }
+            if (remainingMs <= 60000 && !warned1) {
+                warned1 = true;
+                flashBanner('Sisa 1 menit! Tekan KIRIM di form sekarang.', 'danger', 10000);
+            }
+            return;
+        }
+
+        // ---- Waktu habis: beri tenggang supaya siswa sempat menekan KIRIM ----
+        // Dulu form langsung disembunyikan saat 00:00, sehingga jawaban yang
+        // belum terkirim hilang (nilai tidak tercatat).
+        const graceMs = Math.max(0, Number(cfg('graceAfterTimeUpSeconds', 120))) * 1000;
+        const graceLeft = session.startedAt + session.durationMs + graceMs - Date.now();
+
+        if (graceLeft <= 0) {
+            clearInterval(examTimerInterval);
+            finishExam('Waktu ujian telah habis.');
+            return;
+        }
+
+        if (!graceStarted) {
+            graceStarted = true;
+            // Lepas kunci penalti & modal supaya form bisa dipakai untuk KIRIM,
+            // dan matikan deteksi pelanggaran selama tenggang.
+            if (penaltyInterval) clearInterval(penaltyInterval);
+            penaltyActive = false;
+            session.penaltyUntil = null;
+            session.penaltyIsReset = false;
+            saveSession();
+            hideEl(DOM.violationModal);
+            hideEl(DOM.finishConfirm);
+            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.disarm === 'function') {
+                NEXORA_SECURITY.disarm();
+            }
+        }
+        if (bannerTimer) { clearTimeout(bannerTimer); bannerTimer = null; }
+        setBanner(`Waktu habis! Tekan KIRIM di form sekarang (${Math.ceil(graceLeft / 1000)} dtk)`, 'danger');
+    }
 
     function startTimer() {
         if (!session.startedAt) {
@@ -222,34 +334,14 @@ document.addEventListener('DOMContentLoaded', () => {
             session.durationMs = durationMs;
             saveSession();
         } else if (typeof session.durationMs !== 'number' || !isFinite(session.durationMs) || session.durationMs <= 0) {
-            // Jaring pengaman: sesi lama (dibuat sebelum perbaikan durationMs
-            // di app.js, atau data korup) bisa punya startedAt tapi tanpa
-            // durationMs -> tanpa ini, timer akan macet di "NaN:NaN:NaN"
-            // selamanya. Pulihkan ke durasi default dari config.
+            // Jaring pengaman: sesi lama tanpa durationMs -> timer "NaN".
             session.durationMs = durationMs;
             saveSession();
         }
 
         if (examTimerInterval) clearInterval(examTimerInterval);
-
-        examTimerInterval = setInterval(() => {
-            const elapsed = Date.now() - session.startedAt;
-            remainingMs = Math.max(0, session.durationMs - elapsed);
-
-            if (remainingMs <= 0) {
-                clearInterval(examTimerInterval);
-                finishExam("Waktu ujian telah habis.");
-                return;
-            }
-            
-            if (DOM.timer) {
-                const totalSecs = Math.floor(remainingMs / 1000);
-                const hrs = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
-                const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
-                const secs = String(totalSecs % 60).padStart(2, '0');
-                DOM.timer.textContent = `${hrs}:${mins}:${secs}`;
-            }
-        }, 1000);
+        examTimerInterval = setInterval(tickExamTimer, 1000);
+        tickExamTimer();
     }
 
     // ==========================================
@@ -297,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             penaltyRemainingMs = Math.max(0, remainingMsReal);
 
             if (DOM.violationText) {
-                DOM.violationText.innerHTML = `${baseWarningHtml}<br><strong id="countdownPenalty" style="color:#ef4444; font-size:1.2rem; display:block; margin-top:10px;">${isResetCycle ? 'Direset dalam' : 'Form Terkunci'}: ${remainingSecs} detik</strong>`;
+                DOM.violationText.innerHTML = `${baseWarningHtml}<br><strong id="countdownPenalty" style="color:#ef4444; font-size:1.2rem; display:block; margin-top:10px;">${isResetCycle ? 'Direset dalam' : 'Form Terkunci'}: ${remainingSecs} detik<span style="display:block; margin-top:6px; font-size:.8rem; font-weight:400; color:#cbd5e1;">Waktu ujian TETAP berjalan selama form terkunci.</span></strong>`;
             }
 
             if (remainingMsReal <= 0) {
@@ -460,51 +552,58 @@ document.addEventListener('DOMContentLoaded', () => {
     // ke Google Apps Script (kuota eksekusi & penulisan Spreadsheet
     // terbatas), tanpa mengurangi kegunaan pemantauan pengawas secara
     // berarti.
+    let heartbeatTimer = null;
+    let heartbeatInFlight = false;
+
     function startHeartbeat() {
-        setInterval(() => {
-            const scriptUrl = window.NEXORA_CONFIG?.scriptUrl || window.NEXORA_CONFIG?.monitoringUrl;
+        if (heartbeatTimer) return; // jangan dobel
+        const everySec = Math.max(15, Number(cfg('heartbeatSeconds', 60)) || 60);
+        heartbeatTimer = setInterval(sendHeartbeat, everySec * 1000);
+    }
 
-            const payload = {
-                action: 'heartbeat',
-                sessionId: session.sessionId || '-',
-                nisn: session.nisn || '-',
-                name: session.nama || session.name || '-',
-                nama: session.nama || session.name || '-',
-                kelas: session.kelas || session.className || '-',
-                className: session.className || session.kelas || '-',
-                subjectName: session.subjectName || session.mapel || '-',
-                remainingMs: remainingMs,
-                penaltyRemainingMs: penaltyRemainingMs,
-                violations: session.violations || 0,
-                violationsCount: session.violations || 0,
-                totalViolations: session.totalViolations || 0,
-                penaltyActive: penaltyActive,
-                timestamp: new Date().toISOString(),
-                at: Date.now()
-            };
+    function sendHeartbeat() {
+        const scriptUrl = cfg('scriptUrl', '') || cfg('monitoringUrl', '');
 
-            // Simpan salinan lokal juga, dipakai oleh pengawas.html sebagai
-            // jaring pengaman kalau Apps Script belum/gagal dikonfigurasi.
-            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.writeLocalMonitoring === 'function') {
-                NEXORA_SECURITY.writeLocalMonitoring(payload);
-            }
+        const payload = {
+            action: 'heartbeat',
+            sessionId: session.sessionId || '-',
+            nisn: session.nisn || '-',
+            name: session.nama || session.name || '-',
+            nama: session.nama || session.name || '-',
+            kelas: session.kelas || session.className || '-',
+            className: session.className || session.kelas || '-',
+            subjectName: session.subjectName || session.mapel || '-',
+            remainingMs: remainingMs,
+            penaltyRemainingMs: penaltyRemainingMs,
+            violations: session.violations || 0,
+            violationsCount: session.violations || 0,
+            totalViolations: session.totalViolations || 0,
+            penaltyActive: penaltyActive,
+            timestamp: new Date().toISOString(),
+            at: Date.now()
+        };
 
-            if (!scriptUrl) return;
+        if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.writeLocalMonitoring === 'function') {
+            NEXORA_SECURITY.writeLocalMonitoring(payload);
+        }
 
-            // Header Content-Type sengaja tidak diset — lihat catatan di security.js.
-            // Cache-busting param + cache:'no-store' -- lihat catatan panjang
-            // di sendMonitoring() (security.js) kenapa ini perlu: tanpa ini,
-            // browser bisa memakai ulang redirect /exec yang sudah basi dari
-            // heartbeat sebelumnya, sehingga heartbeat ke-2 dst diam-diam
-            // tidak pernah sampai ke Spreadsheet walau tidak ada error di console.
-            const bustedUrl = scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
-            fetch(bustedUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                cache: 'no-store',
-                body: JSON.stringify(payload)
-            }).catch(e => console.log("Heartbeat tersendat (Abaikan, sistem berjalan lokal)"));
-        }, 30000);
+        if (!scriptUrl) return;
+        // Jaringan lemot / offline: jangan menumpuk permintaan yang berebut
+        // bandwidth dengan Google Form.
+        if (navigator.onLine === false) return;
+        if (heartbeatInFlight) return;
+        heartbeatInFlight = true;
+
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const killer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
+        const done = () => { heartbeatInFlight = false; if (killer) clearTimeout(killer); };
+
+        // Cache-busting + no-store: lihat catatan di sendMonitoring() (security.js).
+        const bustedUrl = scriptUrl + (scriptUrl.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+        const opts = { method: 'POST', mode: 'no-cors', cache: 'no-store', body: JSON.stringify(payload) };
+        if (ctrl) opts.signal = ctrl.signal;
+
+        fetch(bustedUrl, opts).then(done, done);
     }
 
     // ==========================================
@@ -545,8 +644,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.disarm === 'function') {
             NEXORA_SECURITY.disarm();
         }
+        hideEl(DOM.finishConfirm);
+        hideEl(DOM.reloadConfirm);
+        setBanner('');
+        session.finishedFlag = true;
         if (DOM.formFrame) DOM.formFrame.style.display = 'none';
-        if (DOM.timer) DOM.timer.textContent = "00:00:00";
+        if (DOM.timer) DOM.timer.textContent = "00:00";
         
         if (DOM.finished && DOM.finishReason) {
             DOM.finishReason.textContent = reasonStr;
@@ -627,23 +730,113 @@ document.addEventListener('DOMContentLoaded', () => {
     // menekan Kirim/Submit di Google Form.
     // ==========================================
     if (DOM.finishExamBtn) {
-        DOM.finishExamBtn.addEventListener('click', () => {
-            // Tombol ini hanya relevan kalau ujian memang sudah dimulai.
-            if (!examActiveForNavGuard && !(session.startedAt || session.isStarted)) {
-                return;
-            }
-            const confirmed = window.confirm(
-                'Pastikan jawaban Anda sudah benar-benar TERKIRIM ' +
-                '(sudah menekan tombol Kirim/Submit di Google Form).\n\n' +
-                'Setelah menekan OK, sesi ujian akan diakhiri dan Anda ' +
-                'tidak bisa kembali mengisi form. Lanjutkan?'
-            );
-            if (!confirmed) return;
+        let finishTimer = null;
+        let finishSuspect = false;
 
+        DOM.finishExamBtn.addEventListener('click', () => {
+            // Hanya relevan kalau ujian memang sudah dimulai.
+            if (!examActiveForNavGuard && !(session.startedAt || session.isStarted)) return;
+            if (!DOM.finishConfirm || !DOM.finishOk) return;
+
+            // Form belum pernah berpindah halaman (loadCount <= 1) = kemungkinan
+            // besar tombol KIRIM belum ditekan. Ini petunjuk, bukan kepastian.
+            finishSuspect = formLoadCount <= 1;
+            if (DOM.finishWarn) DOM.finishWarn.classList.toggle('hidden', !finishSuspect);
+
+            const base = finishSuspect ? 'Tetap selesai (tidak disarankan)' : 'Ya, sudah terkirim';
+            DOM.finishOk.classList.toggle('danger', finishSuspect);
+            DOM.finishOk.classList.toggle('secondary', !finishSuspect);
+            DOM.finishOk.disabled = true;
+
+            // Tombol konfirmasi baru aktif setelah jeda, supaya pesan sempat terbaca.
+            let wait = finishSuspect ? 8 : 3;
+            DOM.finishOk.textContent = `${base} (${wait})`;
+            if (finishTimer) clearInterval(finishTimer);
+            finishTimer = setInterval(() => {
+                wait--;
+                if (wait <= 0) {
+                    clearInterval(finishTimer);
+                    finishTimer = null;
+                    DOM.finishOk.disabled = false;
+                    DOM.finishOk.textContent = base;
+                } else {
+                    DOM.finishOk.textContent = `${base} (${wait})`;
+                }
+            }, 1000);
+
+            showEl(DOM.finishConfirm);
+        });
+
+        if (DOM.finishBack) {
+            DOM.finishBack.addEventListener('click', () => {
+                if (finishTimer) { clearInterval(finishTimer); finishTimer = null; }
+                hideEl(DOM.finishConfirm);
+            });
+        }
+
+        DOM.finishOk.addEventListener('click', () => {
+            if (DOM.finishOk.disabled) return;
+            // Catat ke monitoring supaya pengawas bisa menelusuri siswa yang
+            // menutup tanpa KIRIM. (Ini bukan pelanggaran: penghitung tidak naik.)
+            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.sendMonitoring === 'function') {
+                NEXORA_SECURITY.sendMonitoring(
+                    finishSuspect ? 'FINISH_TANPA_KIRIM_TERDETEKSI' : 'FINISH_OK',
+                    'formLoadCount=' + formLoadCount + '; sisaWaktuMs=' + Math.round(remainingMs)
+                );
+            }
             session.status = 'FINISHED';
             saveSession();
             finishExam('Ujian diselesaikan oleh siswa (tombol Selesai).');
         });
+    }
+
+    // ==========================================
+    // TOMBOL MUAT ULANG FORM (⟳)
+    // ==========================================
+    // Me-refresh HANYA Google Form di dalam iframe (bukan seluruh halaman):
+    // timer tetap berjalan, sesi & pelanggaran tidak berubah, tidak ada
+    // dialog "yakin meninggalkan halaman", dan fullscreen tidak terganggu.
+    // Berguna kalau soal/gambar tidak muncul atau form macet di jaringan lemot.
+    if (DOM.reloadBtn) {
+        let reloadLock = false;
+
+        const doReloadForm = () => {
+            if (reloadLock) return;
+            reloadLock = true;
+            setTimeout(() => { reloadLock = false; }, 3000); // cegah ketukan beruntun
+            hideEl(DOM.reloadConfirm);
+
+            // Catatan informasional untuk pengawas (BUKAN pelanggaran).
+            if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.sendMonitoring === 'function') {
+                NEXORA_SECURITY.sendMonitoring('FORM_RELOAD', 'formLoadCount=' + formLoadCount);
+            }
+            // Kosongkan dulu (onload dicopot agar about:blank tidak terhitung
+            // sebagai "form berpindah halaman"), lalu muat ulang dari awal.
+            // Menugaskan src yang sama persis tidak selalu memicu muat ulang.
+            if (DOM.formFrame) {
+                DOM.formFrame.onload = null;
+                DOM.formFrame.src = 'about:blank';
+            }
+            setTimeout(loadExamForm, 150);
+        };
+
+        DOM.reloadBtn.addEventListener('click', () => {
+            if (!(session.startedAt || session.isStarted) || session.finishedFlag) return;
+
+            // Form belum termuat sama sekali: tidak ada jawaban yang bisa hilang,
+            // langsung muat ulang tanpa bertanya.
+            if (formLoadCount === 0) { doReloadForm(); return; }
+
+            if (DOM.reloadConfirmText) {
+                DOM.reloadConfirmText.textContent = (formLoadCount >= 2)
+                    ? 'Kalau kamu SUDAH menekan KIRIM, tidak perlu muat ulang dan jangan kirim dua kali. Kalau belum, jawaban yang belum terkirim bisa hilang.'
+                    : 'Pakai ini kalau soal atau gambar tidak muncul. Jawaban yang sudah diisi tapi belum dikirim bisa hilang. Waktu ujian tetap berjalan.';
+            }
+            showEl(DOM.reloadConfirm);
+        });
+
+        if (DOM.reloadOk) DOM.reloadOk.addEventListener('click', doReloadForm);
+        if (DOM.reloadCancel) DOM.reloadCancel.addEventListener('click', () => hideEl(DOM.reloadConfirm));
     }
 
     // ==========================================
@@ -683,7 +876,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Jika siswa merefresh saat ujian sedang berjalan (di luar masa penalti)
-    if ((session.startedAt || session.isStarted) && !inPenaltyNow) {
+    // (Dulu ada syarat "&& !inPenaltyNow": kalau halaman dimuat ulang saat penalti,
+    // timer & heartbeat TIDAK PERNAH dijalankan lagi setelah penalti selesai.)
+    if (session.startedAt || session.isStarted) {
         hideEl(DOM.startOverlay);
 
         if (typeof NEXORA_SECURITY !== 'undefined' && typeof NEXORA_SECURITY.arm === 'function') {

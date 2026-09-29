@@ -499,7 +499,7 @@ const NEXORA_SECURITY = (function () {
                 // dipanggil di sini walau visibilitychange mungkin juga
                 // sudah mencatatnya lebih dulu).
                 recordViolation('WINDOW_BLUR', 'Siswa berpindah ke aplikasi/jendela lain (window kehilangan fokus)');
-            }, 150);
+            }, 700); // dulu 150 ms: di HP lambat fokus ke iframe Form belum terbaca -> blur palsu
         });
 
         // D. Deteksi Shortcut DevTools & Tombol Terlarang
