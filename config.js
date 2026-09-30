@@ -78,12 +78,12 @@ const GOOGLE_FORMS = {
     pkn:             "https://docs.google.com/forms/d/e/1FAIpQLSf4ZVOb1mz8tO1SCZqmXEZku_qr9eHn55fZq4gXor4tXch4Zg/viewform",
     bahasaInggris:   "https://docs.google.com/forms/d/e/1FAIpQLSdnkr15KiIr-qexcm8gCJ9HV2LAGOkuutEjie7SQ-7gzPfDqA/viewform",
     pjok:            "https://docs.google.com/forms/d/e/1FAIpQLSdWnuFi_p7xitusBNPtef4BuTq_aYtoO1UqEP1Vby5Xg4pJxA/viewform",
-    ipa: "",
-    bahasaLampung: "",
+    ipa: "https://docs.google.com/forms/d/e/1FAIpQLSdqj9df80ndeoZ0gYRBpl1btQ790pHBuS-mFU0NOeUCv-UmXA/viewform?usp=dialog",
+    bahasaLampung: "https://docs.google.com/forms/d/e/1FAIpQLSdGTd6XOCdfQ51iwYQe_HHYvEa3GW3lhqz68AdWmB569l2zwA/viewform?usp=dialog",
     ips: "",
     informatika: "",
-    seniBudaya: "",
-    pak: ""
+    seniBudaya: "https://docs.google.com/forms/d/e/1FAIpQLScXa33oZK6FM-jsvYrvnhGB2xG3De2YMGIIqBpHU0SaCm134w/viewform?usp=dialog",
+    pak: "https://docs.google.com/forms/d/e/1FAIpQLSfOMHn3POuKvnYYpDSdghjtYSGxEScgZ31p0KXzFHBOR_1wew/viewform?usp=dialog"
   },
 
   // ---------------------- KELAS VIII ----------------------
