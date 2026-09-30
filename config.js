@@ -80,8 +80,8 @@ const GOOGLE_FORMS = {
     pjok:            "https://docs.google.com/forms/d/e/1FAIpQLSdWnuFi_p7xitusBNPtef4BuTq_aYtoO1UqEP1Vby5Xg4pJxA/viewform",
     ipa: "https://docs.google.com/forms/d/e/1FAIpQLSdqj9df80ndeoZ0gYRBpl1btQ790pHBuS-mFU0NOeUCv-UmXA/viewform?usp=dialog",
     bahasaLampung: "https://docs.google.com/forms/d/e/1FAIpQLSdGTd6XOCdfQ51iwYQe_HHYvEa3GW3lhqz68AdWmB569l2zwA/viewform?usp=dialog",
-    ips: "",
-    informatika: "",
+    ips: "https://docs.google.com/forms/d/e/1FAIpQLSebPM76Yko0JR4Xb9zhkx8w2eovvyE6BkdgPgGvh5U1h26L4A/viewform?usp=dialog",
+    informatika: "https://docs.google.com/forms/d/e/1FAIpQLSeaWbQWyo-8MKs31hs-7XtCvrYiDtK9KU22VQhXYLcvSUS2QQ/viewform?usp=dialog",
     seniBudaya: "https://docs.google.com/forms/d/e/1FAIpQLScXa33oZK6FM-jsvYrvnhGB2xG3De2YMGIIqBpHU0SaCm134w/viewform?usp=dialog",
     pak: "https://docs.google.com/forms/d/e/1FAIpQLSfOMHn3POuKvnYYpDSdghjtYSGxEScgZ31p0KXzFHBOR_1wew/viewform?usp=dialog"
   },
